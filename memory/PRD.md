@@ -25,24 +25,34 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - Internal linking: Home → all services/locations/models/blog; service pages → related; area pages → nearby + related services + models; blog → related services + locations; CMS Pages → related services + locations
 - Tested: 23/23 backend tests pass, zero frontend lint errors
 
-## SEO Architecture — SSR LIVE (2026-02)
-**SSR is now active and production-grade.** A custom Express server (`/app/frontend/ssr-server.js` + modular `/app/frontend/ssr/`) pre-renders every public route as real HTML before the React SPA mounts on top.
+## SEO Architecture — SSR LIVE + Bilingual (2026-02)
+**SSR is now active, production-grade, and bilingual (DE / EN).** A custom Express server (`/app/frontend/ssr-server.js` + modular `/app/frontend/ssr/`) pre-renders every public route as real HTML before the React SPA mounts on top.
 
-**Architecture (post 2026-02 polish):**
-- `ssr-server.js` (131 lines) — thin Express wrapper, route table, bundle injection
-- `ssr/shell.js` — shared HTML head, header/nav, footer, breadcrumbs
+**Architecture (post 2026-02 polish + i18n):**
+- `ssr-server.js` (~165 lines) — thin Express wrapper, DE + EN route tables, bundle injection
+- `ssr/shell.js` — shared HTML head, lang-aware header/nav/footer/breadcrumbs, hreflang + canonical assembly
 - `ssr/backend.js` — HTTP client with 60s in-memory TTL cache + stale-on-error
 - `ssr/cache.js` — generic TTL memo with thundering-herd protection
-- `ssr/routes/{home,models,services,areas,blog,static}.js` — per-domain renderers
-- `src/data/site.js` — **single source of truth** (CommonJS) shared with React SPA. No duplication. `ssr-data.js` deleted.
+- `ssr/routes/{home,models,services,areas,blog,static}.js` — per-domain renderers, each accepts `lang` param
+- `src/data/site.js` — single source of truth (CommonJS) shared with React SPA
+- `src/data/i18n.js` — UI chrome translations + path localization helpers, shared with React via `exports.X` named-export pattern
+- `src/lib/i18n.js` — React `useI18n` hook (reads lang from URL via react-router)
+
+**Bilingual SEO contract:**
+- **`/en/...` mirror routes** for every public page (option 1a chosen by user)
+- Per-page `<link rel="canonical">` always points to the current-language URL
+- `<link rel="alternate" hreflang="de-DE" | "en" | "x-default">` cross-links between DE & EN equivalents
+- Slug mapping: `/ueber-uns` ↔ `/en/about`, `/kontakt` ↔ `/en/contact` (others share slugs)
+- `<html lang="de|en">` set both at SSR time and on SPA client-side route changes
+- EN long-form body copy still in German with a small "EN preview" banner (option 2a + 3a)
 
 **Verified via raw `curl` (no JS execution):**
-- 14/14 public routes return their own `<title>`, meta description, canonical, OG, Twitter, JSON-LD
-- Real `<h1>`, `<h2>`, paragraphs, model lists, service cards, area lists, blog teasers, FAQ accordion in HTML source
-- Bing, Yandex, Slack/WhatsApp/X social-card crawlers (non-JS) see full content
+- 23 DE + 14 EN public routes return their own `<title>`, meta, canonical, hreflang, JSON-LD
+- Real H1/H2/links/lists in HTML source on every route
+- Bing, Yandex, Slack/WhatsApp/X social-card crawlers (non-JS) see full content in both languages
 - React SPA still hydrates on top — UX unchanged
-- CRA boilerplate `<noscript>You need to enable JavaScript to run this app.</noscript>` + duplicate `<title>`/`<meta>` stripped (Feb 2026)
-- **40/40 tests passing** (23 backend + 17 SSR)
+- Lang switcher button in header (desktop + mobile menu) toggles DE↔EN, preserves current page
+- **59/59 tests passing** (23 backend + 17 SSR + 19 i18n)
 - Cache: ~40% faster on warm requests (172ms cold → ~100ms warm)
 
 ## Backlog (P1)

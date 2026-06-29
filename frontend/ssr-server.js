@@ -107,20 +107,40 @@ function safe(fn) {
 }
 
 // ---------- Public SSR routes ----------
-app.get("/", safe(() => renderHome(BUILD_ASSETS)));
-app.get("/models", safe(() => renderModels(BUILD_ASSETS)));
-app.get("/models/:slug", safe((req) => renderModelDetail(req.params.slug, BUILD_ASSETS)));
-app.get("/services", safe(() => renderServicesList(BUILD_ASSETS)));
-app.get("/services/:slug", safe((req) => renderServiceDetail(req.params.slug, BUILD_ASSETS)));
-app.get("/areas", safe(() => renderAreasList(BUILD_ASSETS)));
-app.get("/escort/:slug", safe((req) => renderAreaDetail(req.params.slug, BUILD_ASSETS)));
-app.get("/escort-hamburg", safe(() => renderEscortHamburg(BUILD_ASSETS)));
-app.get("/blog", safe(() => renderBlogList(BUILD_ASSETS)));
-app.get("/blog/:slug", safe((req) => renderBlogDetail(req.params.slug, BUILD_ASSETS)));
-app.get("/p/:slug", safe((req) => renderPageDetail(req.params.slug, BUILD_ASSETS)));
-app.get("/faq", safe(() => renderFAQ(BUILD_ASSETS)));
-app.get("/ueber-uns", safe(() => renderAbout(BUILD_ASSETS)));
-app.get("/kontakt", safe(() => renderContact(BUILD_ASSETS)));
+// DE (default-language) routes
+app.get("/", safe(() => renderHome(BUILD_ASSETS, "de")));
+app.get("/models", safe(() => renderModels(BUILD_ASSETS, "de")));
+app.get("/models/:slug", safe((req) => renderModelDetail(req.params.slug, BUILD_ASSETS, "de")));
+app.get("/services", safe(() => renderServicesList(BUILD_ASSETS, "de")));
+app.get("/services/:slug", safe((req) => renderServiceDetail(req.params.slug, BUILD_ASSETS, "de")));
+app.get("/areas", safe(() => renderAreasList(BUILD_ASSETS, "de")));
+app.get("/escort/:slug", safe((req) => renderAreaDetail(req.params.slug, BUILD_ASSETS, "de")));
+app.get("/escort-hamburg", safe(() => renderEscortHamburg(BUILD_ASSETS, "de")));
+app.get("/blog", safe(() => renderBlogList(BUILD_ASSETS, "de")));
+app.get("/blog/:slug", safe((req) => renderBlogDetail(req.params.slug, BUILD_ASSETS, "de")));
+app.get("/p/:slug", safe((req) => renderPageDetail(req.params.slug, BUILD_ASSETS, "de")));
+app.get("/faq", safe(() => renderFAQ(BUILD_ASSETS, "de")));
+app.get("/ueber-uns", safe(() => renderAbout(BUILD_ASSETS, "de")));
+app.get("/kontakt", safe(() => renderContact(BUILD_ASSETS, "de")));
+
+// EN (/en/*) mirror routes — same data, English UI chrome, en-specific
+// canonical + hreflang. Long-form body copy stays in DE with a "coming soon"
+// banner until full English content is supplied via the CMS.
+app.get("/en", safe(() => renderHome(BUILD_ASSETS, "en")));
+app.get("/en/", safe(() => renderHome(BUILD_ASSETS, "en")));
+app.get("/en/models", safe(() => renderModels(BUILD_ASSETS, "en")));
+app.get("/en/models/:slug", safe((req) => renderModelDetail(req.params.slug, BUILD_ASSETS, "en")));
+app.get("/en/services", safe(() => renderServicesList(BUILD_ASSETS, "en")));
+app.get("/en/services/:slug", safe((req) => renderServiceDetail(req.params.slug, BUILD_ASSETS, "en")));
+app.get("/en/areas", safe(() => renderAreasList(BUILD_ASSETS, "en")));
+app.get("/en/escort/:slug", safe((req) => renderAreaDetail(req.params.slug, BUILD_ASSETS, "en")));
+app.get("/en/escort-hamburg", safe(() => renderEscortHamburg(BUILD_ASSETS, "en")));
+app.get("/en/blog", safe(() => renderBlogList(BUILD_ASSETS, "en")));
+app.get("/en/blog/:slug", safe((req) => renderBlogDetail(req.params.slug, BUILD_ASSETS, "en")));
+app.get("/en/p/:slug", safe((req) => renderPageDetail(req.params.slug, BUILD_ASSETS, "en")));
+app.get("/en/faq", safe(() => renderFAQ(BUILD_ASSETS, "en")));
+app.get("/en/about", safe(() => renderAbout(BUILD_ASSETS, "en")));
+app.get("/en/contact", safe(() => renderContact(BUILD_ASSETS, "en")));
 
 // Admin + anything else → SPA shell (React handles routing client-side).
 app.get("*", (req, res) => send(res, TEMPLATE));

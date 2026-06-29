@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import "@/App.css";
 
 import { AuthProvider } from "@/lib/auth";
+import { detectLang, t as rawT } from "@/data/i18n";
 
 // Code splitting: each route is its own JS chunk. Public visitors no longer
 // download admin code; admin users only pay for the admin shell.
@@ -37,14 +38,34 @@ const AdminPageEdit = lazy(() => import("@/pages/admin/AdminPages").then((m) => 
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [pathname]);
+  // Keep <html lang="..."> in sync with the current URL prefix so a11y tools
+  // and search engines see the right language on client-side navigations.
+  useEffect(() => {
+    const lang = detectLang(pathname);
+    document.documentElement.setAttribute("lang", lang);
+  }, [pathname]);
   return null;
 }
 
 function PageFallback() {
+  const lang = detectLang(typeof window === "undefined" ? "/" : window.location.pathname);
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-[#6B5F5F] text-sm">
-      Lädt…
+      {rawT("misc.loading", lang)}
     </div>
+  );
+}
+
+function SkipLink() {
+  const { pathname } = useLocation();
+  const lang = detectLang(pathname);
+  return (
+    <a
+      href="#main"
+      className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:bg-[#8B1538] focus:text-white focus:px-4 focus:py-2 focus:rounded"
+    >
+      {rawT("cta.skipToMain", lang)}
+    </a>
   );
 }
 
@@ -55,16 +76,11 @@ function App() {
         <AuthProvider>
           <ScrollToTop />
           {/* Accessibility: skip to main content (visible on keyboard focus only) */}
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:bg-[#8B1538] focus:text-white focus:px-4 focus:py-2 focus:rounded"
-          >
-            Zum Hauptinhalt springen
-          </a>
+          <SkipLink />
           <Toaster theme="light" position="top-right" richColors />
           <Suspense fallback={<PageFallback />}>
             <Routes>
-              {/* Public */}
+              {/* Public — DE (default) */}
               <Route path="/" element={<Home />} />
               <Route path="/models" element={<Models />} />
               <Route path="/models/:slug" element={<ModelDetail />} />
@@ -80,6 +96,23 @@ function App() {
               <Route path="/kontakt" element={<Contact />} />
               {/* CMS-managed landing pages */}
               <Route path="/p/:slug" element={<PageDetail />} />
+
+              {/* Public — EN mirror (UI chrome translated; long-form copy
+                  remains in DE for now with an "EN preview" banner) */}
+              <Route path="/en" element={<Home />} />
+              <Route path="/en/models" element={<Models />} />
+              <Route path="/en/models/:slug" element={<ModelDetail />} />
+              <Route path="/en/escort-hamburg" element={<EscortHamburg />} />
+              <Route path="/en/services" element={<ServicesList />} />
+              <Route path="/en/services/:slug" element={<ServiceDetail />} />
+              <Route path="/en/areas" element={<AreasList />} />
+              <Route path="/en/escort/:slug" element={<AreaDetail />} />
+              <Route path="/en/blog" element={<BlogList />} />
+              <Route path="/en/blog/:slug" element={<BlogDetail />} />
+              <Route path="/en/faq" element={<FAQ />} />
+              <Route path="/en/about" element={<About />} />
+              <Route path="/en/contact" element={<Contact />} />
+              <Route path="/en/p/:slug" element={<PageDetail />} />
 
               {/* Admin */}
               <Route path="/admin/login" element={<AdminLogin />} />

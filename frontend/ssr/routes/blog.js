@@ -2,42 +2,62 @@
  * Blog list (/blog), blog post (/blog/:slug), CMS page (/p/:slug) SSR.
  */
 const {
-  SITE_ORIGIN,
   esc,
   escAttr,
   stripHtml,
+  navTo,
   renderShell,
   renderBreadcrumbs,
   breadcrumbSchema,
+  englishComingSoonBanner,
+  t,
 } = require("../shell");
 const { backendJSON } = require("../backend");
 
-async function renderBlogList(buildAssets) {
+async function renderBlogList(buildAssets, lang = "de") {
   let posts = [];
-  try { posts = await backendJSON("/api/blog"); } catch (e) { /* empty list */ }
+  try { posts = await backendJSON("/api/blog"); } catch (e) { /* empty */ }
+
+  const titleByLang = {
+    de: "Magazin — Noir Hamburg | Lifestyle, Hamburg Guide & Reiseempfehlungen",
+    en: "Magazine — Noir Hamburg | Lifestyle, Hamburg Guide & Travel Recommendations",
+  };
+  const descByLang = {
+    de: "Das Noir Hamburg Magazin: Restaurants, Hotels, Reisen, Lifestyle und Hamburg-Insider-Wissen für anspruchsvolle Genießer.",
+    en: "The Noir Hamburg Magazine: restaurants, hotels, travel, lifestyle and Hamburg insider knowledge for discerning connoisseurs.",
+  };
+  const h1ByLang = { de: "Noir Magazin", en: "Noir Magazine" };
+  const leadByLang = {
+    de: "Geschichten, Empfehlungen und Insider-Wissen aus dem Hamburger Premium-Lifestyle.",
+    en: "Stories, recommendations and insider knowledge from Hamburg's premium lifestyle.",
+  };
+
   const body = `
 <main id="main" style="padding:2rem;">
-${renderBreadcrumbs([{ label: "Blog" }])}
-<h1>Noir Magazin</h1>
-<p>Geschichten, Empfehlungen und Insider-Wissen aus dem Hamburger Premium-Lifestyle.</p>
-${posts.map((p) => `<article><h2><a href="/blog/${p.slug}">${esc(p.title)}</a></h2><p><strong>${esc(p.category)}</strong></p><p>${esc(p.excerpt)}</p></article>`).join("")}
+${renderBreadcrumbs([{ label: t("crumb.blog", lang) }], lang)}
+<h1>${esc(h1ByLang[lang])}</h1>
+<p>${esc(leadByLang[lang])}</p>
+${englishComingSoonBanner(lang)}
+${posts.map((p) => `<article><h2><a href="${navTo(`/blog/${p.slug}`, lang)}">${esc(p.title)}</a></h2><p><strong>${esc(p.category)}</strong></p><p>${esc(p.excerpt)}</p></article>`).join("")}
 </main>`;
   return renderShell({
     ...buildAssets,
-    title: "Magazin — Noir Hamburg | Lifestyle, Hamburg Guide & Reiseempfehlungen",
-    description: "Das Noir Hamburg Magazin: Restaurants, Hotels, Reisen, Lifestyle und Hamburg-Insider-Wissen für anspruchsvolle Genießer.",
-    canonical: `${SITE_ORIGIN}/blog`,
-    jsonLd: [breadcrumbSchema([{ label: "Blog" }])],
+    lang,
+    title: titleByLang[lang] || titleByLang.de,
+    description: descByLang[lang] || descByLang.de,
+    canonicalPath: "/blog",
+    jsonLd: [breadcrumbSchema([{ label: t("crumb.blog", lang) }], lang)],
     bodyContent: body,
   });
 }
 
-async function renderBlogDetail(slug, buildAssets) {
+async function renderBlogDetail(slug, buildAssets, lang = "de") {
   let p;
   try { p = await backendJSON(`/api/blog/${slug}`); } catch (e) { return null; }
   const body = `
 <main id="main" style="padding:2rem;">
-${renderBreadcrumbs([{ label: "Blog", to: "/blog" }, { label: p.title }])}
+${renderBreadcrumbs([{ label: t("crumb.blog", lang), to: "/blog" }, { label: p.title }], lang)}
+${englishComingSoonBanner(lang)}
 <article>
 <p style="text-transform:uppercase;color:#8B1538;">${esc(p.category)}</p>
 <h1>${esc(p.title)}</h1>
@@ -47,9 +67,10 @@ ${p.content}
 </main>`;
   return renderShell({
     ...buildAssets,
+    lang,
     title: p.meta_title || `${p.title} | Noir Hamburg`,
     description: p.meta_description || p.excerpt,
-    canonical: `${SITE_ORIGIN}/blog/${p.slug}`,
+    canonicalPath: `/blog/${p.slug}`,
     ogImage: p.cover_image,
     jsonLd: [
       {
@@ -64,18 +85,19 @@ ${p.content}
         inLanguage: "de-DE",
         articleSection: p.category,
       },
-      breadcrumbSchema([{ label: "Blog", to: "/blog" }, { label: p.title }]),
+      breadcrumbSchema([{ label: t("crumb.blog", lang), to: "/blog" }, { label: p.title }], lang),
     ],
     bodyContent: body,
   });
 }
 
-async function renderPageDetail(slug, buildAssets) {
+async function renderPageDetail(slug, buildAssets, lang = "de") {
   let p;
   try { p = await backendJSON(`/api/pages/${slug}`); } catch (e) { return null; }
   const body = `
 <main id="main" style="padding:2rem;">
-${renderBreadcrumbs([{ label: p.title }])}
+${renderBreadcrumbs([{ label: p.title }], lang)}
+${englishComingSoonBanner(lang)}
 <article>
 <h1>${esc(p.h1 || p.title)}</h1>
 ${p.intro ? `<p><em>${esc(p.intro)}</em></p>` : ""}
@@ -85,11 +107,12 @@ ${p.content}
 </main>`;
   return renderShell({
     ...buildAssets,
+    lang,
     title: p.meta_title || `${p.title} | Noir Hamburg`,
     description: p.meta_description || p.intro || stripHtml(p.content).slice(0, 160),
-    canonical: `${SITE_ORIGIN}/p/${p.slug}`,
+    canonicalPath: `/p/${p.slug}`,
     ogImage: p.hero_image,
-    jsonLd: [breadcrumbSchema([{ label: p.title }])],
+    jsonLd: [breadcrumbSchema([{ label: p.title }], lang)],
     bodyContent: body,
   });
 }
