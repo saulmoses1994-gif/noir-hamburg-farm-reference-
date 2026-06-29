@@ -1,0 +1,66 @@
+import { Link, NavLink, Outlet, useNavigate, Navigate } from "react-router-dom";
+import { useAuth } from "@/lib/auth";
+import { Users, FileText, Inbox, LogOut, Home } from "lucide-react";
+
+export default function AdminLayout() {
+  const { user, logout, loading } = useAuth();
+  const nav = useNavigate();
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0A0B] text-[#9CA3AF]">Lädt…</div>;
+  if (!user || user.role !== "admin") return <Navigate to="/admin/login" replace />;
+
+  const handleLogout = async () => {
+    await logout();
+    nav("/admin/login");
+  };
+
+  const links = [
+    { to: "/admin", label: "Dashboard", icon: Home, end: true },
+    { to: "/admin/models", label: "Models", icon: Users },
+    { to: "/admin/blog", label: "Blog", icon: FileText },
+    { to: "/admin/contacts", label: "Anfragen", icon: Inbox },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#0A0A0B] text-[#F5F5F0] flex" data-testid="admin-layout">
+      <aside className="w-64 bg-[#121214] border-r border-white/5 flex flex-col">
+        <div className="p-6 border-b border-white/5">
+          <Link to="/" className="font-heading text-lg tracking-[0.25em] uppercase">
+            <span>Noir</span> <span className="accent-text">Hamburg</span>
+          </Link>
+          <div className="text-xs font-mono text-[#52525B] mt-1">CMS · Admin</div>
+        </div>
+        <nav className="flex-1 p-4 space-y-1">
+          {links.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 text-sm font-light transition-colors ${
+                  isActive ? "bg-[#1A1A1D] accent-text" : "text-[#9CA3AF] hover:bg-[#1A1A1D] hover:text-[#F5F5F0]"
+                }`
+              }
+              data-testid={`admin-nav-${label.toLowerCase()}`}
+            >
+              <Icon size={16} /> {label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-white/5">
+          <div className="text-xs text-[#52525B] mb-2 font-mono">{user.email}</div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-sm text-[#9CA3AF] hover:text-[#F5F5F0]"
+            data-testid="admin-logout-btn"
+          >
+            <LogOut size={14} /> Abmelden
+          </button>
+        </div>
+      </aside>
+      <main className="flex-1 overflow-x-hidden">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
