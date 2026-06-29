@@ -34,10 +34,10 @@ export default function ModelDetail() {
   });
 
   if (model === false) {
-    return <PublicLayout><div className="px-6 py-32 text-center text-[#9CA3AF]">Model nicht gefunden.</div></PublicLayout>;
+    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Model nicht gefunden.</div></PublicLayout>;
   }
   if (!model) {
-    return <PublicLayout><div className="px-6 py-32 text-center text-[#9CA3AF]">Lädt…</div></PublicLayout>;
+    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Lädt…</div></PublicLayout>;
   }
 
   const gallery = [model.cover_image, ...(model.gallery || [])].filter(Boolean);
@@ -65,7 +65,7 @@ export default function ModelDetail() {
                     <button
                       key={i}
                       onClick={() => setActiveImg(i)}
-                      className={`editorial-image h-24 ${i === activeImg ? "ring-1 ring-[#E5D3B3]" : "opacity-60 hover:opacity-100"}`}
+                      className={`editorial-image h-24 ${i === activeImg ? "ring-1 ring-[#8B1538]" : "opacity-60 hover:opacity-100"}`}
                       data-testid={`gallery-thumb-${i}`}
                     >
                       <img src={img} alt={`${model.name} ${i + 1}`} />
@@ -83,7 +83,7 @@ export default function ModelDetail() {
               {model.name}
             </h1>
             {model.short_tagline && (
-              <p className="mt-4 font-heading italic text-xl text-[#9CA3AF]">
+              <p className="mt-4 font-heading italic text-xl text-[#6B5F5F]">
                 {model.short_tagline}
               </p>
             )}
@@ -101,7 +101,7 @@ export default function ModelDetail() {
               ].filter(([_, v]) => v).map(([k, v]) => (
                 <div key={k}>
                   <dt className="overline text-[10px] mb-1">{k}</dt>
-                  <dd className="font-light text-[#F5F5F0]">{v}</dd>
+                  <dd className="font-light text-[#1A1414]">{v}</dd>
                 </div>
               ))}
             </dl>
@@ -111,7 +111,7 @@ export default function ModelDetail() {
                 <span className="overline text-[10px] block mb-2">Sprachen</span>
                 <div className="flex flex-wrap gap-2">
                   {model.languages.map((l) => (
-                    <span key={l} className="text-xs font-mono uppercase tracking-[0.15em] py-1 px-3 border border-white/10">
+                    <span key={l} className="text-xs font-mono uppercase tracking-[0.15em] py-1 px-3 border border-[#1A1414]/15">
                       {l}
                     </span>
                   ))}
@@ -121,13 +121,13 @@ export default function ModelDetail() {
 
             <div className="mt-10">
               <h2 className="font-heading text-2xl mb-4">Über {model.name}</h2>
-              <p className="text-base font-light text-[#9CA3AF] leading-relaxed">{model.bio}</p>
+              <p className="text-base font-light text-[#6B5F5F] leading-relaxed">{model.bio}</p>
             </div>
 
             {model.interests?.length > 0 && (
               <div className="mt-8">
                 <span className="overline text-[10px] block mb-2">Interessen</span>
-                <p className="text-sm font-light text-[#F5F5F0]">{model.interests.join(" · ")}</p>
+                <p className="text-sm font-light text-[#1A1414]">{model.interests.join(" · ")}</p>
               </div>
             )}
 
@@ -151,7 +151,7 @@ export default function ModelDetail() {
                 <span className="overline text-[10px] block mb-3">Services</span>
                 <div className="flex flex-wrap gap-2">
                   {modelServices.map((s) => (
-                    <Link key={s.slug} to={`/services/${s.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-white/10 hover:border-[#E5D3B3] hover:text-[#E5D3B3]">
+                    <Link key={s.slug} to={`/services/${s.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">
                       {s.title}
                     </Link>
                   ))}
@@ -165,7 +165,7 @@ export default function ModelDetail() {
                 <span className="overline text-[10px] block mb-3">Verfügbar in</span>
                 <div className="flex flex-wrap gap-2">
                   {modelLocations.map((l) => (
-                    <Link key={l.slug} to={`/escort/${l.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-white/10 hover:border-[#E5D3B3] hover:text-[#E5D3B3]">
+                    <Link key={l.slug} to={`/escort/${l.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">
                       {l.name}
                     </Link>
                   ))}
@@ -178,7 +178,7 @@ export default function ModelDetail() {
 
       {/* Related Models */}
       {related.length > 0 && (
-        <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-white/5">
+        <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-[#1A1414]/8">
           <h2 className="font-heading text-3xl mb-12">Weitere Models</h2>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
             {related.map((m, i) => <ModelCard key={m.id} model={m} index={i} />)}
@@ -187,16 +187,16 @@ export default function ModelDetail() {
       )}
 
       {/* FAQ */}
-      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#121214]">
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]">
         <h2 className="font-heading text-3xl mb-12">Häufige Fragen</h2>
-        <div className="space-y-px bg-white/5 max-w-4xl">
+        <div className="space-y-px bg-[#1A1414]/5 max-w-4xl">
           {FAQS.slice(0, 4).map((f, i) => (
-            <details key={i} className="bg-[#121214] group">
+            <details key={i} className="bg-[#FBF7F4] group">
               <summary className="cursor-pointer p-6 list-none flex items-center justify-between gap-6">
                 <span className="font-heading text-xl">{f.q}</span>
                 <span className="accent-text text-xl group-open:rotate-45 transition-transform">+</span>
               </summary>
-              <div className="px-6 pb-6 text-sm font-light text-[#9CA3AF] leading-relaxed">{f.a}</div>
+              <div className="px-6 pb-6 text-sm font-light text-[#6B5F5F] leading-relaxed">{f.a}</div>
             </details>
           ))}
         </div>

@@ -1,38 +1,50 @@
 import { Link } from "react-router-dom";
 
-export default function ModelCard({ model, index = 0 }) {
-  // Use varied heights for editorial feel
-  const isWide = index % 5 === 2;
-  const heightClass = index % 3 === 0 ? "h-[640px]" : index % 3 === 1 ? "h-[560px]" : "h-[700px]";
+export default function ModelCard({ model }) {
+  const availLabel = model.available ? "Heute verfügbar" : "Heute nicht verfügbar";
+  const badgeClass = model.available ? "badge-available" : "badge-unavailable";
+
+  // City label from first location
+  const cityLabel = model.locations?.[0] || "Hamburg";
+  const cityName = cityLabel.charAt(0).toUpperCase() + cityLabel.slice(1).replace(/-/g, " ");
 
   return (
     <Link
       to={`/models/${model.slug}`}
       data-testid={`model-card-${model.slug}`}
-      className={`group block ${isWide ? "md:col-span-8" : "md:col-span-4"} fade-in`}
+      className="model-card group block bg-white border border-[#1A1414]/8 rounded-lg overflow-hidden hover:shadow-xl hover:border-[#8B1538]/40 transition-all fade-in"
     >
-      <div className={`editorial-image ${heightClass} bg-[#1A1A1D]`}>
+      <div className="editorial-image aspect-[3/4] relative">
         {model.cover_image ? (
-          <img
-            src={model.cover_image}
-            alt={`${model.name} – Escort Hamburg`}
-            loading="lazy"
-          />
+          <img src={model.cover_image} alt={`${model.name} – Escort Hamburg`} loading="lazy" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center font-heading text-6xl text-[#52525B]">
+          <div className="w-full h-full bg-[#F2EAE4] flex items-center justify-center font-heading text-6xl text-[#8B1538]/40">
             {model.name?.[0] || "N"}
           </div>
         )}
+        <div className="absolute top-3 left-3">
+          <span className={badgeClass}>{availLabel}</span>
+        </div>
+        {model.featured && (
+          <div className="absolute top-3 right-3">
+            <span className="bg-[#8B1538] text-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full">Featured</span>
+          </div>
+        )}
       </div>
-      <div className="mt-5 flex items-baseline justify-between">
-        <h3 className="font-heading text-2xl tracking-tight">
-          {model.name}
-        </h3>
-        <span className="overline text-[10px]">{model.age} · {model.height_cm}cm</span>
+      <div className="p-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="font-heading text-2xl text-[#1A1414] group-hover:accent-text transition-colors">{model.name}</h3>
+        </div>
+        <div className="text-xs accent-text uppercase tracking-wider mt-1 font-semibold">Escort {cityName}</div>
+        <div className="mt-3 text-sm text-[#6B5F5F] flex items-center gap-2 flex-wrap">
+          <span>{model.age}J.</span>
+          {model.height_cm && (<><span className="text-[#1A1414]/20">·</span><span>{model.height_cm}cm</span></>)}
+          {model.dress_size && (<><span className="text-[#1A1414]/20">·</span><span>Größe {model.dress_size}</span></>)}
+        </div>
+        {model.short_tagline && (
+          <p className="mt-3 text-sm text-[#6B5F5F] line-clamp-2 italic">{model.short_tagline}</p>
+        )}
       </div>
-      {model.short_tagline && (
-        <p className="mt-2 text-sm text-[#9CA3AF] font-light leading-snug">{model.short_tagline}</p>
-      )}
     </Link>
   );
 }

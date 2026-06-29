@@ -10,7 +10,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-[#9CA3AF]">Lädt…</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-[#6B5F5F]">Lädt…</div>;
   if (user && user.role === "admin") return <Navigate to="/admin" replace />;
 
   const submit = async (e) => {
@@ -31,12 +31,12 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center px-6" data-testid="admin-login-page">
+    <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center px-6" data-testid="admin-login-page">
       <form onSubmit={submit} className="w-full max-w-md" data-testid="admin-login-form">
         <div className="text-center mb-12">
           <span className="overline accent-text">Admin</span>
-          <h1 className="font-heading text-4xl tracking-tight mt-3"><span className="text-[#F5F5F0]">Noir</span> <span className="accent-text">Hamburg</span></h1>
-          <p className="text-sm font-light text-[#9CA3AF] mt-2">CMS Login</p>
+          <h1 className="font-heading text-4xl tracking-tight mt-3"><span className="text-[#1A1414]">Noir</span> <span className="accent-text">Hamburg</span></h1>
+          <p className="text-sm font-light text-[#6B5F5F] mt-2">CMS Login</p>
         </div>
 
         <div className="space-y-5">
@@ -45,7 +45,7 @@ export default function AdminLogin() {
             <input
               type="email" required value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-transparent border border-white/10 focus:border-[#E5D3B3] outline-none p-3 font-light text-[#F5F5F0]"
+              className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light text-[#1A1414]"
               data-testid="admin-email"
             />
           </div>
@@ -54,7 +54,7 @@ export default function AdminLogin() {
             <input
               type="password" required value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border border-white/10 focus:border-[#E5D3B3] outline-none p-3 font-light text-[#F5F5F0]"
+              className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light text-[#1A1414]"
               data-testid="admin-password"
             />
           </div>

@@ -26,49 +26,49 @@ export default function Models() {
 
   return (
     <PublicLayout>
-      <section className="px-6 md:px-12 lg:px-16 pt-12 pb-8" data-testid="models-page">
+      <section className="px-6 md:px-12 lg:px-16 pt-12 pb-8 bg-[#FBF7F4]" data-testid="models-page">
         <Breadcrumbs items={[{ label: "Models" }]} />
         <div className="mt-8 max-w-3xl">
           <span className="overline">Roster</span>
-          <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
+          <h1 className="font-heading text-4xl lg:text-6xl font-semibold tracking-tight leading-tight mt-4">
             Unsere <em className="italic accent-text">Models</em>
           </h1>
-          <p className="mt-6 text-lg font-light text-[#9CA3AF] leading-relaxed">
+          <p className="mt-6 text-base lg:text-lg text-[#6B5F5F] leading-relaxed">
             Eine sorgfältig kuratierte Auswahl an Persönlichkeiten – jede mit eigener Geschichte, Bildung und unverkennbarem Stil.
           </p>
         </div>
       </section>
 
       {/* Filter */}
-      <section className="px-6 md:px-12 lg:px-16 py-6 border-y border-white/5 sticky top-[68px] z-30 backdrop-blur-xl bg-[#0A0A0B]/85">
-        <div className="flex flex-wrap items-center gap-4">
+      <section className="px-6 md:px-12 lg:px-16 py-4 border-y border-[#1A1414]/8 sticky top-[64px] z-30 bg-white/95 backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="overline">Filter</span>
           <select
             value={filterService}
             onChange={(e) => setFilterService(e.target.value)}
-            className="bg-transparent border border-white/10 text-sm py-2 px-4 font-light focus:border-[#E5D3B3] outline-none"
+            className="bg-white border border-[#1A1414]/15 text-sm py-2 px-4 rounded-md focus:border-[#8B1538] outline-none text-[#1A1414]"
             data-testid="filter-service"
           >
             <option value="">Alle Services</option>
             {SERVICES.map((s) => (
-              <option key={s.slug} value={s.slug} className="bg-[#0A0A0B]">{s.title}</option>
+              <option key={s.slug} value={s.slug}>{s.title}</option>
             ))}
           </select>
           <select
             value={filterLocation}
             onChange={(e) => setFilterLocation(e.target.value)}
-            className="bg-transparent border border-white/10 text-sm py-2 px-4 font-light focus:border-[#E5D3B3] outline-none"
+            className="bg-white border border-[#1A1414]/15 text-sm py-2 px-4 rounded-md focus:border-[#8B1538] outline-none text-[#1A1414]"
             data-testid="filter-location"
           >
             <option value="">Alle Standorte</option>
             {LOCATIONS.map((l) => (
-              <option key={l.slug} value={l.slug} className="bg-[#0A0A0B]">{l.name}</option>
+              <option key={l.slug} value={l.slug}>{l.name}</option>
             ))}
           </select>
           {(filterService || filterLocation) && (
             <button
               onClick={() => { setFilterService(""); setFilterLocation(""); }}
-              className="text-xs uppercase tracking-[0.2em] text-[#9CA3AF] hover:text-[#F5F5F0]"
+              className="text-xs uppercase tracking-wider text-[#8B1538] hover:underline"
               data-testid="filter-reset"
             >
               Zurücksetzen
@@ -79,12 +79,12 @@ export default function Models() {
 
       {/* Grid */}
       <section className="px-6 md:px-12 lg:px-16 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
           {models.map((m, i) => (
             <ModelCard key={m.id} model={m} index={i} />
           ))}
           {models.length === 0 && (
-            <div className="md:col-span-12 text-center py-20 text-[#9CA3AF]" data-testid="models-empty">
+            <div className="col-span-full text-center py-20 text-[#6B5F5F]" data-testid="models-empty">
               <p className="font-heading text-2xl">Keine Models gefunden.</p>
               <p className="text-sm mt-2">Bitte passen Sie die Filter an.</p>
             </div>

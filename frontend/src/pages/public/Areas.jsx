@@ -23,19 +23,19 @@ export function AreasList() {
           <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
             Hamburg <em className="italic accent-text">Areas</em>
           </h1>
-          <p className="mt-6 text-lg font-light text-[#9CA3AF] leading-relaxed">
+          <p className="mt-6 text-lg font-light text-[#6B5F5F] leading-relaxed">
             Wir begleiten Sie in der gesamten Metropolregion Hamburg. Wählen Sie Ihren Stadtteil.
           </p>
         </div>
       </section>
 
       <section className="px-6 md:px-12 lg:px-16 pb-32">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#1A1414]/5">
           {LOCATIONS.map((l) => (
             <Link
               key={l.slug}
               to={`/escort/${l.slug}`}
-              className="bg-[#0A0A0B] hover:bg-[#121214] transition-colors duration-500 group block"
+              className="bg-[#FFFFFF] hover:bg-[#FBF7F4] transition-colors duration-500 group block"
               data-testid={`area-card-${l.slug}`}
             >
               <div className="aspect-[4/3] overflow-hidden">
@@ -43,7 +43,7 @@ export function AreasList() {
               </div>
               <div className="p-8">
                 <h2 className="font-heading text-2xl">{l.title}</h2>
-                <p className="text-sm font-light text-[#9CA3AF] mt-2 leading-relaxed">{l.intro}</p>
+                <p className="text-sm font-light text-[#6B5F5F] mt-2 leading-relaxed">{l.intro}</p>
                 <div className="mt-5 inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] accent-text">
                   Mehr <ArrowRight size={12} />
                 </div>
@@ -74,7 +74,7 @@ export function AreaDetail() {
   });
 
   if (!area) {
-    return <PublicLayout><div className="px-6 py-32 text-center text-[#9CA3AF]">Standort nicht gefunden.</div></PublicLayout>;
+    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Standort nicht gefunden.</div></PublicLayout>;
   }
 
   const nearby = LOCATIONS.filter((l) => l.slug !== area.slug).slice(0, 6);
@@ -84,13 +84,13 @@ export function AreaDetail() {
       <section className="relative h-[60vh] flex items-end" data-testid="area-hero">
         <div className="absolute inset-0">
           <img src={area.image} alt={area.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
         </div>
-        <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl">
-          <Breadcrumbs items={[{ label: "Hamburg Areas", to: "/areas" }, { label: area.name }]} />
-          <span className="overline block mt-6 mb-4">Escort {area.name}</span>
-          <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none">{area.title}</h1>
-          <p className="font-heading italic text-xl text-[#9CA3AF] mt-4">{area.intro}</p>
+        <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">
+          <Breadcrumbs items={[{ label: "Hamburg Areas", to: "/areas" }, { label: area.name }]} dark />
+          <span className="overline block mt-6 mb-4 text-[#E5A5B5]">Escort {area.name}</span>
+          <h1 className="font-heading text-5xl lg:text-7xl font-semibold tracking-tight leading-tight text-white">{area.title}</h1>
+          <p className="font-heading italic text-xl text-white/80 mt-4">{area.intro}</p>
         </div>
       </section>
 
@@ -98,14 +98,14 @@ export function AreaDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-7">
             <h2 className="font-heading text-3xl lg:text-4xl mb-8">Begleitung in {area.name}</h2>
-            <p className="text-base lg:text-lg font-light text-[#9CA3AF] leading-relaxed">{area.description}</p>
+            <p className="text-base lg:text-lg font-light text-[#6B5F5F] leading-relaxed">{area.description}</p>
 
             {area.landmarks?.length > 0 && (
               <div className="mt-12">
                 <span className="overline mb-4 block">Beliebte Adressen</span>
                 <div className="flex flex-wrap gap-2">
                   {area.landmarks.map((lm) => (
-                    <span key={lm} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-white/10">{lm}</span>
+                    <span key={lm} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15">{lm}</span>
                   ))}
                 </div>
               </div>
@@ -131,7 +131,7 @@ export function AreaDetail() {
               <span className="overline mb-3 block">In der Nähe</span>
               <div className="flex flex-wrap gap-2">
                 {nearby.map((l) => (
-                  <Link key={l.slug} to={`/escort/${l.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-white/10 hover:border-[#E5D3B3] hover:text-[#E5D3B3]">{l.name}</Link>
+                  <Link key={l.slug} to={`/escort/${l.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">{l.name}</Link>
                 ))}
               </div>
             </div>
@@ -140,7 +140,7 @@ export function AreaDetail() {
       </section>
 
       {models.length > 0 && (
-        <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-white/5">
+        <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-[#1A1414]/8">
           <h2 className="font-heading text-3xl mb-12">Models in {area.name}</h2>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
             {models.map((m, i) => <ModelCard key={m.id} model={m} index={i} />)}

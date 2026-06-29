@@ -3,9 +3,9 @@ import Footer from "./Footer";
 
 export default function PublicLayout({ children }) {
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-[#F5F5F0] grain" data-testid="public-layout">
+    <div className="min-h-screen bg-white text-[#1A1414]" data-testid="public-layout">
       <Header />
-      <main className="pt-20">{children}</main>
+      <main>{children}</main>
       <Footer />
     </div>
   );

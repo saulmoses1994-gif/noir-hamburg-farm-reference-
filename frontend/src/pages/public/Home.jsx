@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import SectionTitle from "@/components/SectionTitle";
 import ModelCard from "@/components/ModelCard";
@@ -14,7 +14,7 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    api.get("/models?featured=true").then((r) => setModels(r.data.slice(0, 4))).catch(() => {});
+    api.get("/models").then((r) => setModels(r.data.slice(0, 8))).catch(() => {});
     api.get("/blog?limit=3").then((r) => setPosts(r.data)).catch(() => {});
   }, []);
 
@@ -35,86 +35,109 @@ export default function Home() {
 
   return (
     <PublicLayout>
-      {/* Hero */}
-      <section className="relative h-[100vh] flex items-end" data-testid="home-hero">
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1542533450-52ccfdc39aba?auto=format&fit=crop&w=2400&q=85"
-            alt="Eleganter Schatten – Noir Hamburg"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/60 to-[#0A0A0B]/40" />
-        </div>
-        <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-20 md:pb-32 max-w-5xl">
-          <motion.span
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="overline block mb-6"
-          >
-            Premium Escort · Hamburg seit 2014
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="font-heading text-5xl sm:text-6xl lg:text-8xl font-light tracking-tighter leading-[0.95]"
-          >
-            Begleitung,<br />
-            <em className="font-light italic accent-text">die nichts erklären muss.</em>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-8 max-w-xl text-lg font-light text-[#9CA3AF] leading-relaxed"
-          >
-            Ausgewählte Persönlichkeiten für Hamburgs anspruchsvollsten Kreis – eine Premium-Begleitagentur, die Eleganz, Bildung und Diskretion zur Selbstverständlichkeit macht.
-          </motion.p>
+      {/* Welcome Banner — Tia-style side-by-side hero */}
+      <section className="px-6 md:px-12 lg:px-16 pt-16 pb-20" data-testid="home-hero">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+          <div className="lg:col-span-7">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#F4E4E4] text-[#8B1538] text-xs font-semibold uppercase tracking-wider rounded-full mb-6"
+            >
+              <Sparkles size={12} /> Premium · Hamburg seit 2014
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="font-heading text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-[#1A1414]"
+            >
+              Herzlich Willkommen<br />
+              <span className="accent-text italic font-medium">bei Noir Hamburg</span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="mt-8 max-w-xl text-base lg:text-lg font-normal text-[#6B5F5F] leading-relaxed"
+            >
+              Ihre vertrauenswürdige Begleitagentur in Hamburg und Umland — ehrlich, diskret und stilvoll. Wir vermitteln charmante, gebildete Persönlichkeiten für unvergessliche Begegnungen.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="mt-10 flex flex-wrap gap-4"
+            >
+              <Link to="/models" className="btn-primary" data-testid="hero-models-btn">
+                Models entdecken <ArrowRight size={16} />
+              </Link>
+              <a
+                href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`}
+                target="_blank" rel="noreferrer"
+                className="btn-whatsapp"
+                data-testid="hero-whatsapp-btn"
+              >
+                <MessageCircle size={16} /> WhatsApp
+              </a>
+            </motion.div>
+
+            <div className="mt-12 grid grid-cols-3 gap-6 max-w-md">
+              {[
+                { num: "14+", label: "Jahre Erfahrung" },
+                { num: "30+", label: "Premium Models" },
+                { num: "18", label: "Hamburg Gebiete" },
+              ].map((s) => (
+                <div key={s.label} className="border-l-2 border-[#8B1538] pl-3">
+                  <div className="font-heading text-3xl text-[#1A1414]">{s.num}</div>
+                  <div className="text-xs text-[#6B5F5F] mt-1">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="mt-10 flex flex-wrap gap-4"
+            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1 }}
+            className="lg:col-span-5 relative"
           >
-            <Link to="/models" className="btn-primary" data-testid="hero-models-btn">
-              Models entdecken <ArrowRight size={16} />
-            </Link>
-            <Link to="/kontakt" className="btn-ghost" data-testid="hero-contact-btn">
-              Kontakt aufnehmen
-            </Link>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-tl-[120px] rounded-br-[120px]">
+              <img
+                src="https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=85"
+                alt="Begleitagentur Noir Hamburg"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="absolute -bottom-6 -left-6 bg-white shadow-xl px-6 py-4 hidden md:flex items-center gap-3">
+              <div className="badge-available">Verfügbar</div>
+              <div>
+                <div className="font-heading text-lg text-[#1A1414]">Heute buchbar</div>
+                <div className="text-xs text-[#6B5F5F]">Hamburg & Umland</div>
+              </div>
+            </div>
           </motion.div>
-        </div>
-        <div className="absolute bottom-8 right-8 hidden md:block">
-          <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#52525B]">↓ Scroll</div>
         </div>
       </section>
 
-      {/* Introduction */}
-      <section className="px-6 md:px-12 lg:px-16 py-24 md:py-40">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-16">
-          <div className="md:col-span-5">
-            <span className="overline">Die Agentur</span>
-            <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight leading-tight mt-4">
-              Eine Idee von <em className="italic accent-text">Stil</em>, die in Hamburg zu Hause ist.
-            </h2>
-          </div>
-          <div className="md:col-span-6 md:col-start-7 flex flex-col gap-6 text-base lg:text-lg font-light text-[#9CA3AF] leading-relaxed">
-            <p>
-              Noir Hamburg ist keine Agentur im klassischen Sinne. Wir sind eine kleine, kuratierte Plattform für Persönlichkeiten, die Bildung, Diskretion und einen feinen ästhetischen Anspruch teilen – auf beiden Seiten der Begegnung.
-            </p>
-            <p>
-              Unsere Models sind Studentinnen, Juristinnen, Künstlerinnen, Berufstätige mit klaren Werten. Ihre Auswahl folgt nicht dem Standard einer Galerie, sondern dem Maß einer persönlichen Empfehlung.
-            </p>
+      {/* Trust strip */}
+      <section className="bg-[#FBF7F4] py-6 border-y border-[#1A1414]/8">
+        <div className="px-6 md:px-12 lg:px-16">
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-3 text-sm text-[#6B5F5F]">
+            <span className="flex items-center gap-2"><Sparkles size={14} className="text-[#8B1538]" /> Geprüfte Models</span>
+            <span className="flex items-center gap-2"><Sparkles size={14} className="text-[#8B1538]" /> 100% Diskret</span>
+            <span className="flex items-center gap-2"><Sparkles size={14} className="text-[#8B1538]" /> 7 Tage/Woche erreichbar</span>
+            <span className="flex items-center gap-2"><Sparkles size={14} className="text-[#8B1538]" /> Faire Preise</span>
+            <span className="flex items-center gap-2"><Sparkles size={14} className="text-[#8B1538]" /> Persönliche Beratung</span>
           </div>
         </div>
       </section>
 
       {/* Featured Models */}
       <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-models">
-        <div className="flex items-end justify-between mb-16">
-          <SectionTitle overline="Featured" title="Unsere Models" description="Eine Auswahl aus unserem aktuellen Roster." />
-          <Link to="/models" className="hidden md:inline-flex btn-ghost" data-testid="home-all-models-btn">
+        <div className="flex flex-wrap items-end justify-between gap-6 mb-12">
+          <SectionTitle overline="Models" title="Unsere Escort Damen" description="Eine Auswahl unserer aktuellen Models — sorgfältig ausgewählt, authentisch und stilvoll." />
+          <Link to="/models" className="btn-ghost" data-testid="home-all-models-btn">
             Alle Models <ArrowRight size={14} />
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
           {models.map((m, i) => (
             <ModelCard key={m.id} model={m} index={i} />
           ))}
@@ -122,21 +145,21 @@ export default function Home() {
       </section>
 
       {/* Services */}
-      <section className="px-6 md:px-12 lg:px-16 py-24 md:py-40 bg-[#121214]" data-testid="home-services">
-        <SectionTitle overline="Services" title="Unsere Begleitarten" description="Acht sorgfältig definierte Servicearten – damit jede Begegnung ihren Rahmen findet." />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/5 mt-16">
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-services">
+        <SectionTitle overline="Unsere Leistungen" title="Was wir bieten" description="Acht spezielle Begleitarten — für jeden Anlass die passende Begleitung." />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
           {SERVICES.map((s) => (
             <Link
               key={s.slug}
               to={`/services/${s.slug}`}
-              className="bg-[#121214] hover:bg-[#1A1A1D] transition-colors duration-500 p-8 group"
+              className="bg-white border border-[#1A1414]/8 hover:border-[#8B1538] transition-all duration-300 hover:shadow-lg p-6 group rounded-lg"
               data-testid={`service-card-${s.slug}`}
             >
-              <span className="overline accent-text">{s.shortLabel}</span>
-              <h3 className="font-heading text-2xl mt-3 mb-3 group-hover:accent-text transition-colors">{s.title}</h3>
-              <p className="text-sm font-light text-[#9CA3AF] leading-relaxed">{s.description}</p>
-              <div className="mt-6 text-xs font-mono uppercase tracking-[0.2em] flex items-center gap-2 text-[#9CA3AF] group-hover:accent-text">
-                Mehr erfahren <ArrowRight size={12} />
+              <span className="overline">{s.shortLabel}</span>
+              <h3 className="font-heading text-xl mt-3 mb-2 text-[#1A1414] group-hover:accent-text transition-colors">{s.title}</h3>
+              <p className="text-sm text-[#6B5F5F] leading-relaxed line-clamp-3">{s.description}</p>
+              <div className="mt-4 text-xs uppercase tracking-wider font-semibold inline-flex items-center gap-2 accent-text">
+                Mehr <ArrowRight size={12} />
               </div>
             </Link>
           ))}
@@ -144,28 +167,30 @@ export default function Home() {
       </section>
 
       {/* Advantages */}
-      <section className="px-6 md:px-12 lg:px-16 py-24 md:py-40" data-testid="home-advantages">
+      <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-advantages">
         <SectionTitle overline="Warum Noir Hamburg" title="Was uns ausmacht" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
           {ADVANTAGES.map((a, i) => (
-            <div key={i} className="border-t border-white/5 pt-6">
-              <div className="font-mono text-xs accent-text mb-4">0{i + 1}</div>
-              <h3 className="font-heading text-2xl mb-3">{a.title}</h3>
-              <p className="text-sm font-light text-[#9CA3AF] leading-relaxed">{a.text}</p>
+            <div key={i} className="bg-white border border-[#1A1414]/8 p-6 rounded-lg">
+              <div className="w-10 h-10 bg-[#F4E4E4] text-[#8B1538] font-heading text-xl flex items-center justify-center rounded-full mb-4">
+                {i + 1}
+              </div>
+              <h3 className="font-heading text-xl mb-2 text-[#1A1414]">{a.title}</h3>
+              <p className="text-sm text-[#6B5F5F] leading-relaxed">{a.text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Coverage Map (location list) */}
-      <section className="px-6 md:px-12 lg:px-16 py-24 md:py-32 bg-[#121214]" data-testid="home-coverage">
-        <SectionTitle overline="Reichweite" title="Hamburg & Umland" description="Wir begleiten Sie in der gesamten Metropolregion Hamburg." />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-8 gap-y-4 mt-12 max-w-5xl">
+      {/* Hamburg Areas */}
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-coverage">
+        <SectionTitle overline="Reichweite" title="Hamburg & Umland" description="Wir begleiten Sie in der gesamten Metropolregion." />
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-12">
           {LOCATIONS.map((l) => (
             <Link
               key={l.slug}
               to={`/escort/${l.slug}`}
-              className="text-sm font-light text-[#F5F5F0] hover:accent-text transition-colors py-2 border-b border-white/5 link-underline"
+              className="bg-white border border-[#1A1414]/8 px-4 py-3 text-center text-sm text-[#1A1414] hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-all rounded-md font-medium"
               data-testid={`coverage-${l.slug}`}
             >
               {l.name}
@@ -174,45 +199,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Blog preview */}
-      <section className="px-6 md:px-12 lg:px-16 py-24 md:py-40" data-testid="home-blog">
-        <div className="flex items-end justify-between mb-16">
-          <SectionTitle overline="Journal" title="Aktuelles aus dem Magazin" />
+      {/* Blog */}
+      <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-blog">
+        <div className="flex items-end justify-between mb-12">
+          <SectionTitle overline="Magazin" title="Aktuelle Beiträge" />
           <Link to="/blog" className="hidden md:inline-flex btn-ghost">
             Alle Beiträge <ArrowRight size={14} />
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {posts.map((p) => (
-            <Link key={p.id} to={`/blog/${p.slug}`} className="group block" data-testid={`blog-card-${p.slug}`}>
-              <div className="editorial-image h-[400px]">
+            <Link key={p.id} to={`/blog/${p.slug}`} className="group block bg-white border border-[#1A1414]/8 rounded-lg overflow-hidden hover:shadow-lg transition-shadow" data-testid={`blog-card-${p.slug}`}>
+              <div className="editorial-image h-[280px]">
                 <img src={p.cover_image} alt={p.title} loading="lazy" />
               </div>
-              <span className="overline mt-5 block accent-text">{p.category}</span>
-              <h3 className="font-heading text-2xl mt-3 group-hover:accent-text transition-colors leading-tight">
-                {p.title}
-              </h3>
-              <p className="mt-3 text-sm font-light text-[#9CA3AF] leading-relaxed line-clamp-2">{p.excerpt}</p>
+              <div className="p-6">
+                <span className="overline">{p.category}</span>
+                <h3 className="font-heading text-xl mt-3 text-[#1A1414] group-hover:accent-text transition-colors leading-snug">
+                  {p.title}
+                </h3>
+                <p className="mt-3 text-sm text-[#6B5F5F] leading-relaxed line-clamp-2">{p.excerpt}</p>
+              </div>
             </Link>
           ))}
         </div>
       </section>
 
       {/* FAQ Preview */}
-      <section className="px-6 md:px-12 lg:px-16 py-24 md:py-32 bg-[#121214]" data-testid="home-faq">
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-faq">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
           <div className="md:col-span-4">
-            <SectionTitle overline="FAQ" title="Häufig gestellte Fragen" />
+            <SectionTitle overline="FAQ" title="Häufige Fragen" />
             <Link to="/faq" className="btn-ghost mt-8 inline-flex">Alle Fragen <ArrowRight size={14} /></Link>
           </div>
-          <div className="md:col-span-7 md:col-start-6 space-y-px bg-white/5">
+          <div className="md:col-span-7 md:col-start-6 space-y-3">
             {FAQS.slice(0, 4).map((f, i) => (
-              <details key={i} className="bg-[#121214] group" data-testid={`faq-${i}`}>
-                <summary className="cursor-pointer p-6 list-none flex items-center justify-between gap-6">
-                  <span className="font-heading text-xl">{f.q}</span>
-                  <span className="accent-text text-xl group-open:rotate-45 transition-transform">+</span>
+              <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`faq-${i}`}>
+                <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
+                  <span className="font-heading text-lg text-[#1A1414]">{f.q}</span>
+                  <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                 </summary>
-                <div className="px-6 pb-6 text-sm font-light text-[#9CA3AF] leading-relaxed">{f.a}</div>
+                <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{f.a}</div>
               </details>
             ))}
           </div>
@@ -220,17 +247,19 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="px-6 md:px-12 lg:px-16 py-32 md:py-48 text-center" data-testid="home-cta">
-        <span className="overline">Buchung</span>
-        <h2 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-light tracking-tighter mt-6 max-w-4xl mx-auto">
-          Ein Abend, der den Eindruck einer <em className="italic accent-text">Erinnerung</em> hinterlässt.
+      <section className="px-6 md:px-12 lg:px-16 py-24 text-center bg-gradient-to-b from-white to-[#FBF7F4]" data-testid="home-cta">
+        <Sparkles className="mx-auto text-[#8B1538] mb-6" size={28} />
+        <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight max-w-3xl mx-auto text-[#1A1414]">
+          Bereit für eine <span className="italic accent-text">unvergessliche</span> Begegnung?
         </h2>
-        <p className="mt-8 max-w-xl mx-auto text-[#9CA3AF] font-light text-lg">
+        <p className="mt-6 max-w-xl mx-auto text-[#6B5F5F] text-base lg:text-lg">
           Diskret. Persönlich. Unkompliziert. Wir freuen uns auf Ihre Anfrage.
         </p>
-        <div className="mt-12 flex justify-center gap-4 flex-wrap">
+        <div className="mt-10 flex justify-center gap-4 flex-wrap">
           <Link to="/kontakt" className="btn-primary" data-testid="cta-contact-btn">Kontakt aufnehmen</Link>
-          <Link to="/models" className="btn-ghost">Models ansehen</Link>
+          <a href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="btn-whatsapp">
+            <MessageCircle size={16} /> WhatsApp
+          </a>
         </div>
       </section>
     </PublicLayout>

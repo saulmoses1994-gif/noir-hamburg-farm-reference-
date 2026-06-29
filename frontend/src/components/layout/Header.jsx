@@ -1,6 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, MessageCircle, Phone } from "lucide-react";
 import { BRAND, NAV } from "@/data/site";
 
 export default function Header() {
@@ -14,91 +14,119 @@ export default function Header() {
   }, []);
 
   return (
-    <header
-      data-testid="site-header"
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? "backdrop-blur-xl bg-[#0A0A0B]/85 border-b border-white/5" : "bg-transparent"
-      }`}
-    >
-      <div className="px-6 md:px-12 lg:px-16 py-5 flex items-center justify-between">
-        <Link to="/" className="font-heading text-xl tracking-[0.3em] uppercase" data-testid="brand-logo">
-          <span className="text-[#F5F5F0]">Noir</span>{" "}
-          <span className="accent-text font-light">Hamburg</span>
-        </Link>
-        <nav className="hidden lg:flex items-center gap-8">
-          {NAV.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              data-testid={`nav-${n.to.replace(/\//g, "") || "home"}`}
-              end={n.to === "/"}
-              className={({ isActive }) =>
-                `text-xs uppercase tracking-[0.2em] font-light link-underline transition-colors ${
-                  isActive ? "accent-text" : "text-[#F5F5F0]/80 hover:text-[#F5F5F0]"
-                }`
-              }
-            >
-              {n.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="hidden lg:block">
-          <Link to="/kontakt" className="btn-primary" data-testid="header-book-btn">
-            Buchen
-          </Link>
+    <>
+      {/* Top contact bar */}
+      <div className="hidden md:block bg-[#1A1414] text-white text-xs py-2 px-6 md:px-12 lg:px-16">
+        <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center gap-5 text-white/90">
+            <a href={`tel:${BRAND.phone}`} className="inline-flex items-center gap-2 hover:accent-text"><Phone size={12} /> {BRAND.phone}</a>
+            <a href={`mailto:${BRAND.email}`} className="hover:accent-text">{BRAND.email}</a>
+          </div>
+          <div className="text-white/70 tracking-wide">Mo – Fr · 10 – 22 Uhr  ·  Sa, So, Feiertag · 13 – 22 Uhr</div>
         </div>
-        <button
-          className="lg:hidden text-[#F5F5F0]"
-          onClick={() => setOpen(true)}
-          aria-label="Menü öffnen"
-          data-testid="mobile-menu-btn"
-        >
-          <Menu size={26} />
-        </button>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 bg-[#0A0A0B] z-50 px-6 py-6 lg:hidden" data-testid="mobile-menu">
-          <div className="flex justify-between items-center mb-12">
-            <Link
-              to="/"
-              onClick={() => setOpen(false)}
-              className="font-heading text-xl tracking-[0.3em] uppercase"
-            >
-              <span className="text-[#F5F5F0]">Noir</span>{" "}
-              <span className="accent-text font-light">Hamburg</span>
-            </Link>
-            <button onClick={() => setOpen(false)} aria-label="Menü schließen" data-testid="mobile-close-btn">
-              <X size={26} />
-            </button>
-          </div>
-          <nav className="flex flex-col gap-6">
+      <header
+        data-testid="site-header"
+        className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled ? "bg-white shadow-md" : "bg-white border-b border-[#1A1414]/8"
+        }`}
+      >
+        <div className="px-6 md:px-12 lg:px-16 py-4 flex items-center justify-between">
+          <Link to="/" className="font-heading text-2xl tracking-tight" data-testid="brand-logo">
+            <span className="text-[#1A1414] font-semibold">Noir</span>{" "}
+            <span className="accent-text italic">Hamburg</span>
+          </Link>
+          <nav className="hidden lg:flex items-center gap-7">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
-                onClick={() => setOpen(false)}
+                data-testid={`nav-${n.to.replace(/\//g, "") || "home"}`}
                 end={n.to === "/"}
                 className={({ isActive }) =>
-                  `font-heading text-3xl tracking-tight ${
-                    isActive ? "accent-text" : "text-[#F5F5F0]"
+                  `text-sm font-medium transition-colors link-underline ${
+                    isActive ? "accent-text" : "text-[#1A1414] hover:accent-text"
                   }`
                 }
               >
                 {n.label}
               </NavLink>
             ))}
-            <Link
-              to="/kontakt"
-              onClick={() => setOpen(false)}
-              className="btn-primary mt-6 w-fit"
-              data-testid="mobile-book-btn"
+          </nav>
+          <div className="hidden lg:flex items-center gap-3">
+            <a
+              href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`}
+              target="_blank" rel="noreferrer"
+              className="btn-whatsapp"
+              data-testid="header-whatsapp-btn"
             >
+              <MessageCircle size={14} /> WhatsApp
+            </a>
+            <Link to="/kontakt" className="btn-primary" data-testid="header-book-btn">
               Buchen
             </Link>
-          </nav>
+          </div>
+          <button
+            className="lg:hidden text-[#1A1414]"
+            onClick={() => setOpen(true)}
+            aria-label="Menü öffnen"
+            data-testid="mobile-menu-btn"
+          >
+            <Menu size={26} />
+          </button>
         </div>
-      )}
-    </header>
+
+        {open && (
+          <div className="fixed inset-0 bg-white z-50 px-6 py-6 lg:hidden overflow-y-auto" data-testid="mobile-menu">
+            <div className="flex justify-between items-center mb-12">
+              <Link
+                to="/"
+                onClick={() => setOpen(false)}
+                className="font-heading text-2xl tracking-tight"
+              >
+                <span className="text-[#1A1414] font-semibold">Noir</span>{" "}
+                <span className="accent-text italic">Hamburg</span>
+              </Link>
+              <button onClick={() => setOpen(false)} aria-label="Menü schließen" data-testid="mobile-close-btn">
+                <X size={26} />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-5">
+              {NAV.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  onClick={() => setOpen(false)}
+                  end={n.to === "/"}
+                  className={({ isActive }) =>
+                    `font-heading text-2xl ${isActive ? "accent-text" : "text-[#1A1414]"}`
+                  }
+                >
+                  {n.label}
+                </NavLink>
+              ))}
+              <div className="flex gap-3 mt-8">
+                <a
+                  href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`}
+                  className="btn-whatsapp"
+                  data-testid="mobile-whatsapp-btn"
+                >
+                  <MessageCircle size={14} /> WhatsApp
+                </a>
+                <Link
+                  to="/kontakt"
+                  onClick={() => setOpen(false)}
+                  className="btn-primary"
+                  data-testid="mobile-book-btn"
+                >
+                  Buchen
+                </Link>
+              </div>
+            </nav>
+          </div>
+        )}
+      </header>
+    </>
   );
 }

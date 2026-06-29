@@ -28,7 +28,7 @@ export default function AdminContacts() {
         </div>
         <div className="flex gap-2">
           {["", "new", "read", "closed"].map((s) => (
-            <button key={s} onClick={() => setFilter(s)} className={`text-xs uppercase tracking-[0.15em] py-2 px-3 border ${filter === s ? "border-[#E5D3B3] text-[#E5D3B3]" : "border-white/10 text-[#9CA3AF]"}`}>
+            <button key={s} onClick={() => setFilter(s)} className={`text-xs uppercase tracking-[0.15em] py-2 px-3 border ${filter === s ? "border-[#8B1538] text-[#8B1538]" : "border-[#1A1414]/15 text-[#6B5F5F]"}`}>
               {s || "Alle"}
             </button>
           ))}
@@ -37,7 +37,7 @@ export default function AdminContacts() {
 
       <div className="space-y-4">
         {filtered.map((c) => (
-          <div key={c.id} className="border border-white/5 bg-[#121214] p-6" data-testid={`contact-${c.id}`}>
+          <div key={c.id} className="border border-[#1A1414]/8 bg-[#FBF7F4] p-6" data-testid={`contact-${c.id}`}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="font-heading text-2xl">{c.name}</div>
@@ -47,26 +47,26 @@ export default function AdminContacts() {
               </div>
               <div className="text-sm font-light text-right">
                 <div><a href={`mailto:${c.email}`} className="hover:accent-text">{c.email}</a></div>
-                {c.phone && <div className="text-[#9CA3AF]">{c.phone}</div>}
+                {c.phone && <div className="text-[#6B5F5F]">{c.phone}</div>}
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono uppercase tracking-[0.15em] text-[#9CA3AF]">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F]">
               {c.service && <div>Service: <span className="accent-text">{c.service}</span></div>}
               {c.location && <div>Ort: <span className="accent-text">{c.location}</span></div>}
               {c.date && <div>Wunschdatum: <span className="accent-text">{c.date}</span></div>}
               {c.model_slug && <div>Model: <span className="accent-text">{c.model_slug}</span></div>}
             </div>
-            <p className="mt-4 text-sm font-light text-[#F5F5F0] leading-relaxed whitespace-pre-wrap">{c.message}</p>
+            <p className="mt-4 text-sm font-light text-[#1A1414] leading-relaxed whitespace-pre-wrap">{c.message}</p>
             <div className="mt-4 flex gap-2">
               {["new", "read", "closed"].map((s) => (
-                <button key={s} onClick={() => setStatus(c.id, s)} className={`text-xs uppercase tracking-[0.15em] py-1 px-3 border ${c.status === s ? "border-[#E5D3B3] text-[#E5D3B3]" : "border-white/10 text-[#9CA3AF] hover:text-[#F5F5F0]"}`} data-testid={`status-${c.id}-${s}`}>
+                <button key={s} onClick={() => setStatus(c.id, s)} className={`text-xs uppercase tracking-[0.15em] py-1 px-3 border ${c.status === s ? "border-[#8B1538] text-[#8B1538]" : "border-[#1A1414]/15 text-[#6B5F5F] hover:text-[#1A1414]"}`} data-testid={`status-${c.id}-${s}`}>
                   {s}
                 </button>
               ))}
             </div>
           </div>
         ))}
-        {filtered.length === 0 && <div className="p-12 text-center text-[#9CA3AF]">Keine Anfragen.</div>}
+        {filtered.length === 0 && <div className="p-12 text-center text-[#6B5F5F]">Keine Anfragen.</div>}
       </div>
     </div>
   );

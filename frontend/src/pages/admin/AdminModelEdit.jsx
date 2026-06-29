@@ -95,7 +95,7 @@ export default function AdminModelEdit() {
 
   return (
     <div className="p-12 max-w-5xl" data-testid="admin-model-edit">
-      <button onClick={() => nav("/admin/models")} className="flex items-center gap-2 text-sm text-[#9CA3AF] hover:text-[#F5F5F0] mb-8">
+      <button onClick={() => nav("/admin/models")} className="flex items-center gap-2 text-sm text-[#6B5F5F] hover:text-[#1A1414] mb-8">
         <ArrowLeft size={14} /> Zurück
       </button>
       <span className="overline">Model</span>
@@ -122,26 +122,26 @@ export default function AdminModelEdit() {
             value={form.bio}
             onChange={(e) => set("bio", e.target.value)}
             rows={8}
-            className="w-full bg-transparent border border-white/10 focus:border-[#E5D3B3] outline-none p-4 font-light"
+            className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-4 font-light"
             required
           />
         </div>
 
         <div>
           <label className="overline text-[10px] block mb-2">Cover-Bild</label>
-          <input type="file" accept="image/*" onChange={onCoverChange} className="text-sm text-[#9CA3AF]" />
+          <input type="file" accept="image/*" onChange={onCoverChange} className="text-sm text-[#6B5F5F]" />
           {form.cover_image && <img src={form.cover_image} alt="cover" className="mt-3 h-48 object-cover" />}
           <input
             type="text" value={form.cover_image}
             onChange={(e) => set("cover_image", e.target.value)}
             placeholder="oder URL einfügen"
-            className="mt-2 w-full bg-transparent border border-white/10 p-2 text-sm"
+            className="mt-2 w-full bg-transparent border border-[#1A1414]/15 p-2 text-sm"
           />
         </div>
 
         <div>
           <label className="overline text-[10px] block mb-2">Galerie</label>
-          <input type="file" accept="image/*" multiple onChange={onGalleryAdd} className="text-sm text-[#9CA3AF]" />
+          <input type="file" accept="image/*" multiple onChange={onGalleryAdd} className="text-sm text-[#6B5F5F]" />
           <div className="grid grid-cols-4 gap-3 mt-3">
             {(form.gallery || []).map((img, i) => (
               <div key={i} className="relative group">
@@ -163,7 +163,7 @@ export default function AdminModelEdit() {
               <button
                 key={s.slug} type="button"
                 onClick={() => toggleArr("services", s.slug)}
-                className={`text-xs uppercase tracking-[0.15em] py-2 px-3 border ${form.services?.includes(s.slug) ? "border-[#E5D3B3] text-[#E5D3B3]" : "border-white/10 text-[#9CA3AF]"}`}
+                className={`text-xs uppercase tracking-[0.15em] py-2 px-3 border ${form.services?.includes(s.slug) ? "border-[#8B1538] text-[#8B1538]" : "border-[#1A1414]/15 text-[#6B5F5F]"}`}
               >
                 {s.title}
               </button>
@@ -178,7 +178,7 @@ export default function AdminModelEdit() {
               <button
                 key={l.slug} type="button"
                 onClick={() => toggleArr("locations", l.slug)}
-                className={`text-xs uppercase tracking-[0.15em] py-2 px-3 border ${form.locations?.includes(l.slug) ? "border-[#E5D3B3] text-[#E5D3B3]" : "border-white/10 text-[#9CA3AF]"}`}
+                className={`text-xs uppercase tracking-[0.15em] py-2 px-3 border ${form.locations?.includes(l.slug) ? "border-[#8B1538] text-[#8B1538]" : "border-[#1A1414]/15 text-[#6B5F5F]"}`}
               >
                 {l.name}
               </button>
@@ -195,7 +195,7 @@ export default function AdminModelEdit() {
           </label>
         </div>
 
-        <div className="pt-6 border-t border-white/5">
+        <div className="pt-6 border-t border-[#1A1414]/8">
           <button type="submit" disabled={busy} className="btn-primary disabled:opacity-50" data-testid="admin-model-save">
             {busy ? "Speichert…" : "Speichern"}
           </button>
@@ -213,7 +213,7 @@ function Input({ label, value, onChange, type = "text", required }) {
         type={type} required={required}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-transparent border border-white/10 focus:border-[#E5D3B3] outline-none p-3 font-light"
+        className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
       />
     </div>
   );

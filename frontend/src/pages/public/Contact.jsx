@@ -52,7 +52,7 @@ export default function Contact() {
           <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-6 max-w-3xl mx-auto">
             Vielen <em className="italic accent-text">Dank</em>.
           </h1>
-          <p className="mt-8 max-w-xl mx-auto text-lg font-light text-[#9CA3AF]">
+          <p className="mt-8 max-w-xl mx-auto text-lg font-light text-[#6B5F5F]">
             Wir haben Ihre Anfrage erhalten und melden uns persönlich, diskret und in Kürze.
           </p>
           <div className="mt-12">
@@ -72,7 +72,7 @@ export default function Contact() {
           <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
             Diskret <em className="italic accent-text">kontaktieren</em>
           </h1>
-          <p className="mt-6 text-lg font-light text-[#9CA3AF] leading-relaxed">
+          <p className="mt-6 text-lg font-light text-[#6B5F5F] leading-relaxed">
             Wir antworten persönlich, vertraulich und meist innerhalb weniger Stunden.
           </p>
         </div>
@@ -110,7 +110,7 @@ export default function Contact() {
                 onChange={(e) => setField("message", e.target.value)}
                 rows={6}
                 required
-                className="w-full bg-transparent border border-white/10 focus:border-[#E5D3B3] outline-none p-4 font-light text-[#F5F5F0]"
+                className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-4 font-light text-[#1A1414]"
                 placeholder="Anlass, Wünsche, Hinweise…"
                 data-testid="contact-message"
               />
@@ -127,21 +127,21 @@ export default function Contact() {
               <span className="overline mb-4 block">Direkt</span>
               <div className="space-y-5 mt-4">
                 <a href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="flex items-center gap-4 group" data-testid="direct-whatsapp">
-                  <span className="w-10 h-10 border border-white/10 group-hover:border-[#E5D3B3] flex items-center justify-center"><MessageCircle size={16} className="group-hover:text-[#E5D3B3]" /></span>
+                  <span className="w-10 h-10 border border-[#1A1414]/15 group-hover:border-[#8B1538] flex items-center justify-center"><MessageCircle size={16} className="group-hover:text-[#8B1538]" /></span>
                   <div>
                     <div className="overline text-[10px]">WhatsApp</div>
                     <div className="text-lg font-light group-hover:accent-text">{BRAND.phone}</div>
                   </div>
                 </a>
                 <a href={`tel:${BRAND.phone}`} className="flex items-center gap-4 group" data-testid="direct-phone">
-                  <span className="w-10 h-10 border border-white/10 group-hover:border-[#E5D3B3] flex items-center justify-center"><Phone size={16} className="group-hover:text-[#E5D3B3]" /></span>
+                  <span className="w-10 h-10 border border-[#1A1414]/15 group-hover:border-[#8B1538] flex items-center justify-center"><Phone size={16} className="group-hover:text-[#8B1538]" /></span>
                   <div>
                     <div className="overline text-[10px]">Telefon</div>
                     <div className="text-lg font-light group-hover:accent-text">{BRAND.phone}</div>
                   </div>
                 </a>
                 <a href={`mailto:${BRAND.email}`} className="flex items-center gap-4 group" data-testid="direct-email">
-                  <span className="w-10 h-10 border border-white/10 group-hover:border-[#E5D3B3] flex items-center justify-center"><Mail size={16} className="group-hover:text-[#E5D3B3]" /></span>
+                  <span className="w-10 h-10 border border-[#1A1414]/15 group-hover:border-[#8B1538] flex items-center justify-center"><Mail size={16} className="group-hover:text-[#8B1538]" /></span>
                   <div>
                     <div className="overline text-[10px]">E-Mail</div>
                     <div className="text-lg font-light group-hover:accent-text">{BRAND.email}</div>
@@ -151,7 +151,7 @@ export default function Contact() {
             </div>
 
             <div className="thin-divider" />
-            <div className="text-sm font-light text-[#9CA3AF] leading-relaxed">
+            <div className="text-sm font-light text-[#6B5F5F] leading-relaxed">
               <span className="overline accent-text mb-3 block">Diskretion</span>
               Alle Anfragen werden vertraulich behandelt. Persönliche Daten werden ausschließlich zur Vermittlung verwendet und nach Abschluss eines Termins fachgerecht gelöscht.
             </div>
@@ -171,7 +171,7 @@ function Field({ label, value, onChange, type = "text", required, testId }) {
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-transparent border border-white/10 focus:border-[#E5D3B3] outline-none p-3 font-light text-[#F5F5F0]"
+        className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light text-[#1A1414]"
         data-testid={testId}
       />
     </div>
@@ -185,11 +185,11 @@ function SelectField({ label, value, onChange, options, testId }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-transparent border border-white/10 focus:border-[#E5D3B3] outline-none p-3 font-light text-[#F5F5F0]"
+        className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light text-[#1A1414]"
         data-testid={testId}
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-[#0A0A0B]">{o.label}</option>
+          <option key={o.value} value={o.value} className="bg-[#FFFFFF]">{o.label}</option>
         ))}
       </select>
     </div>

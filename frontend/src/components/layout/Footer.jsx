@@ -1,37 +1,33 @@
 import { Link } from "react-router-dom";
+import { Phone, Mail, MessageCircle, Sparkles } from "lucide-react";
 import { BRAND, SERVICES, LOCATIONS } from "@/data/site";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/5 bg-[#0A0A0B] mt-32" data-testid="site-footer">
-      <div className="px-6 md:px-12 lg:px-16 py-20">
+    <footer className="bg-[#1A1414] text-white mt-20" data-testid="site-footer">
+      <div className="px-6 md:px-12 lg:px-16 py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-4">
             <h3 className="font-heading text-3xl tracking-tight mb-4">
-              <span className="text-[#F5F5F0]">Noir</span>{" "}
-              <span className="accent-text">Hamburg</span>
+              <span className="text-white">Noir</span>{" "}
+              <span className="accent-text italic">Hamburg</span>
             </h3>
-            <p className="text-[#9CA3AF] font-light text-sm leading-relaxed max-w-sm">
-              Premium-Begleitagentur mit Sitz in Hamburg.
-              Wir verbinden hanseatische Diskretion mit internationalem Stil.
+            <p className="text-white/70 text-sm leading-relaxed max-w-sm">
+              Ihre vertrauenswürdige Premium-Begleitagentur in Hamburg und Umland. Ehrlich, diskret und mit Herz für Service seit 2014.
             </p>
-            <div className="mt-8 space-y-2 text-sm font-light text-[#9CA3AF]">
-              <div>
-                <span className="overline text-[10px] block mb-1">Kontakt</span>
-                <a href={`mailto:${BRAND.email}`} className="hover:text-[#F5F5F0]">{BRAND.email}</a>
-              </div>
-              <div>
-                <a href={`tel:${BRAND.phone}`} className="hover:text-[#F5F5F0]">{BRAND.phone}</a>
-              </div>
+            <div className="mt-6 space-y-3 text-sm">
+              <a href={`tel:${BRAND.phone}`} className="flex items-center gap-2 text-white/90 hover:accent-text"><Phone size={14} /> {BRAND.phone}</a>
+              <a href={`mailto:${BRAND.email}`} className="flex items-center gap-2 text-white/90 hover:accent-text"><Mail size={14} /> {BRAND.email}</a>
+              <a href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-white/90 hover:accent-text"><MessageCircle size={14} /> WhatsApp</a>
             </div>
           </div>
 
           <div className="md:col-span-3">
-            <h4 className="overline mb-6">Services</h4>
-            <ul className="space-y-3 text-sm font-light">
+            <h4 className="text-xs uppercase tracking-wider font-semibold text-[#E5A5B5] mb-5">Services</h4>
+            <ul className="space-y-2.5 text-sm">
               {SERVICES.slice(0, 8).map((s) => (
                 <li key={s.slug}>
-                  <Link to={`/services/${s.slug}`} className="text-[#9CA3AF] hover:text-[#F5F5F0]">
+                  <Link to={`/services/${s.slug}`} className="text-white/70 hover:text-white">
                     {s.title}
                   </Link>
                 </li>
@@ -40,11 +36,11 @@ export default function Footer() {
           </div>
 
           <div className="md:col-span-3">
-            <h4 className="overline mb-6">Hamburg Areas</h4>
-            <ul className="space-y-3 text-sm font-light grid grid-cols-2 gap-y-3">
-              {LOCATIONS.slice(0, 10).map((l) => (
+            <h4 className="text-xs uppercase tracking-wider font-semibold text-[#E5A5B5] mb-5">Hamburg Areas</h4>
+            <ul className="grid grid-cols-2 gap-y-2.5 text-sm">
+              {LOCATIONS.slice(0, 12).map((l) => (
                 <li key={l.slug}>
-                  <Link to={`/escort/${l.slug}`} className="text-[#9CA3AF] hover:text-[#F5F5F0]">
+                  <Link to={`/escort/${l.slug}`} className="text-white/70 hover:text-white">
                     {l.name}
                   </Link>
                 </li>
@@ -53,23 +49,22 @@ export default function Footer() {
           </div>
 
           <div className="md:col-span-2">
-            <h4 className="overline mb-6">Mehr</h4>
-            <ul className="space-y-3 text-sm font-light">
-              <li><Link to="/models" className="text-[#9CA3AF] hover:text-[#F5F5F0]">Models</Link></li>
-              <li><Link to="/blog" className="text-[#9CA3AF] hover:text-[#F5F5F0]">Blog</Link></li>
-              <li><Link to="/faq" className="text-[#9CA3AF] hover:text-[#F5F5F0]">FAQ</Link></li>
-              <li><Link to="/ueber-uns" className="text-[#9CA3AF] hover:text-[#F5F5F0]">Über uns</Link></li>
-              <li><Link to="/kontakt" className="text-[#9CA3AF] hover:text-[#F5F5F0]">Kontakt</Link></li>
-              <li><Link to="/impressum" className="text-[#9CA3AF] hover:text-[#F5F5F0]">Impressum</Link></li>
-              <li><Link to="/datenschutz" className="text-[#9CA3AF] hover:text-[#F5F5F0]">Datenschutz</Link></li>
+            <h4 className="text-xs uppercase tracking-wider font-semibold text-[#E5A5B5] mb-5">Mehr</h4>
+            <ul className="space-y-2.5 text-sm">
+              <li><Link to="/models" className="text-white/70 hover:text-white">Models</Link></li>
+              <li><Link to="/blog" className="text-white/70 hover:text-white">Magazin</Link></li>
+              <li><Link to="/faq" className="text-white/70 hover:text-white">FAQ</Link></li>
+              <li><Link to="/ueber-uns" className="text-white/70 hover:text-white">Über uns</Link></li>
+              <li><Link to="/kontakt" className="text-white/70 hover:text-white">Kontakt</Link></li>
             </ul>
           </div>
         </div>
 
-        <div className="thin-divider mt-16 mb-8" />
-        <div className="flex flex-col md:flex-row justify-between gap-4 text-xs text-[#52525B] font-light">
-          <div>© {new Date().getFullYear()} Noir Hamburg. Alle Rechte vorbehalten.</div>
-          <div className="font-mono uppercase tracking-[0.15em]">Hamburg · 18+ · Diskret</div>
+        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4 text-xs text-white/50">
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-[#E5A5B5]" /> © {new Date().getFullYear()} Noir Hamburg. Alle Rechte vorbehalten.
+          </div>
+          <div className="uppercase tracking-wider">Hamburg · 18+ · Diskret</div>
         </div>
       </div>
     </footer>

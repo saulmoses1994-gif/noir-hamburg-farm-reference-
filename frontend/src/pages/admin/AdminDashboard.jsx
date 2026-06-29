@@ -34,10 +34,10 @@ export default function AdminDashboard() {
           <Link
             key={label}
             to={to}
-            className="bg-[#121214] border border-white/5 p-8 hover:border-[#E5D3B3] transition-colors group block"
+            className="bg-[#FBF7F4] border border-[#1A1414]/8 p-8 hover:border-[#8B1538] transition-colors group block"
             data-testid={`dashboard-card-${label}`}
           >
-            <Icon size={20} className="text-[#9CA3AF] group-hover:accent-text mb-6" />
+            <Icon size={20} className="text-[#6B5F5F] group-hover:accent-text mb-6" />
             <div className="overline text-[10px]">{label}</div>
             <div className="font-heading text-5xl mt-2">{count}</div>
             <div className="mt-6 text-xs font-mono uppercase tracking-[0.2em] inline-flex items-center gap-2 accent-text">

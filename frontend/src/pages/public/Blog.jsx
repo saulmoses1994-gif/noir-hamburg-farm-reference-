@@ -30,21 +30,21 @@ export function BlogList() {
           <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
             Noir <em className="italic accent-text">Magazin</em>
           </h1>
-          <p className="mt-6 text-lg font-light text-[#9CA3AF] leading-relaxed">
+          <p className="mt-6 text-lg font-light text-[#6B5F5F] leading-relaxed">
             Geschichten, Empfehlungen und Insider-Wissen aus dem Hamburger Premium-Lifestyle.
           </p>
         </div>
       </section>
 
-      <section className="px-6 md:px-12 lg:px-16 py-6 border-y border-white/5 sticky top-[68px] z-30 backdrop-blur-xl bg-[#0A0A0B]/85">
+      <section className="px-6 md:px-12 lg:px-16 py-6 border-y border-[#1A1414]/8 sticky top-[68px] z-30 backdrop-blur-xl bg-[#FFFFFF]/85">
         <div className="flex flex-wrap items-center gap-3">
           <span className="overline mr-2">Kategorien</span>
-          <button onClick={() => setCat("")} className={`text-xs uppercase tracking-[0.15em] py-1 px-3 border ${!cat ? "border-[#E5D3B3] text-[#E5D3B3]" : "border-white/10 text-[#9CA3AF] hover:text-[#F5F5F0]"}`}>Alle</button>
+          <button onClick={() => setCat("")} className={`text-xs uppercase tracking-[0.15em] py-1 px-3 border ${!cat ? "border-[#8B1538] text-[#8B1538]" : "border-[#1A1414]/15 text-[#6B5F5F] hover:text-[#1A1414]"}`}>Alle</button>
           {BLOG_CATEGORIES.map((c) => (
             <button
               key={c}
               onClick={() => setCat(c)}
-              className={`text-xs uppercase tracking-[0.15em] py-1 px-3 border ${cat === c ? "border-[#E5D3B3] text-[#E5D3B3]" : "border-white/10 text-[#9CA3AF] hover:text-[#F5F5F0]"}`}
+              className={`text-xs uppercase tracking-[0.15em] py-1 px-3 border ${cat === c ? "border-[#8B1538] text-[#8B1538]" : "border-[#1A1414]/15 text-[#6B5F5F] hover:text-[#1A1414]"}`}
               data-testid={`blog-cat-${c}`}
             >
               {c}
@@ -62,11 +62,11 @@ export function BlogList() {
               </div>
               <span className="overline mt-5 block accent-text">{p.category}</span>
               <h2 className="font-heading text-2xl lg:text-3xl mt-3 group-hover:accent-text transition-colors leading-tight">{p.title}</h2>
-              <p className="mt-3 text-sm font-light text-[#9CA3AF] leading-relaxed line-clamp-3">{p.excerpt}</p>
+              <p className="mt-3 text-sm font-light text-[#6B5F5F] leading-relaxed line-clamp-3">{p.excerpt}</p>
             </Link>
           ))}
           {posts.length === 0 && (
-            <div className="md:col-span-3 text-center py-20 text-[#9CA3AF]">
+            <div className="md:col-span-3 text-center py-20 text-[#6B5F5F]">
               <p className="font-heading text-2xl">Keine Beiträge in dieser Kategorie.</p>
             </div>
           )}
@@ -98,8 +98,8 @@ export function BlogDetail() {
     } : null,
   });
 
-  if (post === false) return <PublicLayout><div className="px-6 py-32 text-center text-[#9CA3AF]">Artikel nicht gefunden.</div></PublicLayout>;
-  if (!post) return <PublicLayout><div className="px-6 py-32 text-center text-[#9CA3AF]">Lädt…</div></PublicLayout>;
+  if (post === false) return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Artikel nicht gefunden.</div></PublicLayout>;
+  if (!post) return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Lädt…</div></PublicLayout>;
 
   const relatedServices = SERVICES.filter((s) => post.related_services?.includes(s.slug));
   const relatedLocations = LOCATIONS.filter((l) => post.related_locations?.includes(l.slug));

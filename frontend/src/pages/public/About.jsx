@@ -24,7 +24,7 @@ export default function About() {
 
       <section className="px-6 md:px-12 lg:px-16 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className="lg:col-span-7 space-y-6 text-lg font-light text-[#9CA3AF] leading-relaxed">
+          <div className="lg:col-span-7 space-y-6 text-lg font-light text-[#6B5F5F] leading-relaxed">
             <p>
               Noir Hamburg ist keine Agentur im klassischen Sinne. Wir sind eine kleine, kuratierte Plattform für Menschen, die einen feinen ästhetischen Anspruch, intellektuelle Neugier und ein klares Verständnis von Diskretion teilen – auf beiden Seiten der Begegnung.
             </p>
@@ -43,14 +43,14 @@ export default function About() {
         </div>
       </section>
 
-      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#121214]">
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]">
         <h2 className="font-heading text-3xl lg:text-4xl mb-12">Unsere Prinzipien</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {ADVANTAGES.map((a, i) => (
-            <div key={i} className="border-t border-white/10 pt-6">
+            <div key={i} className="border-t border-[#1A1414]/15 pt-6">
               <div className="font-mono text-xs accent-text mb-4">0{i + 1}</div>
               <h3 className="font-heading text-2xl mb-3">{a.title}</h3>
-              <p className="text-sm font-light text-[#9CA3AF] leading-relaxed">{a.text}</p>
+              <p className="text-sm font-light text-[#6B5F5F] leading-relaxed">{a.text}</p>
             </div>
           ))}
         </div>

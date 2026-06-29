@@ -6,7 +6,7 @@ export default function AdminLayout() {
   const { user, logout, loading } = useAuth();
   const nav = useNavigate();
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0A0B] text-[#9CA3AF]">Lädt…</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF] text-[#6B5F5F]">Lädt…</div>;
   if (!user || user.role !== "admin") return <Navigate to="/admin/login" replace />;
 
   const handleLogout = async () => {
@@ -22,13 +22,13 @@ export default function AdminLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-[#F5F5F0] flex" data-testid="admin-layout">
-      <aside className="w-64 bg-[#121214] border-r border-white/5 flex flex-col">
-        <div className="p-6 border-b border-white/5">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#1A1414] flex" data-testid="admin-layout">
+      <aside className="w-64 bg-[#FBF7F4] border-r border-[#1A1414]/8 flex flex-col">
+        <div className="p-6 border-b border-[#1A1414]/8">
           <Link to="/" className="font-heading text-lg tracking-[0.25em] uppercase">
             <span>Noir</span> <span className="accent-text">Hamburg</span>
           </Link>
-          <div className="text-xs font-mono text-[#52525B] mt-1">CMS · Admin</div>
+          <div className="text-xs font-mono text-[#9B8F8F] mt-1">CMS · Admin</div>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {links.map(({ to, label, icon: Icon, end }) => (
@@ -38,7 +38,7 @@ export default function AdminLayout() {
               end={end}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 text-sm font-light transition-colors ${
-                  isActive ? "bg-[#1A1A1D] accent-text" : "text-[#9CA3AF] hover:bg-[#1A1A1D] hover:text-[#F5F5F0]"
+                  isActive ? "bg-[#F2EAE4] accent-text" : "text-[#6B5F5F] hover:bg-[#F2EAE4] hover:text-[#1A1414]"
                 }`
               }
               data-testid={`admin-nav-${label.toLowerCase()}`}
@@ -47,11 +47,11 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-white/5">
-          <div className="text-xs text-[#52525B] mb-2 font-mono">{user.email}</div>
+        <div className="p-4 border-t border-[#1A1414]/8">
+          <div className="text-xs text-[#9B8F8F] mb-2 font-mono">{user.email}</div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-sm text-[#9CA3AF] hover:text-[#F5F5F0]"
+            className="flex items-center gap-2 text-sm text-[#6B5F5F] hover:text-[#1A1414]"
             data-testid="admin-logout-btn"
           >
             <LogOut size={14} /> Abmelden

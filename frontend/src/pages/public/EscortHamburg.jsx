@@ -17,12 +17,12 @@ export default function EscortHamburg() {
       <section className="relative h-[70vh] flex items-end" data-testid="escort-hamburg-page">
         <div className="absolute inset-0">
           <img src="https://images.pexels.com/photos/31222489/pexels-photo-31222489.jpeg?auto=compress&cs=tinysrgb&w=2400" alt="Hamburg bei Nacht" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/60 to-[#0A0A0B]/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/50 to-[#1A1414]/25" />
         </div>
-        <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-16 max-w-5xl">
-          <Breadcrumbs items={[{ label: "Escort Hamburg" }]} />
-          <span className="overline block mt-6 mb-4">Hauptstadt der Eleganz</span>
-          <h1 className="font-heading text-5xl lg:text-8xl font-light tracking-tighter leading-none">
+        <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-16 max-w-5xl text-white">
+          <Breadcrumbs items={[{ label: "Escort Hamburg" }]} dark />
+          <span className="overline block mt-6 mb-4 text-[#E5A5B5]">Hauptstadt der Eleganz</span>
+          <h1 className="font-heading text-5xl lg:text-8xl font-semibold tracking-tight leading-tight text-white">
             Escort <em className="italic accent-text">Hamburg</em>
           </h1>
         </div>
@@ -36,7 +36,7 @@ export default function EscortHamburg() {
               Eleganz, die in Hamburg geboren wird.
             </h2>
           </div>
-          <div className="lg:col-span-6 lg:col-start-7 space-y-6 text-base lg:text-lg font-light text-[#9CA3AF] leading-relaxed">
+          <div className="lg:col-span-6 lg:col-start-7 space-y-6 text-base lg:text-lg font-light text-[#6B5F5F] leading-relaxed">
             <p>
               Hamburg ist eine Stadt der feinen Kontraste: maritime Weltläufigkeit und hanseatische Zurückhaltung, Reichtum ohne Pomp, Kultur ohne Eile. Wer hier um Begleitung bittet, sucht keine Bühne – er sucht eine Persönlichkeit.
             </p>
@@ -50,13 +50,13 @@ export default function EscortHamburg() {
         </div>
       </section>
 
-      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#121214]">
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]">
         <SectionTitle overline="Services" title="Wofür Sie uns rufen können" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/5 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-[#1A1414]/5 mt-16">
           {SERVICES.map((s) => (
-            <Link key={s.slug} to={`/services/${s.slug}`} className="bg-[#121214] hover:bg-[#1A1A1D] transition-colors duration-500 p-6 group">
+            <Link key={s.slug} to={`/services/${s.slug}`} className="bg-[#FBF7F4] hover:bg-[#F2EAE4] transition-colors duration-500 p-6 group">
               <h3 className="font-heading text-xl group-hover:accent-text">{s.title}</h3>
-              <p className="text-xs font-light text-[#9CA3AF] mt-2 line-clamp-2">{s.description}</p>
+              <p className="text-xs font-light text-[#6B5F5F] mt-2 line-clamp-2">{s.description}</p>
               <div className="mt-4 text-xs font-mono uppercase tracking-[0.2em] inline-flex items-center gap-2 group-hover:accent-text">Details <ArrowRight size={12} /></div>
             </Link>
           ))}
@@ -67,7 +67,7 @@ export default function EscortHamburg() {
         <SectionTitle overline="Reichweite" title="Hamburg & Umland" description="Wir sind in der gesamten Metropolregion verfügbar." />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-8 gap-y-4 mt-12">
           {LOCATIONS.map((l) => (
-            <Link key={l.slug} to={`/escort/${l.slug}`} className="text-sm font-light text-[#F5F5F0] hover:accent-text border-b border-white/5 py-2 link-underline">{l.name}</Link>
+            <Link key={l.slug} to={`/escort/${l.slug}`} className="text-sm font-light text-[#1A1414] hover:accent-text border-b border-[#1A1414]/8 py-2 link-underline">{l.name}</Link>
           ))}
         </div>
       </section>

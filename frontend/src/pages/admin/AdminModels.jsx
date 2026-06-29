@@ -34,8 +34,8 @@ export default function AdminModels() {
         </Link>
       </div>
 
-      <div className="border border-white/5 bg-[#121214]">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/10 text-xs font-mono uppercase tracking-[0.15em] text-[#52525B]">
+      <div className="border border-[#1A1414]/8 bg-[#FBF7F4]">
+        <div className="grid grid-cols-12 gap-4 p-4 border-b border-[#1A1414]/15 text-xs font-mono uppercase tracking-[0.15em] text-[#9B8F8F]">
           <div className="col-span-1">Bild</div>
           <div className="col-span-3">Name</div>
           <div className="col-span-1">Alter</div>
@@ -44,15 +44,15 @@ export default function AdminModels() {
           <div className="col-span-2 text-right">Aktion</div>
         </div>
         {models.map((m) => (
-          <div key={m.id} className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 items-center hover:bg-[#1A1A1D]" data-testid={`admin-model-row-${m.slug}`}>
+          <div key={m.id} className="grid grid-cols-12 gap-4 p-4 border-b border-[#1A1414]/8 items-center hover:bg-[#F2EAE4]" data-testid={`admin-model-row-${m.slug}`}>
             <div className="col-span-1">
               {m.cover_image && <img src={m.cover_image} alt={m.name} className="w-12 h-16 object-cover" />}
             </div>
             <div className="col-span-3 font-heading text-xl">{m.name}</div>
             <div className="col-span-1 text-sm font-light">{m.age}</div>
-            <div className="col-span-3 text-sm font-mono text-[#9CA3AF]">{m.slug}</div>
+            <div className="col-span-3 text-sm font-mono text-[#6B5F5F]">{m.slug}</div>
             <div className="col-span-2">
-              <span className={`text-xs uppercase tracking-[0.15em] py-1 px-2 ${m.featured ? "accent-text border border-[#E5D3B3]" : "text-[#9CA3AF] border border-white/10"}`}>
+              <span className={`text-xs uppercase tracking-[0.15em] py-1 px-2 ${m.featured ? "accent-text border border-[#8B1538]" : "text-[#6B5F5F] border border-[#1A1414]/15"}`}>
                 {m.featured ? "Featured" : "Standard"}
               </span>
             </div>
@@ -63,7 +63,7 @@ export default function AdminModels() {
           </div>
         ))}
         {models.length === 0 && (
-          <div className="p-12 text-center text-[#9CA3AF]">Keine Models vorhanden.</div>
+          <div className="p-12 text-center text-[#6B5F5F]">Keine Models vorhanden.</div>
         )}
       </div>
     </div>
