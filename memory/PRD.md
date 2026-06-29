@@ -28,6 +28,7 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - Seeded: 6 model profiles + 3 magazine-style blog posts
 - Internal linking: Home → all services/locations/models/blog; service pages → related; area pages → nearby + related services + models; blog → related services + locations; CMS Pages → related services + locations
 - Tested: 23/23 backend tests pass, zero frontend lint errors
+- **Tiered Pricing on Models (2026-02)**: `prices: List[Price]` schema with `label`, `amount`, `currency`, **`unit`** (hour/flat/night/day/weekend). Admin CMS has a 4-column row editor (label + amount + currency + unit dropdown + remove). Public Model Detail page renders prices as a large, brand-accent (#8B1538) `text-3xl/4xl` ladder with i18n unit suffix ("/ pro Stunde", "/ pro Nacht", "/ Wochenende", etc; "flat" hides the suffix). SSR renders identical HTML for crawlers in both DE and EN with locale-aware number formatting. Migration script (`/app/scripts/migrate_price_units.py`) back-fills `unit` on existing data via label heuristics — idempotent. 85/85 backend tests passing.
 
 ## SEO Architecture — SSR LIVE + Bilingual (2026-02)
 **SSR is now active, production-grade, and bilingual (DE / EN).** A custom Express server (`/app/frontend/ssr-server.js` + modular `/app/frontend/ssr/`) pre-renders every public route as real HTML before the React SPA mounts on top.

@@ -159,17 +159,23 @@ export default function ModelDetail() {
               <div className="mt-10" data-testid="model-prices">
                 <span className="overline text-[10px] block mb-4">{isEn ? "Rates" : "Tarife"}</span>
                 <dl className="grid grid-cols-1 gap-y-4">
-                  {model.prices.map((p, i) => (
-                    <div key={i} className="flex items-baseline justify-between border-b border-[#1A1414]/10 pb-4">
-                      <dt className="font-light text-[#1A1414] text-base">{p.label}</dt>
-                      <dd className="font-heading text-3xl md:text-4xl font-semibold text-[#8B1538] whitespace-nowrap leading-none">
-                        {Number(p.amount).toLocaleString(isEn ? "en-GB" : "de-DE")} {p.currency || "EUR"}
-                        <span className="ml-1 text-sm font-light text-[#8B1538]/80">
-                          {isEn ? "/ per hour" : "/ pro Stunde"}
-                        </span>
-                      </dd>
-                    </div>
-                  ))}
+                  {model.prices.map((p, i) => {
+                    const unitKey = `price.unit.${p.unit || "hour"}`;
+                    const unitText = t(unitKey);
+                    return (
+                      <div key={i} className="flex items-baseline justify-between border-b border-[#1A1414]/10 pb-4">
+                        <dt className="font-light text-[#1A1414] text-base">{p.label}</dt>
+                        <dd className="font-heading text-3xl md:text-4xl font-semibold text-[#8B1538] whitespace-nowrap leading-none">
+                          {Number(p.amount).toLocaleString(isEn ? "en-GB" : "de-DE")} {p.currency || "EUR"}
+                          {unitText && (
+                            <span className="ml-1 text-sm font-light text-[#8B1538]/80">
+                              {unitText}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                    );
+                  })}
                 </dl>
                 <p className="mt-4 text-xs text-[#6B5F5F]">
                   {isEn

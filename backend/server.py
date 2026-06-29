@@ -217,6 +217,9 @@ class Price(BaseModel):
     label: str
     amount: int  # whole units (EUR/USD/CHF)
     currency: str = "EUR"
+    # Display unit, rendered as a suffix on the public profile.
+    # Allowed: "hour" (default), "flat" (no suffix), "night", "day", "weekend".
+    unit: str = "hour"
 
 
 class ModelCreate(BaseModel):

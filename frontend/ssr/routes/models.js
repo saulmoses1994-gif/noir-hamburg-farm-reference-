@@ -113,7 +113,11 @@ ${m.cover_image ? `<img src="${escAttr(m.cover_image)}" alt="${escAttr(m.name)} 
 <p>${esc(bio)}</p>
 ${(m.prices || []).length > 0 ? `
 <h2>${esc(lang === "en" ? "Rates" : "Tarife")}</h2>
-<dl>${m.prices.map((p) => `<dt>${esc(p.label)}</dt><dd><strong>${Number(p.amount).toLocaleString(lang === "en" ? "en-GB" : "de-DE")} ${esc(p.currency || "EUR")}</strong> <span>${esc(lang === "en" ? "/ per hour" : "/ pro Stunde")}</span></dd>`).join("")}</dl>
+<dl>${m.prices.map((p) => {
+  const unitKey = `price.unit.${p.unit || "hour"}`;
+  const unitText = t(unitKey, lang);
+  return `<dt>${esc(p.label)}</dt><dd><strong>${Number(p.amount).toLocaleString(lang === "en" ? "en-GB" : "de-DE")} ${esc(p.currency || "EUR")}</strong>${unitText ? ` <span>${esc(unitText)}</span>` : ""}</dd>`;
+}).join("")}</dl>
 <p><em>${esc(lang === "en" ? "Travel expenses and additional services on request." : "Reisekosten und Zusatzleistungen auf Anfrage.")}</em></p>
 ` : ""}
 <h2>${esc(t("sec.services", lang))}</h2>

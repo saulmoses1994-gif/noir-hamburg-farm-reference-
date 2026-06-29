@@ -103,3 +103,51 @@ def test_update_replaces_price_ladder(admin_session):
         assert r.json()["prices"][0]["currency"] == "CHF"
     finally:
         admin_session.delete(f"{API}/models/{slug}", timeout=15)
+
+
+def test_price_unit_field_defaults_and_round_trips(admin_session):
+    """unit defaults to 'hour' when omitted and persists explicit values."""
+    m = _create(admin_session, f"Unit Test {int(time.time())}", [
+        {"label": "1 Stunde", "amount": 500, "currency": "EUR"},  # no unit → "hour"
+        {"label": "Overnight", "amount": 2500, "currency": "EUR", "unit": "night"},
+        {"label": "Dinner Date (4h)", "amount": 1500, "currency": "EUR", "unit": "flat"},
+    ])
+    slug = m["slug"]
+    try:
+        assert m["prices"][0]["unit"] == "hour", "missing unit must default to hour"
+        assert m["prices"][1]["unit"] == "night"
+        assert m["prices"][2]["unit"] == "flat"
+    finally:
+        admin_session.delete(f"{API}/models/{slug}", timeout=15)
+
+
+def test_ssr_renders_unit_suffix_by_kind(admin_session):
+    """DE: hour → 'pro Stunde', night → 'pro Nacht', flat → no suffix."""
+    m = _create(admin_session, f"Unit SSR DE {int(time.time())}", [
+        {"label": "1 Stunde", "amount": 500, "currency": "EUR", "unit": "hour"},
+        {"label": "Overnight", "amount": 2500, "currency": "EUR", "unit": "night"},
+        {"label": "Dinner Date", "amount": 1500, "currency": "EUR", "unit": "flat"},
+    ])
+    slug = m["slug"]
+    try:
+        html = requests.get(f"{SSR}/models/{slug}", timeout=10).text
+        assert "500 EUR</strong> <span>/ pro Stunde</span>" in html
+        assert "2.500 EUR</strong> <span>/ pro Nacht</span>" in html
+        assert "1.500 EUR</strong></dd>" in html, "flat unit must omit suffix span"
+    finally:
+        admin_session.delete(f"{API}/models/{slug}", timeout=15)
+
+
+def test_ssr_renders_unit_suffix_en(admin_session):
+    """EN: weekend → '/ weekend', day → '/ per day'."""
+    m = _create(admin_session, f"Unit SSR EN {int(time.time())}", [
+        {"label": "Weekend", "amount": 5500, "currency": "EUR", "unit": "weekend"},
+        {"label": "Day rate", "amount": 3000, "currency": "EUR", "unit": "day"},
+    ])
+    slug = m["slug"]
+    try:
+        html = requests.get(f"{SSR}/en/models/{slug}", timeout=10).text
+        assert "5,500 EUR</strong> <span>/ weekend</span>" in html
+        assert "3,000 EUR</strong> <span>/ per day</span>" in html
+    finally:
+        admin_session.delete(f"{API}/models/{slug}", timeout=15)

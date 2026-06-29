@@ -14,7 +14,7 @@ const empty = {
   cover_image: "", gallery: [],
   available: true, featured: false, nationality: "Deutsch",
   interests: [],
-  prices: [],  // [{label, amount, currency}]
+  prices: [],  // [{label, amount, currency, unit}]
 };
 
 export default function AdminModelEdit() {
@@ -171,7 +171,7 @@ export default function AdminModelEdit() {
             <label className="overline text-[10px]">Tarife / Pricing</label>
             <button
               type="button"
-              onClick={() => set("prices", [...(form.prices || []), { label: "", amount: 0, currency: "EUR" }])}
+              onClick={() => set("prices", [...(form.prices || []), { label: "", amount: 0, currency: "EUR", unit: "hour" }])}
               className="text-xs uppercase tracking-widest text-[#8B1538] hover:underline"
               data-testid="add-price-row"
             >
@@ -196,7 +196,7 @@ export default function AdminModelEdit() {
                   next[i] = { ...next[i], label: e.target.value };
                   set("prices", next);
                 }}
-                className="col-span-6 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm"
+                className="col-span-4 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm"
                 data-testid={`price-label-${i}`}
               />
               <input
@@ -209,7 +209,7 @@ export default function AdminModelEdit() {
                   next[i] = { ...next[i], amount: parseInt(e.target.value, 10) || 0 };
                   set("prices", next);
                 }}
-                className="col-span-3 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm text-right"
+                className="col-span-2 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm text-right"
                 data-testid={`price-amount-${i}`}
               />
               <select
@@ -220,11 +220,29 @@ export default function AdminModelEdit() {
                   set("prices", next);
                 }}
                 className="col-span-2 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm"
+                data-testid={`price-currency-${i}`}
               >
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
                 <option value="CHF">CHF</option>
                 <option value="GBP">GBP</option>
+              </select>
+              <select
+                value={p.unit || "hour"}
+                onChange={(e) => {
+                  const next = [...form.prices];
+                  next[i] = { ...next[i], unit: e.target.value };
+                  set("prices", next);
+                }}
+                className="col-span-3 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm"
+                data-testid={`price-unit-${i}`}
+                title="Einheit (wird hinter dem Betrag angezeigt)"
+              >
+                <option value="hour">pro Stunde</option>
+                <option value="flat">Pauschal (ohne Zusatz)</option>
+                <option value="night">pro Nacht</option>
+                <option value="day">pro Tag</option>
+                <option value="weekend">Wochenende</option>
               </select>
               <button
                 type="button"

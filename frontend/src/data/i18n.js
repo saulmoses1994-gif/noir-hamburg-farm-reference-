@@ -100,6 +100,13 @@ const STRINGS = {
     "misc.contactLead":
       "Wir antworten persönlich, vertraulich und meist innerhalb weniger Stunden.",
     "misc.englishComingSoon": "",
+
+    // pricing unit suffixes (rendered after amount, e.g. "500 EUR / pro Stunde")
+    "price.unit.hour": "/ pro Stunde",
+    "price.unit.flat": "",
+    "price.unit.night": "/ pro Nacht",
+    "price.unit.day": "/ pro Tag",
+    "price.unit.weekend": "/ Wochenende",
   },
 
   en: {
@@ -182,6 +189,12 @@ const STRINGS = {
       "We respond personally, confidentially, and usually within a few hours.",
     "misc.englishComingSoon":
       "Detailed editorial copy is currently available in German only — a full English edition is on its way. Personal enquiries in English are warmly welcomed.",
+
+    "price.unit.hour": "/ per hour",
+    "price.unit.flat": "",
+    "price.unit.night": "/ per night",
+    "price.unit.day": "/ per day",
+    "price.unit.weekend": "/ weekend",
   },
 };
 
