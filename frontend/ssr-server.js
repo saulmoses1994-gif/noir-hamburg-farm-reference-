@@ -36,15 +36,34 @@ const TEMPLATE = fs.readFileSync(path.join(BUILD_DIR, "index.html"), "utf8");
 // so the SSR-rendered pages still load the SPA after first paint.
 const headAssetsMatch = TEMPLATE.match(/<head>([\s\S]*?)<\/head>/i);
 const bodyScriptsMatch = TEMPLATE.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-const reactScripts = (bodyScriptsMatch ? bodyScriptsMatch[1] : "").replace(
-  /<div id="root">[\s\S]*?<\/div>/i,
-  ""
-);
-// Pull out only the <link rel="stylesheet"> and <script src> tags from React's head.
-const reactHeadAssets = (headAssetsMatch ? headAssetsMatch[1] : "")
-  .split("\n")
-  .filter((line) => /<link[^>]+rel=["']stylesheet/i.test(line) || /<script[^>]+src=/i.test(line))
-  .join("\n");
+
+// Build the body scripts that React needs to mount on top of SSR.
+// We strip:
+//   - the <div id="root"> placeholder (SSR provides its own)
+//   - <noscript>You need to enable JavaScript...</noscript> (legacy CRA boilerplate;
+//     misleading for SEO crawlers because real HTML *is* present without JS)
+const reactScripts = (bodyScriptsMatch ? bodyScriptsMatch[1] : "")
+  .replace(/<div id="root">[\s\S]*?<\/div>/i, "")
+  .replace(/<noscript>[\s\S]*?<\/noscript>/gi, "");
+
+// Extract only <link rel="stylesheet"> and <script src> tags from the built head.
+// CRA's production build minifies the head onto a single line which contains many
+// other tags (title, meta, link rel=preconnect, inline scripts). We tokenise the
+// head and keep ONLY the asset tags so we don't duplicate <title>/<meta> that the
+// SSR template already emits.
+function extractAssetTags(headHtml) {
+  const tags = [];
+  // Match self-closing or void link tags and external script tags individually.
+  const tagRegex = /<(link|script)\b[^>]*?(?:\/>|>(?:[\s\S]*?<\/\1>)?)/gi;
+  let m;
+  while ((m = tagRegex.exec(headHtml)) !== null) {
+    const tag = m[0];
+    if (/<link\b[^>]+rel=["']stylesheet/i.test(tag)) tags.push(tag);
+    else if (/<script\b[^>]+src=/i.test(tag)) tags.push(tag);
+  }
+  return tags.join("\n");
+}
+const reactHeadAssets = extractAssetTags(headAssetsMatch ? headAssetsMatch[1] : "");
 
 // ---------- HTTP helpers ----------
 function backendJSON(reqPath) {
@@ -142,7 +161,6 @@ ${ldScripts}
 ${reactHeadAssets}
 </head>
 <body>
-<noscript><style>#root-spa{display:none}</style></noscript>
 <div id="seo-content">
 ${renderHeaderNav()}
 ${bodyContent}

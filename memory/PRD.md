@@ -25,14 +25,13 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - Internal linking: Home → all services/locations/models/blog; service pages → related; area pages → nearby + related services + models; blog → related services + locations; CMS Pages → related services + locations
 - Tested: 23/23 backend tests pass, zero frontend lint errors
 
-## SEO Architecture — Honest Assessment
-**The single biggest remaining gap is SSR/SSG.** This site is built on Create React App. Mitigations in place:
-- Organization + WebSite JSON-LD is in the **static** HTML
-- All meta tags, canonical, OG, Twitter, hreflang are in HTML head
-- Sitemap is server-rendered with absolute URLs, image extensions, real lastmod, priority+changefreq
-- Modern Googlebot executes JS — but Bing/Yandex/social-card crawlers don't
-
-**Proper fix: migrate to Next.js (App Router).** Effort: 6-10h. Risk: medium. The data model, schemas, internal-linking patterns and `useSEO` hook port cleanly.
+## SEO Architecture — SSR LIVE (2026-02)
+**SSR is now active.** A custom Express server (`/app/frontend/ssr-server.js` + `ssr-data.js`) pre-renders every public route as real HTML before the React SPA mounts on top. Verified via raw `curl` (no JS execution):
+- Every route returns its own `<title>`, meta description, canonical, OG, Twitter, JSON-LD
+- Real `<h1>`, `<h2>`, paragraphs, model lists, service cards, area lists, blog teasers, FAQ accordion in HTML source
+- Bing, Yandex, Slack/WhatsApp/X social-card crawlers (non-JS) see full content
+- React SPA still hydrates on top — UX unchanged
+- Final cleanup (2026-02): removed CRA boilerplate `<noscript>You need to enable JavaScript to run this app.</noscript>` + duplicate `<title>`/`<meta>` from the served HTML so SEO auditors no longer pick up the misleading message.
 
 ## Backlog (P1)
 - **Next.js migration for true SSR/SSG** — single highest-impact item
