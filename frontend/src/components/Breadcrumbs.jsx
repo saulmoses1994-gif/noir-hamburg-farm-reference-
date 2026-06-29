@@ -11,16 +11,20 @@ export default function Breadcrumbs({ items = [], dark = false }) {
       <Link to="/" className={`flex items-center gap-1 ${hoverColor}`}>
         <Home size={12} /> Home
       </Link>
-      {items.map((item, i) => (
-        <span key={i} className="flex items-center gap-2">
-          <ChevronRight size={12} className={baseColor} />
-          {item.to && i !== items.length - 1 ? (
-            <Link to={item.to} className={hoverColor}>{item.label}</Link>
-          ) : (
-            <span className={activeColor}>{item.label}</span>
-          )}
-        </span>
-      ))}
+      {items.map((item, i) => {
+        const isLast = i === items.length - 1;
+        const key = `${item.to || ""}|${item.label}`;
+        return (
+          <span key={key} className="flex items-center gap-2">
+            <ChevronRight size={12} className={baseColor} />
+            {item.to && !isLast ? (
+              <Link to={item.to} className={hoverColor}>{item.label}</Link>
+            ) : (
+              <span className={activeColor}>{item.label}</span>
+            )}
+          </span>
+        );
+      })}
     </nav>
   );
 }

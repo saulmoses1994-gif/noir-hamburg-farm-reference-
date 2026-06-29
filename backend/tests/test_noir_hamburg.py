@@ -6,8 +6,8 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://client-portal-385.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
-ADMIN_EMAIL = "admin@noir-hamburg.de"
-ADMIN_PASSWORD = "NoirAdmin2026!"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@noir-hamburg.de")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "NoirAdmin2026!")
 
 
 @pytest.fixture(scope="session")
@@ -72,7 +72,7 @@ class TestModels:
             assert expected in slugs
         # Mila & Lara should not be featured
         for m in r.json():
-            assert m["featured"] is True
+            assert m["featured"]
 
     def test_location_filter_hamburg(self, session):
         r = session.get(f"{API}/models", params={"location": "hamburg"})
@@ -196,9 +196,8 @@ class TestAuth:
         data = r.json()
         assert "access_token" in data
         assert data["role"] == "admin"
-        # Check cookie present
-        cookies = r.cookies
-        # cookie name is access_token (may not show due to samesite=none + non-https client) but should be set in headers
+        # Check cookie present (cookie name is access_token; may not be exposed
+        # through r.cookies due to samesite=none + non-https client, so we read the header)
         set_cookie = r.headers.get("set-cookie", "")
         assert "access_token=" in set_cookie
 
@@ -232,7 +231,7 @@ class TestContact:
         r = session.post(f"{API}/contact", json=payload)
         assert r.status_code == 200
         data = r.json()
-        assert data["ok"] is True
+        assert data["ok"]
         assert "id" in data
 
     def test_list_contacts_no_auth(self):

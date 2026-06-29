@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { api, setAuthHeader } from "./api";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { api } from "./api";
 
 const AuthContext = createContext(null);
 
@@ -9,37 +9,36 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let mounted = true;
-    const token = typeof window !== "undefined" ? localStorage.getItem("noir_token") : null;
-    if (!token) {
-      setUser(false);
-      setLoading(false);
-      return () => { mounted = false; };
-    }
+    // httpOnly cookies are not visible to JS — we always probe /auth/me on mount.
+    // For unauthenticated visitors this is one 401 (cheap).
     api.get("/auth/me")
-      .then((r) => mounted && setUser(r.data))
-      .catch(() => mounted && setUser(false))
-      .finally(() => mounted && setLoading(false));
+      .then((r) => { if (mounted) setUser(r.data); })
+      .catch(() => { if (mounted) setUser(false); })
+      .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, []);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
-    setAuthHeader(data.access_token);
+    // Backend sets access_token + refresh_token as httpOnly cookies.
+    // We no longer keep the JWT in localStorage.
     setUser(data);
     return data;
-  };
+  }, []);
 
-  const logout = async () => {
-    try { await api.post("/auth/logout"); } catch (e) {}
-    setAuthHeader(null);
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (e) {
+      // logout is best-effort; if the network call fails we still clear local state
+      console.warn("Logout request failed:", e?.message || e);
+    }
     setUser(false);
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, login, logout]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);

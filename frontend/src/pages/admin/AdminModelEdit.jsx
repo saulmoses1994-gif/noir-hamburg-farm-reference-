@@ -144,7 +144,7 @@ export default function AdminModelEdit() {
           <input type="file" accept="image/*" multiple onChange={onGalleryAdd} className="text-sm text-[#6B5F5F]" />
           <div className="grid grid-cols-4 gap-3 mt-3">
             {(form.gallery || []).map((img, i) => (
-              <div key={i} className="relative group">
+              <div key={img} className="relative group">
                 <img src={img} alt="g" className="h-32 w-full object-cover" />
                 <button
                   type="button"
