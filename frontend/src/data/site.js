@@ -1,14 +1,18 @@
 // Noir Hamburg — Site-wide content data (German)
+// CommonJS exports so this file is the single source of truth
+// for both the React app (via Babel's import interop) AND the SSR server
+// (which `require`s this file from Node). Do NOT add ES `export` syntax here.
 
-export const BRAND = {
+const BRAND = {
   name: "Noir Hamburg",
   tagline: "Premium Begleitagentur · Hamburg",
   phone: "+49 40 0000 0000",
   whatsapp: "+4940000000000",
+  whatsappUrl: "https://wa.me/4940000000000",
   email: "kontakt@noir-hamburg.de",
 };
 
-export const NAV = [
+const NAV = [
   { label: "Startseite", to: "/" },
   { label: "Models", to: "/models" },
   { label: "Escort Hamburg", to: "/escort-hamburg" },
@@ -20,7 +24,7 @@ export const NAV = [
   { label: "Kontakt", to: "/kontakt" },
 ];
 
-export const SERVICES = [
+const SERVICES = [
   {
     slug: "luxury-escort-hamburg",
     title: "Luxury Escort Hamburg",
@@ -199,7 +203,7 @@ export const SERVICES = [
   },
 ];
 
-export const LOCATIONS = [
+const LOCATIONS = [
   {
     slug: "hamburg",
     name: "Hamburg",
@@ -382,7 +386,7 @@ export const LOCATIONS = [
   },
 ];
 
-export const FAQS = [
+const FAQS = [
   {
     q: "Wie verlässt sich Noir Hamburg auf Diskretion?",
     a: "Diskretion ist das Fundament unserer Arbeit. Alle Anfragen werden verschlüsselt verarbeitet, persönliche Daten werden ausschließlich für die Vermittlung genutzt und nach Abschluss eines Termins fachgerecht entfernt. Auf Wunsch arbeiten wir mit NDA-Standards.",
@@ -409,14 +413,14 @@ export const FAQS = [
   },
 ];
 
-export const ADVANTAGES = [
+const ADVANTAGES = [
   { title: "Sorgfältige Auswahl", text: "Jedes Model wird persönlich begleitet und nach klaren Qualitätskriterien aufgenommen." },
   { title: "Verbindliche Diskretion", text: "Datenschutz und Vertraulichkeit auf NDA-Niveau – für Sie und für uns selbstverständlich." },
   { title: "Persönliche Betreuung", text: "Ein fester Ansprechpartner – kein Callcenter, keine anonymen Abläufe." },
   { title: "Verlässliche Pünktlichkeit", text: "Termintreue und reibungsloser Ablauf sind das Mindeste, was wir versprechen." },
 ];
 
-export const BLOG_CATEGORIES = [
+const BLOG_CATEGORIES = [
   "Luxury Lifestyle",
   "Hamburg Guide",
   "Hotels",
@@ -429,3 +433,13 @@ export const BLOG_CATEGORIES = [
   "Privacy",
   "Travel Tips",
 ];
+
+module.exports = {
+  BRAND,
+  NAV,
+  SERVICES,
+  LOCATIONS,
+  FAQS,
+  ADVANTAGES,
+  BLOG_CATEGORIES,
+};

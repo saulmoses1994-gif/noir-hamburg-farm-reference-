@@ -26,12 +26,24 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - Tested: 23/23 backend tests pass, zero frontend lint errors
 
 ## SEO Architecture — SSR LIVE (2026-02)
-**SSR is now active.** A custom Express server (`/app/frontend/ssr-server.js` + `ssr-data.js`) pre-renders every public route as real HTML before the React SPA mounts on top. Verified via raw `curl` (no JS execution):
-- Every route returns its own `<title>`, meta description, canonical, OG, Twitter, JSON-LD
+**SSR is now active and production-grade.** A custom Express server (`/app/frontend/ssr-server.js` + modular `/app/frontend/ssr/`) pre-renders every public route as real HTML before the React SPA mounts on top.
+
+**Architecture (post 2026-02 polish):**
+- `ssr-server.js` (131 lines) — thin Express wrapper, route table, bundle injection
+- `ssr/shell.js` — shared HTML head, header/nav, footer, breadcrumbs
+- `ssr/backend.js` — HTTP client with 60s in-memory TTL cache + stale-on-error
+- `ssr/cache.js` — generic TTL memo with thundering-herd protection
+- `ssr/routes/{home,models,services,areas,blog,static}.js` — per-domain renderers
+- `src/data/site.js` — **single source of truth** (CommonJS) shared with React SPA. No duplication. `ssr-data.js` deleted.
+
+**Verified via raw `curl` (no JS execution):**
+- 14/14 public routes return their own `<title>`, meta description, canonical, OG, Twitter, JSON-LD
 - Real `<h1>`, `<h2>`, paragraphs, model lists, service cards, area lists, blog teasers, FAQ accordion in HTML source
 - Bing, Yandex, Slack/WhatsApp/X social-card crawlers (non-JS) see full content
 - React SPA still hydrates on top — UX unchanged
-- Final cleanup (2026-02): removed CRA boilerplate `<noscript>You need to enable JavaScript to run this app.</noscript>` + duplicate `<title>`/`<meta>` from the served HTML so SEO auditors no longer pick up the misleading message.
+- CRA boilerplate `<noscript>You need to enable JavaScript to run this app.</noscript>` + duplicate `<title>`/`<meta>` stripped (Feb 2026)
+- **40/40 tests passing** (23 backend + 17 SSR)
+- Cache: ~40% faster on warm requests (172ms cold → ~100ms warm)
 
 ## Backlog (P1)
 - **Next.js migration for true SSR/SSG** — single highest-impact item
