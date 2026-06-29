@@ -7,12 +7,14 @@ import ModelCard from "@/components/ModelCard";
 import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { SERVICES, LOCATIONS, BRAND, FAQS } from "@/data/site";
+import { useI18n } from "@/lib/i18n";
 
 export default function ModelDetail() {
   const { slug } = useParams();
   const [model, setModel] = useState(null);
   const [related, setRelated] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
+  const { lang, t, to } = useI18n();
 
   useEffect(() => {
     setModel(null);
@@ -20,32 +22,42 @@ export default function ModelDetail() {
     api.get(`/models?limit=20`).then((r) => setRelated(r.data.filter((m) => m.slug !== slug).slice(0, 3))).catch(() => {});
   }, [slug]);
 
+  // EN fields fall back to German originals when missing.
+  const isEn = lang === "en";
+  const bio = model ? (isEn && model.bio_en ? model.bio_en : model.bio) : "";
+  const shortTagline = model
+    ? (isEn && model.short_tagline_en ? model.short_tagline_en : model.short_tagline || "")
+    : "";
+  const enFallback = model && isEn && !model.bio_en;
+
   useSEO({
     title: model ? `${model.name} — Escort Hamburg | Noir Hamburg` : "Model",
-    description: model ? `${model.name}, ${model.age} Jahre – ${model.short_tagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.` : "",
+    description: model ? (isEn
+      ? `${model.name}, ${model.age} years old — ${shortTagline || "premium companionship in Hamburg"}. Discreet, well-educated, hanseatic elegance.`
+      : `${model.name}, ${model.age} Jahre – ${shortTagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.`) : "",
     image: model?.cover_image,
     jsonLd: model ? [
       {
         "@context": "https://schema.org",
         "@type": "Person",
         "name": model.name,
-        "description": model.bio,
+        "description": bio,
         "knowsLanguage": model.languages,
         "image": model.cover_image,
         "nationality": model.nationality,
       },
       breadcrumbSchema([
-        { label: "Models", to: "/models" },
+        { label: t("crumb.models"), to: "/models" },
         { label: model.name },
       ]),
     ] : null,
   });
 
   if (model === false) {
-    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Model nicht gefunden.</div></PublicLayout>;
+    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">{isEn ? "Model not found." : "Model nicht gefunden."}</div></PublicLayout>;
   }
   if (!model) {
-    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Lädt…</div></PublicLayout>;
+    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">{t("misc.loading")}</div></PublicLayout>;
   }
 
   const gallery = [model.cover_image, ...(model.gallery || [])].filter(Boolean);
@@ -90,9 +102,9 @@ export default function ModelDetail() {
             <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter mt-3 leading-none">
               {model.name}
             </h1>
-            {model.short_tagline && (
+            {shortTagline && (
               <p className="mt-4 font-heading italic text-xl text-[#6B5F5F]">
-                {model.short_tagline}
+                {shortTagline}
               </p>
             )}
 
@@ -128,8 +140,13 @@ export default function ModelDetail() {
             )}
 
             <div className="mt-10">
-              <h2 className="font-heading text-2xl mb-4">Über {model.name}</h2>
-              <p className="text-base font-light text-[#6B5F5F] leading-relaxed">{model.bio}</p>
+              <h2 className="font-heading text-2xl mb-4">{t("sec.aboutPerson", { name: model.name })}</h2>
+              {enFallback && (
+                <div className="mb-4 p-3 border-l-2 border-[#8B1538] bg-[#FAF5F2] text-xs text-[#4A3F3F]" data-testid="en-fallback-note">
+                  <strong className="text-[#8B1538]">EN preview.</strong> {t("misc.englishComingSoon")}
+                </div>
+              )}
+              <p className="text-base font-light text-[#6B5F5F] leading-relaxed">{bio}</p>
             </div>
 
             {model.interests?.length > 0 && (

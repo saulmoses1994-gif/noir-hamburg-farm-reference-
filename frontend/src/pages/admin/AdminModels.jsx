@@ -55,6 +55,9 @@ export default function AdminModels() {
               <span className={`text-xs uppercase tracking-[0.15em] py-1 px-2 ${m.featured ? "accent-text border border-[#8B1538]" : "text-[#6B5F5F] border border-[#1A1414]/15"}`}>
                 {m.featured ? "Featured" : "Standard"}
               </span>
+              <span className={`ml-2 text-[10px] uppercase tracking-widest ${m.bio_en ? "text-[#8B1538]" : "text-[#6B5F5F]/50"}`} title="English bio status">
+                {m.bio_en ? "✓ EN" : "⚑ EN"}
+              </span>
             </div>
             <div className="col-span-2 text-right flex gap-2 justify-end">
               <Link to={`/admin/models/edit/${m.slug}`} className="p-2 hover:accent-text" data-testid={`admin-edit-${m.slug}`}><Pencil size={16} /></Link>

@@ -37,7 +37,11 @@ async function renderBlogList(buildAssets, lang = "de") {
 ${renderBreadcrumbs([{ label: t("crumb.blog", lang) }], lang)}
 <h1>${esc(h1ByLang[lang])}</h1>
 <p>${esc(leadByLang[lang])}</p>
-${posts.map((p) => `<article><h2><a href="${navTo(`/blog/${p.slug}`, lang)}">${esc(p.title)}</a></h2><p><strong>${esc(p.category)}</strong></p><p>${esc(p.excerpt)}</p></article>`).join("")}
+${posts.map((p) => {
+  const title = lang === "en" && p.title_en ? p.title_en : p.title;
+  const exc = lang === "en" && p.excerpt_en ? p.excerpt_en : p.excerpt;
+  return `<article><h2><a href="${navTo(`/blog/${p.slug}`, lang)}">${esc(title)}</a></h2><p><strong>${esc(p.category)}</strong></p><p>${esc(exc)}</p></article>`;
+}).join("")}
 </main>`;
   return renderShell({
     ...buildAssets,
@@ -53,38 +57,48 @@ ${posts.map((p) => `<article><h2><a href="${navTo(`/blog/${p.slug}`, lang)}">${e
 async function renderBlogDetail(slug, buildAssets, lang = "de") {
   let p;
   try { p = await backendJSON(`/api/blog/${slug}`); } catch (e) { return null; }
+
+  // EN fields fall back to German originals when missing.
+  const isEn = lang === "en";
+  const title = isEn && p.title_en ? p.title_en : p.title;
+  const content = isEn && p.content_en ? p.content_en : p.content;
+  const excerpt = isEn && p.excerpt_en ? p.excerpt_en : p.excerpt;
+  const metaTitle = isEn && p.meta_title_en ? p.meta_title_en : p.meta_title;
+  const metaDesc = isEn && p.meta_description_en ? p.meta_description_en : p.meta_description;
+  const enFallback = isEn && !p.content_en;
+
   const body = `
 <main id="main" style="padding:2rem;">
-${renderBreadcrumbs([{ label: t("crumb.blog", lang), to: "/blog" }, { label: p.title }], lang)}
-${englishComingSoonBanner(lang)}
+${renderBreadcrumbs([{ label: t("crumb.blog", lang), to: "/blog" }, { label: title }], lang)}
+${enFallback ? englishComingSoonBanner(lang) : ""}
 <article>
 <p style="text-transform:uppercase;color:#8B1538;">${esc(p.category)}</p>
-<h1>${esc(p.title)}</h1>
-${p.cover_image ? `<img src="${escAttr(p.cover_image)}" alt="${escAttr(p.title)}" width="800" loading="eager"/>` : ""}
-${p.content}
+<h1>${esc(title)}</h1>
+${p.cover_image ? `<img src="${escAttr(p.cover_image)}" alt="${escAttr(title)}" width="800" loading="eager"/>` : ""}
+${content}
 </article>
 </main>`;
   return renderShell({
     ...buildAssets,
     lang,
-    title: p.meta_title || `${p.title} | Noir Hamburg`,
-    description: p.meta_description || p.excerpt,
+    title: metaTitle || `${title} | Noir Hamburg`,
+    description: metaDesc || excerpt,
     canonicalPath: `/blog/${p.slug}`,
     ogImage: p.cover_image,
     jsonLd: [
       {
         "@context": "https://schema.org",
         "@type": "Article",
-        headline: p.title,
+        headline: title,
         image: p.cover_image,
         datePublished: p.created_at,
         dateModified: p.updated_at || p.created_at,
         author: { "@type": "Organization", name: "Noir Hamburg" },
         publisher: { "@type": "Organization", name: "Noir Hamburg" },
-        inLanguage: "de-DE",
+        inLanguage: isEn && p.content_en ? "en" : "de-DE",
         articleSection: p.category,
       },
-      breadcrumbSchema([{ label: t("crumb.blog", lang), to: "/blog" }, { label: p.title }], lang),
+      breadcrumbSchema([{ label: t("crumb.blog", lang), to: "/blog" }, { label: title }], lang),
     ],
     bodyContent: body,
   });

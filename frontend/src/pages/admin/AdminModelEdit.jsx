@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 
 const empty = {
   name: "", age: 25, bio: "", short_tagline: "",
+  bio_en: "", short_tagline_en: "",
   height_cm: 170, languages: ["Deutsch", "Englisch"],
   services: [], locations: [],
   hair_color: "", eye_color: "", dress_size: "", measurements: "",
@@ -117,13 +118,49 @@ export default function AdminModelEdit() {
         </div>
 
         <div>
-          <label className="overline text-[10px] block mb-2">Biografie</label>
+          <label className="overline text-[10px] block mb-2">Biografie (Deutsch)</label>
           <textarea
             value={form.bio}
             onChange={(e) => set("bio", e.target.value)}
             rows={8}
             className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-4 font-light"
             required
+            data-testid="model-bio-de"
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="overline text-[10px]">Biografie (English)</label>
+            {!form.bio_en && (
+              <span className="text-[10px] uppercase tracking-widest text-[#8B1538]/80">
+                ⚑ EN translation needed
+              </span>
+            )}
+          </div>
+          <textarea
+            value={form.bio_en}
+            onChange={(e) => set("bio_en", e.target.value)}
+            rows={8}
+            placeholder="Leave empty to fall back to German bio with an inline EN-preview notice"
+            className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-4 font-light"
+            data-testid="model-bio-en"
+          />
+          <p className="mt-2 text-xs text-[#6B5F5F]">
+            Optional. When filled, the public <code>/en/models/&lt;slug&gt;</code> page renders this
+            English bio and drops the &ldquo;EN preview&rdquo; banner for this record.
+          </p>
+        </div>
+
+        <div>
+          <label className="overline text-[10px] block mb-2">Tagline (English)</label>
+          <input
+            type="text"
+            value={form.short_tagline_en ?? ""}
+            onChange={(e) => set("short_tagline_en", e.target.value)}
+            placeholder="e.g. Elegance with classical education"
+            className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
+            data-testid="model-tagline-en"
           />
         </div>
 

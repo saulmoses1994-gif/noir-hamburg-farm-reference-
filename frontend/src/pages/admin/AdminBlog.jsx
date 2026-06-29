@@ -34,7 +34,12 @@ export function AdminBlog() {
             {p.cover_image && <img src={p.cover_image} alt="" className="w-20 h-14 object-cover" />}
             <div className="flex-1">
               <div className="font-heading text-xl">{p.title}</div>
-              <div className="overline text-[10px] mt-1">{p.category} · {p.published ? "Veröffentlicht" : "Entwurf"}</div>
+              <div className="overline text-[10px] mt-1 flex items-center gap-3">
+                <span>{p.category} · {p.published ? "Veröffentlicht" : "Entwurf"}</span>
+                <span className={p.content_en ? "text-[#8B1538]" : "text-[#6B5F5F]/50"}>
+                  {p.content_en ? "✓ EN" : "⚑ EN missing"}
+                </span>
+              </div>
             </div>
             <Link to={`/admin/blog/edit/${p.slug}`} className="p-2 hover:accent-text"><Pencil size={16} /></Link>
             <button onClick={() => del(p.slug)} className="p-2 hover:text-red-400"><Trash2 size={16} /></button>
@@ -48,7 +53,9 @@ export function AdminBlog() {
 
 const emptyPost = {
   title: "", excerpt: "", content: "", category: BLOG_CATEGORIES[0],
+  title_en: "", excerpt_en: "", content_en: "",
   cover_image: "", meta_title: "", meta_description: "",
+  meta_title_en: "", meta_description_en: "",
   related_services: [], related_locations: [], published: true,
 };
 
@@ -132,6 +139,66 @@ export function AdminBlogEdit() {
           <label className="overline text-[10px] block mb-2">Inhalt (HTML)</label>
           <textarea value={form.content} onChange={(e) => set("content", e.target.value)} rows={15} className="w-full bg-transparent border border-[#1A1414]/15 outline-none p-3 font-light font-mono text-sm" required />
         </div>
+
+        {/* ----- English translation block ----- */}
+        <details className="border border-[#8B1538]/20 bg-[#FAF5F2] p-5" open={!!form.content_en}>
+          <summary className="cursor-pointer flex items-center justify-between gap-4">
+            <span className="overline text-[#8B1538]">English Translation</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#8B1538]/80">
+              {form.content_en ? "✓ EN published" : "⚑ EN translation needed"}
+            </span>
+          </summary>
+          <div className="mt-5 space-y-4">
+            <div>
+              <label className="overline text-[10px] block mb-2">Title (English)</label>
+              <input
+                type="text" value={form.title_en ?? ""}
+                onChange={(e) => set("title_en", e.target.value)}
+                className="w-full bg-transparent border border-[#1A1414]/15 outline-none p-3 font-light"
+                data-testid="blog-title-en"
+              />
+            </div>
+            <div>
+              <label className="overline text-[10px] block mb-2">Excerpt (English)</label>
+              <textarea
+                value={form.excerpt_en ?? ""}
+                onChange={(e) => set("excerpt_en", e.target.value)}
+                rows={2}
+                className="w-full bg-transparent border border-[#1A1414]/15 outline-none p-3 font-light"
+                data-testid="blog-excerpt-en"
+              />
+            </div>
+            <div>
+              <label className="overline text-[10px] block mb-2">Content (English, HTML)</label>
+              <textarea
+                value={form.content_en ?? ""}
+                onChange={(e) => set("content_en", e.target.value)}
+                rows={15}
+                placeholder="Leave empty to fall back to German content with an EN-preview notice on /en/blog/<slug>"
+                className="w-full bg-transparent border border-[#1A1414]/15 outline-none p-3 font-light font-mono text-sm"
+                data-testid="blog-content-en"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="overline text-[10px] block mb-2">SEO Meta Title (EN)</label>
+                <input
+                  type="text" value={form.meta_title_en ?? ""}
+                  onChange={(e) => set("meta_title_en", e.target.value)}
+                  className="w-full bg-transparent border border-[#1A1414]/15 outline-none p-3 font-light"
+                />
+              </div>
+              <div>
+                <label className="overline text-[10px] block mb-2">SEO Meta Description (EN)</label>
+                <input
+                  type="text" value={form.meta_description_en ?? ""}
+                  onChange={(e) => set("meta_description_en", e.target.value)}
+                  className="w-full bg-transparent border border-[#1A1414]/15 outline-none p-3 font-light"
+                />
+              </div>
+            </div>
+          </div>
+        </details>
 
         <div>
           <label className="overline text-[10px] block mb-2">Cover-Bild</label>

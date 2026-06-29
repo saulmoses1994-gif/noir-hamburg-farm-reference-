@@ -77,22 +77,30 @@ async function renderModelDetail(slug, buildAssets, lang = "de") {
   const relServices = SERVICES.filter((s) => (m.services || []).includes(s.slug));
   const relLocs = LOCATIONS.filter((l) => (m.locations || []).includes(l.slug));
 
+  // EN fields fall back to the German originals when missing. We only show the
+  // inline "translation pending" notice when EN was requested AND the admin
+  // has not yet supplied an English bio for this record.
+  const isEn = lang === "en";
+  const bio = isEn && m.bio_en ? m.bio_en : m.bio;
+  const shortTagline = isEn && m.short_tagline_en ? m.short_tagline_en : (m.short_tagline || "");
+  const enFallback = isEn && !m.bio_en;
+
   const titleByLang = {
     de: `${m.name} — Escort Hamburg | Noir Hamburg`,
     en: `${m.name} — Escort Hamburg | Noir Hamburg`,
   };
   const descByLang = {
     de: `${m.name}, ${m.age} Jahre – ${m.short_tagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.`,
-    en: `${m.name}, ${m.age} years old — ${m.short_tagline || "premium companionship in Hamburg"}. Discreet, well-educated, hanseatic elegance.`,
+    en: `${m.name}, ${m.age} years old — ${shortTagline || "premium companionship in Hamburg"}. Discreet, well-educated, hanseatic elegance.`,
   };
 
   const body = `
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.models", lang), to: "/models" }, { label: m.name }], lang)}
-${englishComingSoonBanner(lang)}
+${enFallback ? englishComingSoonBanner(lang) : ""}
 <article>
 <h1>${esc(m.name)}</h1>
-<p><strong>${esc(m.short_tagline || "")}</strong></p>
+<p><strong>${esc(shortTagline)}</strong></p>
 ${m.cover_image ? `<img src="${escAttr(m.cover_image)}" alt="${escAttr(m.name)} — Escort Hamburg" width="600" loading="eager"/>` : ""}
 <dl>
 <dt>${esc(lang === "en" ? "Age" : "Alter")}</dt><dd>${m.age} ${esc(t("model.years", lang))}</dd>
@@ -102,7 +110,7 @@ ${m.cover_image ? `<img src="${escAttr(m.cover_image)}" alt="${escAttr(m.name)} 
 <dt>${esc(t("model.hairEyes", lang))}</dt><dd>${esc(m.hair_color || "")} / ${esc(m.eye_color || "")}</dd>
 </dl>
 <h2>${esc(t("sec.aboutPerson", lang, { name: m.name }))}</h2>
-<p>${esc(m.bio)}</p>
+<p>${esc(bio)}</p>
 <h2>${esc(t("sec.services", lang))}</h2>
 <ul>${relServices.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}">${esc(s.title)}</a></li>`).join("")}</ul>
 <h2>${esc(t("sec.availableIn", lang))}</h2>
@@ -122,7 +130,7 @@ ${m.cover_image ? `<img src="${escAttr(m.cover_image)}" alt="${escAttr(m.name)} 
         "@context": "https://schema.org",
         "@type": "Person",
         name: m.name,
-        description: stripHtml(m.bio),
+        description: stripHtml(bio),
         knowsLanguage: m.languages,
         image: m.cover_image,
         nationality: m.nationality,

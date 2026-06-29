@@ -209,6 +209,12 @@ class ModelCreate(BaseModel):
     age: int
     bio: str
     short_tagline: Optional[str] = ""
+    # Optional English translations for the public-facing detail page. When
+    # present (non-empty) we serve them on /en/models/:slug and drop the
+    # "EN preview" banner for that record. When empty, the German fields are
+    # used as a fallback and the banner is shown to set expectations.
+    bio_en: Optional[str] = ""
+    short_tagline_en: Optional[str] = ""
     height_cm: Optional[int] = None
     languages: List[str] = []
     services: List[str] = []  # service slugs
@@ -233,10 +239,18 @@ class BlogPostCreate(BaseModel):
     title: str
     excerpt: str
     content: str  # HTML / markdown content
+    # Optional English translation. Stored alongside the German copy; SSR + SPA
+    # pick the language-appropriate field at request time. content_en is run
+    # through the same bleach sanitiser as content (defense-in-depth XSS).
+    title_en: Optional[str] = ""
+    excerpt_en: Optional[str] = ""
+    content_en: Optional[str] = ""
     category: str
     cover_image: Optional[str] = ""
     meta_title: Optional[str] = ""
     meta_description: Optional[str] = ""
+    meta_title_en: Optional[str] = ""
+    meta_description_en: Optional[str] = ""
     related_services: List[str] = []
     related_locations: List[str] = []
     published: bool = True
@@ -427,6 +441,7 @@ async def create_blog(payload: BlogPostCreate, _: dict = Depends(require_admin))
         slug = f"{base_slug}-{n}"
     doc = payload.model_dump()
     doc["content"] = sanitize_html(doc.get("content", ""))
+    doc["content_en"] = sanitize_html(doc.get("content_en", ""))
     doc["slug"] = slug
     doc["created_at"] = datetime.now(timezone.utc)
     doc["updated_at"] = doc["created_at"]
@@ -439,6 +454,7 @@ async def create_blog(payload: BlogPostCreate, _: dict = Depends(require_admin))
 async def update_blog(slug: str, payload: BlogPostUpdate, _: dict = Depends(require_admin)):
     update_doc = payload.model_dump()
     update_doc["content"] = sanitize_html(update_doc.get("content", ""))
+    update_doc["content_en"] = sanitize_html(update_doc.get("content_en", ""))
     update_doc["updated_at"] = datetime.now(timezone.utc)
     result = await db.blog.update_one({"slug": slug}, {"$set": update_doc})
     if result.matched_count == 0:
