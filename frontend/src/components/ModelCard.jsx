@@ -54,6 +54,11 @@ export default function ModelCard({ model }) {
         {tagline && (
           <p className="mt-3 text-sm text-[#6B5F5F] line-clamp-2 italic">{tagline}</p>
         )}
+        {model.prices?.length > 0 && (
+          <div className="mt-3 text-xs font-mono uppercase tracking-[0.15em] accent-text" data-testid={`model-card-price-${model.slug}`}>
+            {isEn ? "from" : "ab"} {Math.min(...model.prices.map((p) => p.amount)).toLocaleString(isEn ? "en-GB" : "de-DE")} {model.prices[0].currency || "EUR"}
+          </div>
+        )}
       </div>
     </Link>
   );

@@ -203,6 +203,22 @@ class LoginInput(BaseModel):
     password: str
 
 
+class Price(BaseModel):
+    """A single pricing tier shown on a model's public profile.
+
+    Examples:
+      {label: "1 Stunde", amount: 500, currency: "EUR"}
+      {label: "Dinner Date (4h)", amount: 1500, currency: "EUR"}
+      {label: "Overnight", amount: 2500, currency: "EUR"}
+
+    Multiple tiers are listed in order; the lowest amount drives the
+    "ab X EUR" / "from X EUR" teaser shown on listing cards.
+    """
+    label: str
+    amount: int  # whole units (EUR/USD/CHF)
+    currency: str = "EUR"
+
+
 class ModelCreate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     name: str
@@ -229,6 +245,8 @@ class ModelCreate(BaseModel):
     featured: bool = False
     nationality: Optional[str] = ""
     interests: List[str] = []
+    # Tiered pricing list (admin-managed). Empty list → no price shown.
+    prices: List[Price] = []
 
 
 class ModelUpdate(ModelCreate):

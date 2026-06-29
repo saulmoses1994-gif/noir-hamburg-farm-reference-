@@ -111,6 +111,11 @@ ${m.cover_image ? `<img src="${escAttr(m.cover_image)}" alt="${escAttr(m.name)} 
 </dl>
 <h2>${esc(t("sec.aboutPerson", lang, { name: m.name }))}</h2>
 <p>${esc(bio)}</p>
+${(m.prices || []).length > 0 ? `
+<h2>${esc(lang === "en" ? "Rates" : "Tarife")}</h2>
+<dl>${m.prices.map((p) => `<dt>${esc(p.label)}</dt><dd><strong>${Number(p.amount).toLocaleString(lang === "en" ? "en-GB" : "de-DE")} ${esc(p.currency || "EUR")}</strong></dd>`).join("")}</dl>
+<p><em>${esc(lang === "en" ? "Travel expenses and additional services on request." : "Reisekosten und Zusatzleistungen auf Anfrage.")}</em></p>
+` : ""}
 <h2>${esc(t("sec.services", lang))}</h2>
 <ul>${relServices.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}">${esc(s.title)}</a></li>`).join("")}</ul>
 <h2>${esc(t("sec.availableIn", lang))}</h2>

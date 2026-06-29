@@ -154,6 +154,28 @@ export default function ModelDetail() {
               </div>
             )}
 
+            {/* Pricing tiers — admin-managed via control panel. */}
+            {model.prices?.length > 0 && (
+              <div className="mt-10" data-testid="model-prices">
+                <span className="overline text-[10px] block mb-3">{isEn ? "Rates" : "Tarife"}</span>
+                <dl className="grid grid-cols-1 gap-y-2">
+                  {model.prices.map((p, i) => (
+                    <div key={i} className="flex items-baseline justify-between border-b border-[#1A1414]/8 pb-2">
+                      <dt className="font-light text-[#1A1414]">{p.label}</dt>
+                      <dd className="font-heading text-lg accent-text whitespace-nowrap">
+                        {Number(p.amount).toLocaleString(isEn ? "en-GB" : "de-DE")} {p.currency || "EUR"}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-3 text-xs text-[#6B5F5F]">
+                  {isEn
+                    ? "Travel expenses and additional services on request."
+                    : "Reisekosten und Zusatzleistungen auf Anfrage."}
+                </p>
+              </div>
+            )}
+
             <div className="mt-10">
               <h2 className="font-heading text-2xl mb-4">{t("sec.aboutPerson", { name: model.name })}</h2>
               {enFallback && (

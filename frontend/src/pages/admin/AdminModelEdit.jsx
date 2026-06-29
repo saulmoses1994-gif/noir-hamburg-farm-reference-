@@ -14,6 +14,7 @@ const empty = {
   cover_image: "", gallery: [],
   available: true, featured: false, nationality: "Deutsch",
   interests: [],
+  prices: [],  // [{label, amount, currency}]
 };
 
 export default function AdminModelEdit() {
@@ -162,6 +163,80 @@ export default function AdminModelEdit() {
             className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
             data-testid="model-tagline-en"
           />
+        </div>
+
+        {/* ---- Tarife / Prices ---- */}
+        <div className="border border-[#1A1414]/15 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <label className="overline text-[10px]">Tarife / Pricing</label>
+            <button
+              type="button"
+              onClick={() => set("prices", [...(form.prices || []), { label: "", amount: 0, currency: "EUR" }])}
+              className="text-xs uppercase tracking-widest text-[#8B1538] hover:underline"
+              data-testid="add-price-row"
+            >
+              + Tarif hinzufügen
+            </button>
+          </div>
+          <p className="text-xs text-[#6B5F5F] mb-4">
+            Optional. Beispiel: <em>2 Stunden · 800 EUR</em>, <em>Dinner Date (4h) · 1500 EUR</em>, <em>Overnight · 2500 EUR</em>.
+            Der niedrigste Eintrag wird als &ldquo;ab X EUR&rdquo; auf der Übersichtskarte angezeigt. Leere Liste = kein Preis sichtbar.
+          </p>
+          {(form.prices || []).length === 0 && (
+            <p className="text-sm text-[#6B5F5F]/60 italic">Noch keine Tarife.</p>
+          )}
+          {(form.prices || []).map((p, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 mb-2 items-center" data-testid={`price-row-${i}`}>
+              <input
+                type="text"
+                placeholder="Label (z.B. 2 Stunden)"
+                value={p.label}
+                onChange={(e) => {
+                  const next = [...form.prices];
+                  next[i] = { ...next[i], label: e.target.value };
+                  set("prices", next);
+                }}
+                className="col-span-6 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm"
+                data-testid={`price-label-${i}`}
+              />
+              <input
+                type="number"
+                min="0"
+                placeholder="Betrag"
+                value={p.amount}
+                onChange={(e) => {
+                  const next = [...form.prices];
+                  next[i] = { ...next[i], amount: parseInt(e.target.value, 10) || 0 };
+                  set("prices", next);
+                }}
+                className="col-span-3 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm text-right"
+                data-testid={`price-amount-${i}`}
+              />
+              <select
+                value={p.currency}
+                onChange={(e) => {
+                  const next = [...form.prices];
+                  next[i] = { ...next[i], currency: e.target.value };
+                  set("prices", next);
+                }}
+                className="col-span-2 bg-transparent border border-[#1A1414]/15 outline-none p-2 text-sm"
+              >
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="CHF">CHF</option>
+                <option value="GBP">GBP</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => set("prices", form.prices.filter((_, j) => j !== i))}
+                className="col-span-1 text-[#8B1538] hover:text-[#a01a45] text-sm"
+                title="Tarif entfernen"
+                data-testid={`remove-price-${i}`}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
         </div>
 
         <div>
