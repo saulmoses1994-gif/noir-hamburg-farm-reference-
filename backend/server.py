@@ -232,7 +232,9 @@ async def login(payload: LoginInput, response: Response):
     refresh = create_refresh_token(user_id)
     response.set_cookie("access_token", access, httponly=True, secure=True, samesite="none", max_age=8*3600, path="/")
     response.set_cookie("refresh_token", refresh, httponly=True, secure=True, samesite="none", max_age=7*86400, path="/")
-    return {"id": user_id, "email": email, "name": user.get("name"), "role": user.get("role"), "access_token": access}
+    # SEC: don't echo the access_token in the body — httpOnly cookies are the
+    # only intended transport; returning it here would undermine that protection.
+    return {"id": user_id, "email": email, "name": user.get("name"), "role": user.get("role")}
 
 
 @api_router.post("/auth/logout")
@@ -321,7 +323,17 @@ def _blog_doc_to_public(doc: dict) -> dict:
 
 
 @api_router.get("/blog")
-async def list_blog(category: Optional[str] = None, limit: int = 100, include_drafts: bool = False):
+async def list_blog(request: Request, category: Optional[str] = None, limit: int = 100, include_drafts: bool = False):
+    # SEC-001: drafts are admin-only. Silently ignore include_drafts unless the
+    # caller authenticates as an admin so anonymous callers can never read
+    # unpublished posts.
+    if include_drafts:
+        try:
+            user = await get_current_user(request)
+            if user.get("role") != "admin":
+                include_drafts = False
+        except HTTPException:
+            include_drafts = False
     query = {} if include_drafts else {"published": True}
     if category:
         query["category"] = category
@@ -663,10 +675,19 @@ async def shutdown_db_client():
 # ---------- Wire up routes + CORS ----------
 app.include_router(api_router)
 
+# SEC-002: never combine wildcard origin with credentials. Default to the known
+# preview URL; production deployments should set CORS_ORIGINS to an explicit
+# comma-separated list.
+_default_origin = "https://client-portal-385.preview.emergentagent.com"
+_cors_origins_raw = os.environ.get('CORS_ORIGINS', _default_origin)
+_cors_origins = [o.strip() for o in _cors_origins_raw.split(',') if o.strip() and o.strip() != '*']
+if not _cors_origins:
+    _cors_origins = [_default_origin]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=_cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

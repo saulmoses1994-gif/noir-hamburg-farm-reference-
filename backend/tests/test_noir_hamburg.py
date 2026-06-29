@@ -18,17 +18,16 @@ def session():
 
 
 @pytest.fixture(scope="session")
-def admin_token(session):
-    r = session.post(f"{API}/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+def admin_session():
+    """Logged-in session that carries access_token + refresh_token httpOnly cookies."""
+    s = requests.Session()
+    s.headers.update({"Content-Type": "application/json"})
+    r = s.post(f"{API}/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
     assert r.status_code == 200, r.text
-    data = r.json()
-    assert "access_token" in data
-    return data["access_token"]
-
-
-@pytest.fixture(scope="session")
-def admin_headers(admin_token):
-    return {"Authorization": f"Bearer {admin_token}", "Content-Type": "application/json"}
+    assert r.json().get("role") == "admin"
+    # Cookie may or may not appear in r.cookies depending on samesite/secure; check header.
+    assert "access_token=" in r.headers.get("set-cookie", "")
+    return s
 
 
 # ---------- Health ----------
@@ -90,7 +89,7 @@ class TestModels:
         for m in data:
             assert "luxury-escort-hamburg" in m["services"]
 
-    def test_create_update_delete_model(self, session, admin_headers):
+    def test_create_update_delete_model(self, session, admin_session):
         payload = {
             "name": "TEST Tatjana",
             "age": 26,
@@ -100,7 +99,7 @@ class TestModels:
             "locations": ["hamburg"],
             "featured": False,
         }
-        r = requests.post(f"{API}/models", json=payload, headers=admin_headers)
+        r = admin_session.post(f"{API}/models", json=payload)
         assert r.status_code == 200, r.text
         created = r.json()
         slug = created["slug"]
@@ -109,7 +108,7 @@ class TestModels:
 
         # Update
         payload["bio"] = "Updated bio"
-        r = requests.put(f"{API}/models/{slug}", json=payload, headers=admin_headers)
+        r = admin_session.put(f"{API}/models/{slug}", json=payload)
         assert r.status_code == 200
         assert r.json()["bio"] == "Updated bio"
 
@@ -119,7 +118,7 @@ class TestModels:
         assert r.json()["bio"] == "Updated bio"
 
         # Delete
-        r = requests.delete(f"{API}/models/{slug}", headers=admin_headers)
+        r = admin_session.delete(f"{API}/models/{slug}")
         assert r.status_code == 200
         r = session.get(f"{API}/models/{slug}")
         assert r.status_code == 404
@@ -148,7 +147,7 @@ class TestBlog:
         assert post["title"]
         assert post["content"]
 
-    def test_create_delete_blog(self, admin_headers, session):
+    def test_create_delete_blog(self, admin_session, session):
         payload = {
             "title": "TEST Article About Testing",
             "excerpt": "Test excerpt",
@@ -156,7 +155,7 @@ class TestBlog:
             "category": "Test",
             "published": True,
         }
-        r = requests.post(f"{API}/blog", json=payload, headers=admin_headers)
+        r = admin_session.post(f"{API}/blog", json=payload)
         assert r.status_code == 200, r.text
         created = r.json()
         slug = created["slug"]
@@ -165,7 +164,7 @@ class TestBlog:
         r = session.get(f"{API}/blog/{slug}")
         assert r.status_code == 200
 
-        r = requests.delete(f"{API}/blog/{slug}", headers=admin_headers)
+        r = admin_session.delete(f"{API}/blog/{slug}")
         assert r.status_code == 200
 
 
@@ -194,7 +193,8 @@ class TestAuth:
         r = session.post(f"{API}/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
         assert r.status_code == 200
         data = r.json()
-        assert "access_token" in data
+        # SEC: the JWT must NOT be echoed in the body — only delivered via httpOnly cookie.
+        assert "access_token" not in data
         assert data["role"] == "admin"
         # Check cookie present (cookie name is access_token; may not be exposed
         # through r.cookies due to samesite=none + non-https client, so we read the header)
@@ -206,8 +206,8 @@ class TestAuth:
         assert r.status_code == 401
         assert "detail" in r.json()
 
-    def test_me_with_bearer(self, admin_headers):
-        r = requests.get(f"{API}/auth/me", headers=admin_headers)
+    def test_me_with_session_cookie(self, admin_session):
+        r = admin_session.get(f"{API}/auth/me")
         assert r.status_code == 200
         data = r.json()
         assert data["email"] == ADMIN_EMAIL
@@ -238,8 +238,8 @@ class TestContact:
         r = requests.get(f"{API}/contact")
         assert r.status_code == 401
 
-    def test_list_contacts_admin(self, admin_headers):
-        r = requests.get(f"{API}/contact", headers=admin_headers)
+    def test_list_contacts_admin(self, admin_session):
+        r = admin_session.get(f"{API}/contact")
         assert r.status_code == 200
         data = r.json()
         assert isinstance(data, list)
@@ -254,14 +254,14 @@ class TestUpload:
         r = requests.post(f"{API}/upload", files={"file": ("a.txt", b"abc", "text/plain")})
         assert r.status_code == 401
 
-    def test_upload_rejects_non_image(self, admin_token):
-        headers = {"Authorization": f"Bearer {admin_token}"}
-        r = requests.post(f"{API}/upload", headers=headers,
-                          files={"file": ("a.txt", b"abc", "text/plain")})
+    def test_upload_rejects_non_image(self, admin_session):
+        # multipart requires the json default Content-Type be cleared per-request
+        r = admin_session.post(f"{API}/upload",
+                               files={"file": ("a.txt", b"abc", "text/plain")},
+                               headers={"Content-Type": None})
         assert r.status_code == 400
 
-    def test_upload_image_ok(self, admin_token):
-        headers = {"Authorization": f"Bearer {admin_token}"}
+    def test_upload_image_ok(self, admin_session):
         # Minimal valid 1x1 JPEG bytes
         jpg = bytes.fromhex(
             "ffd8ffe000104a46494600010100000100010000ffdb0043000806060706"
@@ -284,8 +284,9 @@ class TestUpload:
             "c8c9cad2d3d4d5d6d7d8d9dae2e3e4e5e6e7e8e9eaf2f3f4f5f6f7f8f9faffda000c03010002"
             "11031100003f00fbfa28a28affd9"
         )
-        r = requests.post(f"{API}/upload", headers=headers,
-                          files={"file": ("test.jpg", jpg, "image/jpeg")})
+        r = admin_session.post(f"{API}/upload",
+                               files={"file": ("test.jpg", jpg, "image/jpeg")},
+                               headers={"Content-Type": None})
         # Could fail if storage not configured - log
         if r.status_code != 200:
             pytest.skip(f"Upload skipped/failed (storage): {r.status_code} {r.text[:200]}")
