@@ -26,6 +26,9 @@ import AdminModelEdit from "@/pages/admin/AdminModelEdit";
 import { AdminBlog, AdminBlogEdit } from "@/pages/admin/AdminBlog";
 import AdminContacts from "@/pages/admin/AdminContacts";
 
+// Misc
+import NotFound from "@/pages/public/NotFound";
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -69,6 +72,9 @@ function App() {
               <Route path="blog/edit/:slug" element={<AdminBlogEdit />} />
               <Route path="contacts" element={<AdminContacts />} />
             </Route>
+
+            {/* 404 catch-all */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

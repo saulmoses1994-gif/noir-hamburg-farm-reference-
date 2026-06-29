@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ModelCard from "@/components/ModelCard";
-import { useSEO } from "@/lib/seo";
+import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { LOCATIONS, SERVICES } from "@/data/site";
 
@@ -71,6 +71,19 @@ export function AreaDetail() {
     title: area ? `${area.title} — Premium Begleitung in ${area.name} | Noir Hamburg` : "",
     description: area ? `${area.title}: ${area.intro} Diskrete Begleitung in ${area.name} – exklusiv vermittelt durch Noir Hamburg.` : "",
     image: area?.image,
+    jsonLd: area ? [
+      {
+        "@context": "https://schema.org",
+        "@type": "Place",
+        "name": `Escort ${area.name}`,
+        "description": area.description,
+        "address": { "@type": "PostalAddress", "addressLocality": area.name, "addressCountry": "DE" },
+      },
+      breadcrumbSchema([
+        { label: "Hamburg Areas", to: "/areas" },
+        { label: area.name },
+      ]),
+    ] : null,
   });
 
   if (!area) {

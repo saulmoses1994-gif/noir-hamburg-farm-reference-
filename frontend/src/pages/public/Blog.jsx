@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { useSEO } from "@/lib/seo";
+import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { BLOG_CATEGORIES, SERVICES, LOCATIONS } from "@/data/site";
 
@@ -88,14 +88,24 @@ export function BlogDetail() {
     title: post?.meta_title || (post ? `${post.title} | Noir Hamburg` : ""),
     description: post?.meta_description || post?.excerpt,
     image: post?.cover_image,
-    jsonLd: post ? {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      "headline": post.title,
-      "image": post.cover_image,
-      "datePublished": post.created_at,
-      "author": { "@type": "Organization", "name": "Noir Hamburg" },
-    } : null,
+    jsonLd: post ? [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": post.title,
+        "image": post.cover_image,
+        "datePublished": post.created_at,
+        "dateModified": post.updated_at || post.created_at,
+        "author": { "@type": "Organization", "name": "Noir Hamburg" },
+        "publisher": { "@type": "Organization", "name": "Noir Hamburg" },
+        "inLanguage": "de-DE",
+        "articleSection": post.category,
+      },
+      breadcrumbSchema([
+        { label: "Blog", to: "/blog" },
+        { label: post.title },
+      ]),
+    ] : null,
   });
 
   if (post === false) return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Artikel nicht gefunden.</div></PublicLayout>;

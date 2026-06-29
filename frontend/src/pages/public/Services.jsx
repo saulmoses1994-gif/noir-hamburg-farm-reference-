@@ -3,13 +3,14 @@ import { ArrowRight } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import SectionTitle from "@/components/SectionTitle";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { useSEO } from "@/lib/seo";
+import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { SERVICES, LOCATIONS } from "@/data/site";
 
 export function ServicesList() {
   useSEO({
     title: "Escort Services Hamburg — Premium Begleitung | Noir Hamburg",
     description: "Acht sorgfältig definierte Servicearten von Noir Hamburg: Luxury, VIP, Business, Dinner, Hotel, Event, Travel und Girlfriend Experience. Diskret. Persönlich.",
+    jsonLd: breadcrumbSchema([{ label: "Services" }]),
   });
 
   return (
@@ -64,14 +65,21 @@ export function ServiceDetail() {
     title: service?.metaTitle,
     description: service?.metaDescription,
     image: service?.image,
-    jsonLd: service ? {
-      "@context": "https://schema.org",
-      "@type": "Service",
-      "name": service.title,
-      "description": service.metaDescription,
-      "provider": { "@type": "LocalBusiness", "name": "Noir Hamburg" },
-      "areaServed": "Hamburg",
-    } : null,
+    jsonLd: service ? [
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": service.title,
+        "description": service.metaDescription,
+        "provider": { "@type": "LocalBusiness", "name": "Noir Hamburg", "areaServed": "Hamburg" },
+        "areaServed": { "@type": "City", "name": "Hamburg" },
+        "serviceType": service.shortLabel,
+      },
+      breadcrumbSchema([
+        { label: "Services", to: "/services" },
+        { label: service.title },
+      ]),
+    ] : null,
   });
 
   if (!service) {

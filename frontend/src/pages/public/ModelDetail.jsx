@@ -4,7 +4,7 @@ import { ArrowRight, MessageCircle, Phone } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ModelCard from "@/components/ModelCard";
-import { useSEO } from "@/lib/seo";
+import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { SERVICES, LOCATIONS, BRAND, FAQS } from "@/data/site";
 
@@ -24,13 +24,21 @@ export default function ModelDetail() {
     title: model ? `${model.name} — Escort Hamburg | Noir Hamburg` : "Model",
     description: model ? `${model.name}, ${model.age} Jahre – ${model.short_tagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.` : "",
     image: model?.cover_image,
-    jsonLd: model ? {
-      "@context": "https://schema.org",
-      "@type": "Person",
-      "name": model.name,
-      "description": model.bio,
-      "knowsLanguage": model.languages,
-    } : null,
+    jsonLd: model ? [
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": model.name,
+        "description": model.bio,
+        "knowsLanguage": model.languages,
+        "image": model.cover_image,
+        "nationality": model.nationality,
+      },
+      breadcrumbSchema([
+        { label: "Models", to: "/models" },
+        { label: model.name },
+      ]),
+    ] : null,
   });
 
   if (model === false) {

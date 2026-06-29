@@ -101,7 +101,11 @@ export default function Home() {
             <div className="relative aspect-[4/5] overflow-hidden rounded-tl-[120px] rounded-br-[120px]">
               <img
                 src="https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=85"
-                alt="Begleitagentur Noir Hamburg"
+                alt="Premium Escort Hamburg — Noir Hamburg Begleitagentur"
+                width="1200"
+                height="1500"
+                fetchpriority="high"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>

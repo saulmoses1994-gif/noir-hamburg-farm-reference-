@@ -460,18 +460,65 @@ LOCATION_SLUGS = [
 @api_router.get("/sitemap.xml", response_class=PlainTextResponse)
 async def sitemap(request: Request):
     host = os.environ.get("SITE_URL", str(request.base_url).rstrip("/"))
-    urls = ["/", "/models", "/escort-hamburg", "/services", "/areas", "/blog", "/faq", "/ueber-uns", "/kontakt"]
-    urls += [f"/services/{s}" for s in SERVICE_SLUGS]
-    urls += [f"/escort/{loc}" for loc in LOCATION_SLUGS]
-    models = await db.models.find({}, {"slug": 1}).to_list(1000)
-    urls += [f"/models/{m['slug']}" for m in models]
-    posts = await db.blog.find({"published": True}, {"slug": 1}).to_list(1000)
-    urls += [f"/blog/{p['slug']}" for p in posts]
-    now = datetime.now(timezone.utc).date().isoformat()
+    if host.endswith("/api"):
+        host = host[:-4]
+
+    static_pages = [
+        ("/", "daily", "1.0"),
+        ("/models", "daily", "0.9"),
+        ("/escort-hamburg", "weekly", "0.9"),
+        ("/services", "weekly", "0.8"),
+        ("/areas", "weekly", "0.8"),
+        ("/blog", "daily", "0.8"),
+        ("/faq", "monthly", "0.6"),
+        ("/ueber-uns", "monthly", "0.5"),
+        ("/kontakt", "monthly", "0.6"),
+    ]
+
+    today = datetime.now(timezone.utc).date().isoformat()
     xml = ['<?xml version="1.0" encoding="UTF-8"?>',
-           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for u in urls:
-        xml.append(f"<url><loc>{host}{u}</loc><lastmod>{now}</lastmod></url>")
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+           'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">']
+
+    for path, freq, prio in static_pages:
+        xml.append(
+            f"<url><loc>{host}{path}</loc><lastmod>{today}</lastmod>"
+            f"<changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
+        )
+    for s in SERVICE_SLUGS:
+        xml.append(
+            f"<url><loc>{host}/services/{s}</loc><lastmod>{today}</lastmod>"
+            f"<changefreq>monthly</changefreq><priority>0.8</priority></url>"
+        )
+    for loc in LOCATION_SLUGS:
+        xml.append(
+            f"<url><loc>{host}/escort/{loc}</loc><lastmod>{today}</lastmod>"
+            f"<changefreq>monthly</changefreq><priority>0.8</priority></url>"
+        )
+
+    # Models with their cover_image as image:image
+    models = await db.models.find({}, {"slug": 1, "cover_image": 1, "created_at": 1}).to_list(2000)
+    for m in models:
+        lm = m.get("created_at")
+        lm_str = lm.date().isoformat() if isinstance(lm, datetime) else today
+        cover = (m.get("cover_image") or "").replace("&", "&amp;")
+        img_tag = f"<image:image><image:loc>{cover}</image:loc></image:image>" if cover.startswith("http") else ""
+        xml.append(
+            f"<url><loc>{host}/models/{m['slug']}</loc><lastmod>{lm_str}</lastmod>"
+            f"<changefreq>weekly</changefreq><priority>0.7</priority>{img_tag}</url>"
+        )
+
+    posts = await db.blog.find({"published": True}, {"slug": 1, "cover_image": 1, "updated_at": 1, "created_at": 1}).to_list(5000)
+    for p in posts:
+        lm = p.get("updated_at") or p.get("created_at")
+        lm_str = lm.date().isoformat() if isinstance(lm, datetime) else today
+        cover = (p.get("cover_image") or "").replace("&", "&amp;")
+        img_tag = f"<image:image><image:loc>{cover}</image:loc></image:image>" if cover.startswith("http") else ""
+        xml.append(
+            f"<url><loc>{host}/blog/{p['slug']}</loc><lastmod>{lm_str}</lastmod>"
+            f"<changefreq>monthly</changefreq><priority>0.7</priority>{img_tag}</url>"
+        )
+
     xml.append("</urlset>")
     return PlainTextResponse("\n".join(xml), media_type="application/xml")
 
