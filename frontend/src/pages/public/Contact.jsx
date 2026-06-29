@@ -15,6 +15,7 @@ export default function Contact() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", message: "",
     service: "", location: "", date: "", model_slug: preSelectedModel,
+    company: "", // honeypot — must stay empty
   });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -119,6 +120,20 @@ export default function Contact() {
             <button type="submit" disabled={sending} className="btn-primary disabled:opacity-50" data-testid="contact-submit">
               {sending ? "Wird gesendet…" : "Anfrage senden"}
             </button>
+
+            {/* Honeypot — visually hidden from users, irresistible to bots. Real
+                visitors never fill this; bots auto-fill all visible fields. */}
+            <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, overflow: "hidden" }}>
+              <label htmlFor="company-website">Firma (nicht ausfüllen)</label>
+              <input
+                id="company-website"
+                type="text"
+                tabIndex="-1"
+                autoComplete="off"
+                value={form.company}
+                onChange={(e) => setField("company", e.target.value)}
+              />
+            </div>
           </form>
 
           {/* Direct Contact */}

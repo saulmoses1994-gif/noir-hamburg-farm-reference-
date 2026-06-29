@@ -12,7 +12,41 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - **Primary user**: Anspruchsvoller Herr in Hamburg/Umland looking for discreet premium companionship
 - **Admin**: Agency operator managing models, blog, contacts
 
-## Implemented (2026-02 — MVP)
+## Implemented (2026-02 — MVP + Self-audit iterations)
+- Public pages: Home, Models, ModelDetail, EscortHamburg, Services list, ServiceDetail (×8), Areas list, AreaDetail (×18), Blog list, BlogDetail, FAQ, About, Contact, 404, **/p/:slug (CMS-managed landing pages, unlimited)**
+- Admin CMS: Login, Dashboard, **Models / Blog / Pages / Contacts** all with full CRUD + image upload
+- Backend endpoints: full /api/auth + /api/models + /api/blog + /api/pages + /api/contact + /api/upload + /api/files + image-extended sitemap + robots
+- SEO: Per-page title/meta/canonical/OG/Twitter, **Organization + WebSite JSON-LD in static HTML**, BreadcrumbList JSON-LD on every detail page, ItemList JSON-LD on /models, FAQPage JSON-LD on /faq, LocalBusiness on Home, Article JSON-LD on blog with publisher/dateModified/inLanguage/articleSection
+- Performance: code-split via React.lazy (each route is its own chunk; public visitors no longer download admin code), font preconnect+preload, image preconnect, LCP hero has fetchpriority=high + width/height (no CLS), images lazy-loaded
+- Accessibility: skip-to-content link, focus-visible ring on all interactive elements, prefers-reduced-motion respected, aria-label on sticky WhatsApp CTA
+- Mobile UX: persistent sticky WhatsApp CTA on mobile only (conversion driver)
+- Security: httpOnly cookies, no token in body, draft posts admin-gated, explicit CORS allowlist, Origin/Referer check on /api/upload (closes SEC-004), honeypot field on /api/contact (silent drop)
+- Seeded: 6 model profiles + 3 magazine-style blog posts
+- Internal linking: Home → all services/locations/models/blog; service pages → related; area pages → nearby + related services + models; blog → related services + locations; CMS Pages → related services + locations
+- Tested: 23/23 backend tests pass, zero frontend lint errors
+
+## SEO Architecture — Honest Assessment
+**The single biggest remaining gap is SSR/SSG.** This site is built on Create React App. Mitigations in place:
+- Organization + WebSite JSON-LD is in the **static** HTML
+- All meta tags, canonical, OG, Twitter, hreflang are in HTML head
+- Sitemap is server-rendered with absolute URLs, image extensions, real lastmod, priority+changefreq
+- Modern Googlebot executes JS — but Bing/Yandex/social-card crawlers don't
+
+**Proper fix: migrate to Next.js (App Router).** Effort: 6-10h. Risk: medium. The data model, schemas, internal-linking patterns and `useSEO` hook port cleanly.
+
+## Backlog (P1)
+- **Next.js migration for true SSR/SSG** — single highest-impact item
+- WebP image optimization pipeline + responsive srcset
+- Rate limiting on /api/auth/login and /api/contact (slowapi)
+- DOMPurify / bleach sanitization on blog HTML
+- Site Settings CMS (phone, email, hours, WhatsApp — currently hardcoded in data/site.js)
+- Search functionality (models + blog)
+- FAQ CMS (currently hardcoded)
+- Email notification on /api/contact (Resend / SendGrid)
+- "Neuzugang" badge on models added in last 30 days
+- Multi-language toggle (DE/EN)
+- Newsletter capture
+- Real WhatsApp & phone numbers replacing placeholders
 - Public pages: Home, Models, ModelDetail, EscortHamburg, Services list, ServiceDetail (×8), Areas list, AreaDetail (×18), Blog list, BlogDetail, FAQ, About, Contact, 404
 - Admin CMS: Login, Dashboard, Models CRUD with image upload, Blog CRUD with image upload, Contacts list with status management
 - Backend endpoints: /api/auth/{login,logout,me}, /api/models (GET/POST/PUT/DELETE), /api/blog (GET/POST/PUT/DELETE — drafts admin-only), /api/contact (POST/GET/PUT), /api/upload, /api/files/{path}, /api/sitemap.xml (image-extended, real lastmod, priority+changefreq), /api/robots.txt

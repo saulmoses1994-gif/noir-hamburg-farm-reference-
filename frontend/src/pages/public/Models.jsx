@@ -22,6 +22,17 @@ export default function Models() {
   useSEO({
     title: "Models — Premium Escort Hamburg | Noir Hamburg",
     description: "Entdecken Sie das aktuelle Roster von Noir Hamburg – sorgfältig ausgewählte Persönlichkeiten für anspruchsvolle Begleitung in Hamburg und Umland.",
+    jsonLd: models.length > 0 ? {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": models.slice(0, 30).map((m, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "url": `${typeof window !== "undefined" ? window.location.origin : ""}/models/${m.slug}`,
+        "name": m.name,
+        "image": m.cover_image,
+      })),
+    } : null,
   });
 
   return (

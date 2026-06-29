@@ -18,6 +18,7 @@ export default function AdminLayout() {
     { to: "/admin", label: "Dashboard", icon: Home, end: true },
     { to: "/admin/models", label: "Models", icon: Users },
     { to: "/admin/blog", label: "Blog", icon: FileText },
+    { to: "/admin/pages", label: "Pages", icon: FileText },
     { to: "/admin/contacts", label: "Anfragen", icon: Inbox },
   ];
 

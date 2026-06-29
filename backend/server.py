@@ -209,6 +209,24 @@ class BlogPostUpdate(BlogPostCreate):
     pass
 
 
+class PageCreate(BaseModel):
+    """A CMS-managed arbitrary landing page (e.g. neighborhood expansion, seasonal campaign)."""
+    title: str
+    h1: Optional[str] = ""
+    intro: Optional[str] = ""
+    content: str  # HTML
+    hero_image: Optional[str] = ""
+    meta_title: Optional[str] = ""
+    meta_description: Optional[str] = ""
+    related_services: List[str] = []
+    related_locations: List[str] = []
+    published: bool = True
+
+
+class PageUpdate(PageCreate):
+    pass
+
+
 class ContactCreate(BaseModel):
     name: str
     email: EmailStr
@@ -218,6 +236,8 @@ class ContactCreate(BaseModel):
     service: Optional[str] = ""
     date: Optional[str] = ""
     location: Optional[str] = ""
+    # Honeypot field — real users leave it empty; bots fill all visible fields.
+    company: Optional[str] = ""
 
 
 # ---------- Auth Endpoints ----------
@@ -388,7 +408,13 @@ async def delete_blog(slug: str, _: dict = Depends(require_admin)):
 # ---------- Contact / Bookings ----------
 @api_router.post("/contact")
 async def submit_contact(payload: ContactCreate):
+    # Honeypot — if the hidden `company` field is filled, it's a bot.
+    # Return success so spammers don't learn we're filtering.
+    if payload.company:
+        logger.info("Honeypot triggered for contact submission")
+        return {"ok": True, "id": "noop"}
     doc = payload.model_dump()
+    doc.pop("company", None)  # never persist the honeypot
     doc["id"] = str(uuid.uuid4())
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     doc["status"] = "new"
@@ -408,12 +434,86 @@ async def update_contact(contact_id: str, status: str = Query(...), _: dict = De
     return {"ok": True}
 
 
+# ---------- Pages CMS (arbitrary landing pages) ----------
+def _page_doc_to_public(doc: dict) -> dict:
+    doc["id"] = str(doc.pop("_id"))
+    if "created_at" in doc and isinstance(doc["created_at"], datetime):
+        doc["created_at"] = doc["created_at"].isoformat()
+    if "updated_at" in doc and isinstance(doc["updated_at"], datetime):
+        doc["updated_at"] = doc["updated_at"].isoformat()
+    return doc
+
+
+@api_router.get("/pages")
+async def list_pages(request: Request, include_drafts: bool = False):
+    if include_drafts:
+        try:
+            user = await get_current_user(request)
+            if user.get("role") != "admin":
+                include_drafts = False
+        except HTTPException:
+            include_drafts = False
+    query = {} if include_drafts else {"published": True}
+    docs = await db.pages.find(query).sort("created_at", -1).limit(500).to_list(500)
+    return [_page_doc_to_public(d) for d in docs]
+
+
+@api_router.get("/pages/{slug}")
+async def get_page(slug: str):
+    doc = await db.pages.find_one({"slug": slug, "published": True})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Page not found")
+    return _page_doc_to_public(doc)
+
+
+@api_router.post("/pages")
+async def create_page(payload: PageCreate, _: dict = Depends(require_admin)):
+    base_slug = slugify(payload.title)
+    slug = base_slug
+    n = 1
+    while await db.pages.find_one({"slug": slug}):
+        n += 1
+        slug = f"{base_slug}-{n}"
+    doc = payload.model_dump()
+    doc["slug"] = slug
+    doc["created_at"] = datetime.now(timezone.utc)
+    doc["updated_at"] = doc["created_at"]
+    result = await db.pages.insert_one(doc)
+    return _page_doc_to_public(await db.pages.find_one({"_id": result.inserted_id}))
+
+
+@api_router.put("/pages/{slug}")
+async def update_page(slug: str, payload: PageUpdate, _: dict = Depends(require_admin)):
+    update_doc = payload.model_dump()
+    update_doc["updated_at"] = datetime.now(timezone.utc)
+    result = await db.pages.update_one({"slug": slug}, {"$set": update_doc})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Page not found")
+    return _page_doc_to_public(await db.pages.find_one({"slug": slug}))
+
+
+@api_router.delete("/pages/{slug}")
+async def delete_page(slug: str, _: dict = Depends(require_admin)):
+    result = await db.pages.delete_one({"slug": slug})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Page not found")
+    return {"ok": True}
+
+
 # ---------- File Upload ----------
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 
 @api_router.post("/upload")
-async def upload_image(file: UploadFile = File(...), _: dict = Depends(require_admin)):
+async def upload_image(request: Request, file: UploadFile = File(...), _: dict = Depends(require_admin)):
+    # SEC-004: simple anti-CSRF gate. State-changing multipart endpoints skip
+    # CORS preflight, so we explicitly require an Origin (or Referer) that
+    # matches our allow-list. Server-to-server callers can pass through with no
+    # Origin header at all — only browsers send one cross-origin.
+    origin = request.headers.get("origin") or request.headers.get("referer", "")
+    if origin:
+        if not any(origin.startswith(allowed) for allowed in _cors_origins):
+            raise HTTPException(status_code=403, detail="Cross-origin upload blocked")
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status_code=400, detail="Nur Bilddateien erlaubt (JPEG, PNG, WEBP, GIF)")
     ext = (file.filename or "img").split(".")[-1].lower() if "." in (file.filename or "") else "jpg"
@@ -519,6 +619,18 @@ async def sitemap(request: Request):
             f"<changefreq>monthly</changefreq><priority>0.7</priority>{img_tag}</url>"
         )
 
+    # CMS-managed landing pages
+    pages = await db.pages.find({"published": True}, {"slug": 1, "hero_image": 1, "updated_at": 1, "created_at": 1}).to_list(5000)
+    for pg in pages:
+        lm = pg.get("updated_at") or pg.get("created_at")
+        lm_str = lm.date().isoformat() if isinstance(lm, datetime) else today
+        hero = (pg.get("hero_image") or "").replace("&", "&amp;")
+        img_tag = f"<image:image><image:loc>{hero}</image:loc></image:image>" if hero.startswith("http") else ""
+        xml.append(
+            f"<url><loc>{host}/p/{pg['slug']}</loc><lastmod>{lm_str}</lastmod>"
+            f"<changefreq>monthly</changefreq><priority>0.6</priority>{img_tag}</url>"
+        )
+
     xml.append("</urlset>")
     return PlainTextResponse("\n".join(xml), media_type="application/xml")
 
@@ -541,6 +653,7 @@ async def startup():
         await db.users.create_index("email", unique=True)
         await db.models.create_index("slug", unique=True)
         await db.blog.create_index("slug", unique=True)
+        await db.pages.create_index("slug", unique=True)
         await db.contacts.create_index("created_at")
     except Exception as e:
         logger.warning(f"Index creation: {e}")
