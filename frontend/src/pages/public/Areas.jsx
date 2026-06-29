@@ -7,24 +7,34 @@ import ModelCard from "@/components/ModelCard";
 import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { LOCATIONS, SERVICES } from "@/data/site";
+import { useI18n } from "@/lib/i18n";
+
+const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${key}En`] : o[key]);
 
 export function AreasList() {
+  const { lang, t, to } = useI18n();
   useSEO({
-    title: "Hamburg Areas — Premium Escort in der ganzen Metropolregion | Noir Hamburg",
-    description: "Premium Escort in Hamburg und Umland: HafenCity, Blankenese, Harvestehude, Eppendorf, Altona und weitere Stadtteile. Diskrete Begleitung in Ihrer Nähe.",
+    title: lang === "en"
+      ? "Hamburg Areas — Premium Escort across the Metropolitan Region | Noir Hamburg"
+      : "Hamburg Areas — Premium Escort in der ganzen Metropolregion | Noir Hamburg",
+    description: lang === "en"
+      ? "Premium escort in Hamburg and the surrounding region: HafenCity, Blankenese, Harvestehude, Eppendorf, Altona and further districts."
+      : "Premium Escort in Hamburg und Umland: HafenCity, Blankenese, Harvestehude, Eppendorf, Altona und weitere Stadtteile. Diskrete Begleitung in Ihrer Nähe.",
   });
 
   return (
     <PublicLayout>
       <section className="px-6 md:px-12 lg:px-16 pt-12 pb-8" data-testid="areas-list">
-        <Breadcrumbs items={[{ label: "Hamburg Areas" }]} />
+        <Breadcrumbs items={[{ label: t("crumb.areas") }]} />
         <div className="mt-8 max-w-3xl">
-          <span className="overline">Reichweite</span>
+          <span className="overline">{lang === "en" ? "Coverage" : "Reichweite"}</span>
           <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
             Hamburg <em className="italic accent-text">Areas</em>
           </h1>
           <p className="mt-6 text-lg font-light text-[#6B5F5F] leading-relaxed">
-            Wir begleiten Sie in der gesamten Metropolregion Hamburg. Wählen Sie Ihren Stadtteil.
+            {lang === "en"
+              ? "We accompany you throughout the entire Hamburg metropolitan region. Choose your district."
+              : "Wir begleiten Sie in der gesamten Metropolregion Hamburg. Wählen Sie Ihren Stadtteil."}
           </p>
         </div>
       </section>
@@ -34,7 +44,7 @@ export function AreasList() {
           {LOCATIONS.map((l) => (
             <Link
               key={l.slug}
-              to={`/escort/${l.slug}`}
+              to={to(`/escort/${l.slug}`)}
               className="bg-[#FFFFFF] hover:bg-[#FBF7F4] transition-colors duration-500 group block"
               data-testid={`area-card-${l.slug}`}
             >
@@ -43,9 +53,9 @@ export function AreasList() {
               </div>
               <div className="p-8">
                 <h2 className="font-heading text-2xl">{l.title}</h2>
-                <p className="text-sm font-light text-[#6B5F5F] mt-2 leading-relaxed">{l.intro}</p>
+                <p className="text-sm font-light text-[#6B5F5F] mt-2 leading-relaxed">{pick(l, "intro", lang)}</p>
                 <div className="mt-5 inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] accent-text">
-                  Mehr <ArrowRight size={12} />
+                  {lang === "en" ? "More" : "Mehr"} <ArrowRight size={12} />
                 </div>
               </div>
             </Link>
@@ -60,6 +70,7 @@ export function AreaDetail() {
   const { slug } = useParams();
   const area = LOCATIONS.find((l) => l.slug === slug);
   const [models, setModels] = useState([]);
+  const { lang, t, to } = useI18n();
 
   useEffect(() => {
     if (slug) {
@@ -67,27 +78,34 @@ export function AreaDetail() {
     }
   }, [slug]);
 
+  const intro = area ? pick(area, "intro", lang) : "";
+  const description = area ? pick(area, "description", lang) : "";
+
   useSEO({
-    title: area ? `${area.title} — Premium Begleitung in ${area.name} | Noir Hamburg` : "",
-    description: area ? `${area.title}: ${area.intro} Diskrete Begleitung in ${area.name} – exklusiv vermittelt durch Noir Hamburg.` : "",
+    title: area ? (lang === "en"
+      ? `${area.title} — Premium Companionship in ${area.name} | Noir Hamburg`
+      : `${area.title} — Premium Begleitung in ${area.name} | Noir Hamburg`) : "",
+    description: area ? (lang === "en"
+      ? `${area.title}: ${intro} Discreet companionship in ${area.name} — exclusively arranged by Noir Hamburg.`
+      : `${area.title}: ${intro} Diskrete Begleitung in ${area.name} – exklusiv vermittelt durch Noir Hamburg.`) : "",
     image: area?.image,
     jsonLd: area ? [
       {
         "@context": "https://schema.org",
         "@type": "Place",
         "name": `Escort ${area.name}`,
-        "description": area.description,
+        "description": description,
         "address": { "@type": "PostalAddress", "addressLocality": area.name, "addressCountry": "DE" },
       },
       breadcrumbSchema([
-        { label: "Hamburg Areas", to: "/areas" },
+        { label: t("crumb.areas"), to: "/areas" },
         { label: area.name },
       ]),
     ] : null,
   });
 
   if (!area) {
-    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">Standort nicht gefunden.</div></PublicLayout>;
+    return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">{lang === "en" ? "Location not found." : "Standort nicht gefunden."}</div></PublicLayout>;
   }
 
   const nearby = LOCATIONS.filter((l) => l.slug !== area.slug).slice(0, 6);
@@ -100,22 +118,24 @@ export function AreaDetail() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
         </div>
         <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">
-          <Breadcrumbs items={[{ label: "Hamburg Areas", to: "/areas" }, { label: area.name }]} dark />
+          <Breadcrumbs items={[{ label: t("crumb.areas"), to: "/areas" }, { label: area.name }]} dark />
           <span className="overline block mt-6 mb-4 text-[#E5A5B5]">Escort {area.name}</span>
           <h1 className="font-heading text-5xl lg:text-7xl font-semibold tracking-tight leading-tight text-white">{area.title}</h1>
-          <p className="font-heading italic text-xl text-white/80 mt-4">{area.intro}</p>
+          <p className="font-heading italic text-xl text-white/80 mt-4">{intro}</p>
         </div>
       </section>
 
       <section className="px-6 md:px-12 lg:px-16 py-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-7">
-            <h2 className="font-heading text-3xl lg:text-4xl mb-8">Begleitung in {area.name}</h2>
-            <p className="text-base lg:text-lg font-light text-[#6B5F5F] leading-relaxed">{area.description}</p>
+            <h2 className="font-heading text-3xl lg:text-4xl mb-8">
+              {lang === "en" ? `Companionship in ${area.name}` : `Begleitung in ${area.name}`}
+            </h2>
+            <p className="text-base lg:text-lg font-light text-[#6B5F5F] leading-relaxed">{description}</p>
 
             {area.landmarks?.length > 0 && (
               <div className="mt-12">
-                <span className="overline mb-4 block">Beliebte Adressen</span>
+                <span className="overline mb-4 block">{t("sec.popularAddresses")}</span>
                 <div className="flex flex-wrap gap-2">
                   {area.landmarks.map((lm) => (
                     <span key={lm} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15">{lm}</span>
@@ -125,26 +145,26 @@ export function AreaDetail() {
             )}
 
             <div className="mt-12 flex gap-4 flex-wrap">
-              <Link to="/kontakt" className="btn-primary">In {area.name} buchen <ArrowRight size={14} /></Link>
+              <Link to={to("/kontakt")} className="btn-primary">{t("cta.bookInArea", { name: area.name })} <ArrowRight size={14} /></Link>
             </div>
           </div>
 
           <aside className="lg:col-span-4 lg:col-start-9 space-y-10">
             <div>
-              <span className="overline mb-3 block">Beliebte Services</span>
+              <span className="overline mb-3 block">{t("sec.popularServices")}</span>
               <ul className="space-y-3">
                 {SERVICES.slice(0, 5).map((s) => (
                   <li key={s.slug}>
-                    <Link to={`/services/${s.slug}`} className="font-heading text-xl hover:accent-text transition-colors block py-1">{s.title}</Link>
+                    <Link to={to(`/services/${s.slug}`)} className="font-heading text-xl hover:accent-text transition-colors block py-1">{s.title}</Link>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <span className="overline mb-3 block">In der Nähe</span>
+              <span className="overline mb-3 block">{t("sec.nearby")}</span>
               <div className="flex flex-wrap gap-2">
                 {nearby.map((l) => (
-                  <Link key={l.slug} to={`/escort/${l.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">{l.name}</Link>
+                  <Link key={l.slug} to={to(`/escort/${l.slug}`)} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">{l.name}</Link>
                 ))}
               </div>
             </div>
@@ -154,7 +174,7 @@ export function AreaDetail() {
 
       {models.length > 0 && (
         <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-[#1A1414]/8">
-          <h2 className="font-heading text-3xl mb-12">Models in {area.name}</h2>
+          <h2 className="font-heading text-3xl mb-12">{lang === "en" ? `Companions in ${area.name}` : `Models in ${area.name}`}</h2>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
             {models.map((m, i) => <ModelCard key={m.id} model={m} index={i} />)}
           </div>

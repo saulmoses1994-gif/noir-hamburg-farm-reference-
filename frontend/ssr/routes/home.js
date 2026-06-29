@@ -35,7 +35,7 @@ async function renderHome(buildAssets, lang = "de") {
 </section>
 <section>
 <h2>${esc(t("sec.whatWeOffer", lang))}</h2>
-<ul>${SERVICES.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}"><strong>${esc(s.title)}</strong> — ${esc(s.description)}</a></li>`).join("")}</ul>
+<ul>${SERVICES.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}"><strong>${esc(s.title)}</strong> — ${esc(lang === "en" ? s.descriptionEn : s.description)}</a></li>`).join("")}</ul>
 </section>
 <section>
 <h2>${esc(t("sec.hamburgRegion", lang))}</h2>
@@ -48,7 +48,7 @@ ${posts.map((p) => `<article><h3><a href="${navTo(`/blog/${p.slug}`, lang)}">${e
 </section>
 <section>
 <h2>${esc(t("sec.faq", lang))}</h2>
-${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(f.q)}</strong></summary><p>${esc(f.a)}</p></details>`).join("")}
+${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f.qEn : f.q)}</strong></summary><p>${esc(lang === "en" ? f.aEn : f.a)}</p></details>`).join("")}
 </section>
 </main>`;
 
@@ -84,8 +84,8 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(f.q)}</strong></s
         "@type": "FAQPage",
         mainEntity: FAQS.map((f) => ({
           "@type": "Question",
-          name: f.q,
-          acceptedAnswer: { "@type": "Answer", text: f.a },
+          name: lang === "en" ? f.qEn : f.q,
+          acceptedAnswer: { "@type": "Answer", text: lang === "en" ? f.aEn : f.a },
         })),
       },
     ],

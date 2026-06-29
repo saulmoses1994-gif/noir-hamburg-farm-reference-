@@ -32,10 +32,9 @@ function renderAreasList(buildAssets, lang = "de") {
 ${renderBreadcrumbs([{ label: t("crumb.areas", lang) }], lang)}
 <h1>Hamburg Areas</h1>
 <p>${esc(leadByLang[lang])}</p>
-${englishComingSoonBanner(lang)}
 ${LOCATIONS.map((l) => `
 <article><h2><a href="${navTo(`/escort/${l.slug}`, lang)}">${esc(l.title)}</a></h2>
-<p>${esc(l.intro)}</p></article>`).join("")}
+<p>${esc(lang === "en" ? l.introEn : l.intro)}</p></article>`).join("")}
 </main>`;
   return renderShell({
     ...buildAssets,
@@ -52,6 +51,8 @@ function renderAreaDetail(slug, buildAssets, lang = "de") {
   const l = LOCATIONS.find((x) => x.slug === slug);
   if (!l) return null;
   const nearby = LOCATIONS.filter((x) => x.slug !== l.slug).slice(0, 6);
+  const intro = lang === "en" ? l.introEn : l.intro;
+  const description = lang === "en" ? l.descriptionEn : l.description;
 
   const titleByLang = {
     de: `${l.title} — Premium Begleitung in ${l.name} | Noir Hamburg`,
@@ -59,18 +60,17 @@ function renderAreaDetail(slug, buildAssets, lang = "de") {
   };
   const descByLang = {
     de: `${l.title}: ${l.intro} Diskrete Begleitung in ${l.name} – exklusiv vermittelt durch Noir Hamburg.`,
-    en: `${l.title}: ${l.intro} Discreet companionship in ${l.name} — exclusively arranged by Noir Hamburg.`,
+    en: `${l.title}: ${l.introEn} Discreet companionship in ${l.name} — exclusively arranged by Noir Hamburg.`,
   };
 
   const body = `
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.areas", lang), to: "/areas" }, { label: l.name }], lang)}
-${englishComingSoonBanner(lang)}
 <article>
 <h1>${esc(l.title)}</h1>
-<p><em>${esc(l.intro)}</em></p>
+<p><em>${esc(intro)}</em></p>
 ${l.image ? `<img src="${escAttr(l.image)}" alt="${escAttr(l.title)}" width="800" loading="eager"/>` : ""}
-<p>${esc(l.description)}</p>
+<p>${esc(description)}</p>
 ${(l.landmarks || []).length > 0 ? `<h2>${esc(t("sec.popularAddresses", lang))}</h2><ul>${l.landmarks.map((lm) => `<li>${esc(lm)}</li>`).join("")}</ul>` : ""}
 <h2>${esc(t("sec.popularServices", lang))}</h2>
 <ul>${SERVICES.slice(0, 5).map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}">${esc(s.title)}</a></li>`).join("")}</ul>
@@ -91,7 +91,7 @@ ${(l.landmarks || []).length > 0 ? `<h2>${esc(t("sec.popularAddresses", lang))}<
         "@context": "https://schema.org",
         "@type": "Place",
         name: `Escort ${l.name}`,
-        description: l.description,
+        description: description,
         address: { "@type": "PostalAddress", addressLocality: l.name, addressCountry: "DE" },
       },
       breadcrumbSchema([{ label: t("crumb.areas", lang), to: "/areas" }, { label: l.name }], lang),
@@ -120,7 +120,7 @@ ${renderBreadcrumbs([{ label: t("crumb.escortHamburg", lang) }], lang)}
 <h1>Escort Hamburg</h1>
 <p>${esc(introByLang[lang])}</p>
 <h2>${esc(t("sec.whatWeOffer", lang))}</h2>
-<ul>${SERVICES.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}"><strong>${esc(s.title)}</strong> — ${esc(s.description)}</a></li>`).join("")}</ul>
+<ul>${SERVICES.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}"><strong>${esc(s.title)}</strong> — ${esc(lang === "en" ? s.descriptionEn : s.description)}</a></li>`).join("")}</ul>
 <h2>${esc(t("sec.hamburgRegion", lang))}</h2>
 <ul>${LOCATIONS.map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}">Escort ${esc(l.name)}</a></li>`).join("")}</ul>
 <p><a href="${navTo("/models", lang)}">${esc(t("cta.discoverModels", lang))}</a> · <a href="${navTo("/kontakt", lang)}">${esc(t("cta.sendRequest", lang))}</a></p>

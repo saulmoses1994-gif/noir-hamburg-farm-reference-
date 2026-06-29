@@ -8,10 +8,14 @@ import ModelCard from "@/components/ModelCard";
 import { useSEO } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { SERVICES, LOCATIONS, ADVANTAGES, FAQS, BRAND } from "@/data/site";
+import { useI18n } from "@/lib/i18n";
+
+const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${key}En`] : o[key]);
 
 export default function Home() {
   const [models, setModels] = useState([]);
   const [posts, setPosts] = useState([]);
+  const { lang } = useI18n();
 
   useEffect(() => {
     api.get("/models").then((r) => setModels(r.data.slice(0, 8))).catch(() => {});
@@ -161,7 +165,7 @@ export default function Home() {
             >
               <span className="overline">{s.shortLabel}</span>
               <h3 className="font-heading text-xl mt-3 mb-2 text-[#1A1414] group-hover:accent-text transition-colors">{s.title}</h3>
-              <p className="text-sm text-[#6B5F5F] leading-relaxed line-clamp-3">{s.description}</p>
+              <p className="text-sm text-[#6B5F5F] leading-relaxed line-clamp-3">{pick(s, "description", lang)}</p>
               <div className="mt-4 text-xs uppercase tracking-wider font-semibold inline-flex items-center gap-2 accent-text">
                 Mehr <ArrowRight size={12} />
               </div>
@@ -240,10 +244,10 @@ export default function Home() {
             {FAQS.slice(0, 4).map((f, i) => (
               <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`faq-${i}`}>
                 <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
-                  <span className="font-heading text-lg text-[#1A1414]">{f.q}</span>
+                  <span className="font-heading text-lg text-[#1A1414]">{lang === "en" ? f.qEn : f.q}</span>
                   <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                 </summary>
-                <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{f.a}</div>
+                <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{lang === "en" ? f.aEn : f.a}</div>
               </details>
             ))}
           </div>

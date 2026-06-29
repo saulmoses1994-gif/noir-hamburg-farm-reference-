@@ -1,11 +1,21 @@
+import { useLocation } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import MobileStickyCTA from "@/components/MobileStickyCTA";
 import { useI18n } from "@/lib/i18n";
 
+/**
+ * Show the "EN preview" banner only on EN routes whose body copy is still
+ * admin-managed (model bios, blog posts). Site-wide static content (services,
+ * areas, FAQ, home, about, contact) has full English copy as of Feb 2026.
+ */
 function EnPreviewBanner() {
   const { lang, t } = useI18n();
+  const { pathname } = useLocation();
   if (lang !== "en") return null;
+  const showBanner =
+    /^\/en\/models\/[^/]+/.test(pathname) || /^\/en\/blog\/[^/]+/.test(pathname);
+  if (!showBanner) return null;
   return (
     <aside
       data-testid="en-preview-banner"

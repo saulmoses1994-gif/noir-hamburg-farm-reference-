@@ -41,7 +41,6 @@ async function renderModels(buildAssets, lang = "de") {
 ${renderBreadcrumbs([{ label: t("crumb.models", lang) }], lang)}
 <h1>${esc(h1ByLang[lang])}</h1>
 <p>${esc(leadByLang[lang])}</p>
-${englishComingSoonBanner(lang)}
 <ul>
 ${models.map((m) => `<li><a href="${navTo(`/models/${m.slug}`, lang)}"><strong>${esc(m.name)}</strong>, ${m.age} ${esc(t("model.years", lang))}, ${m.height_cm || ""}cm — ${esc(m.short_tagline || "")}</a><br/>${esc(t("model.languages", lang))}: ${(m.languages || []).map(esc).join(", ")}<br/>${esc(t("model.availableIn", lang))}: ${(m.locations || []).map(esc).join(", ")}</li>`).join("")}
 </ul>

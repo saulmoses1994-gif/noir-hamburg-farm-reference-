@@ -5,11 +5,19 @@ import SectionTitle from "@/components/SectionTitle";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useSEO } from "@/lib/seo";
 import { SERVICES, LOCATIONS } from "@/data/site";
+import { useI18n } from "@/lib/i18n";
+
+const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${key}En`] : o[key]);
 
 export default function EscortHamburg() {
+  const { lang } = useI18n();
   useSEO({
-    title: "Escort Hamburg — Premium Begleitagentur | Noir Hamburg",
-    description: "Escort Hamburg auf höchstem Niveau: Diskret, gebildet, hanseatisch elegant. Sorgfältig ausgewählte Models für anspruchsvolle Herren in Hamburg und Umland.",
+    title: lang === "en"
+      ? "Escort Hamburg — Premium Companion Agency | Noir Hamburg"
+      : "Escort Hamburg — Premium Begleitagentur | Noir Hamburg",
+    description: lang === "en"
+      ? "Escort Hamburg at the highest level: discreet, well-educated, hanseatic elegance. Carefully selected companions for discerning gentlemen in Hamburg and surroundings."
+      : "Escort Hamburg auf höchstem Niveau: Diskret, gebildet, hanseatisch elegant. Sorgfältig ausgewählte Models für anspruchsvolle Herren in Hamburg und Umland.",
   });
 
   return (
@@ -56,7 +64,7 @@ export default function EscortHamburg() {
           {SERVICES.map((s) => (
             <Link key={s.slug} to={`/services/${s.slug}`} className="bg-[#FBF7F4] hover:bg-[#F2EAE4] transition-colors duration-500 p-6 group">
               <h3 className="font-heading text-xl group-hover:accent-text">{s.title}</h3>
-              <p className="text-xs font-light text-[#6B5F5F] mt-2 line-clamp-2">{s.description}</p>
+              <p className="text-xs font-light text-[#6B5F5F] mt-2 line-clamp-2">{pick(s, "description", lang)}</p>
               <div className="mt-4 text-xs font-mono uppercase tracking-[0.2em] inline-flex items-center gap-2 group-hover:accent-text">Details <ArrowRight size={12} /></div>
             </Link>
           ))}

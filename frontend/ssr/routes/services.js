@@ -33,11 +33,10 @@ function renderServicesList(buildAssets, lang = "de") {
 ${renderBreadcrumbs([{ label: t("crumb.services", lang) }], lang)}
 <h1>${esc(h1ByLang[lang])}</h1>
 <p>${esc(leadByLang[lang])}</p>
-${englishComingSoonBanner(lang)}
 ${SERVICES.map((s) => `
 <article><h2><a href="${navTo(`/services/${s.slug}`, lang)}">${esc(s.title)}</a></h2>
-<p><em>${esc(s.tagline)}</em></p>
-<p>${esc(s.description)}</p>
+<p><em>${esc(lang === "en" ? s.taglineEn : s.tagline)}</em></p>
+<p>${esc(lang === "en" ? s.descriptionEn : s.description)}</p>
 <p><a href="${navTo(`/services/${s.slug}`, lang)}">${esc(t("cta.viewDetails", lang))}</a></p></article>`).join("")}
 </main>`;
   return renderShell({
@@ -54,17 +53,21 @@ ${SERVICES.map((s) => `
 function renderServiceDetail(slug, buildAssets, lang = "de") {
   const s = SERVICES.find((x) => x.slug === slug);
   if (!s) return null;
+  const tagline = lang === "en" ? s.taglineEn : s.tagline;
+  const longCopy = lang === "en" ? s.longCopyEn : s.longCopy;
+  const keypoints = lang === "en" ? s.keypointsEn : s.keypoints;
+  const metaTitle = lang === "en" ? s.metaTitleEn : s.metaTitle;
+  const metaDescription = lang === "en" ? s.metaDescriptionEn : s.metaDescription;
   const body = `
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.services", lang), to: "/services" }, { label: s.title }], lang)}
-${englishComingSoonBanner(lang)}
 <article>
 <h1>${esc(s.h1)}</h1>
-<p><em>${esc(s.tagline)}</em></p>
+<p><em>${esc(tagline)}</em></p>
 ${s.image ? `<img src="${escAttr(s.image)}" alt="${escAttr(s.title)}" width="800" loading="eager"/>` : ""}
-<p>${esc(s.longCopy)}</p>
+<p>${esc(longCopy)}</p>
 <h2>${esc(t("sec.characteristics", lang))}</h2>
-<ul>${s.keypoints.map((k) => `<li>${esc(k)}</li>`).join("")}</ul>
+<ul>${keypoints.map((k) => `<li>${esc(k)}</li>`).join("")}</ul>
 <h2>${esc(t("sec.availableIn", lang))}</h2>
 <ul>${LOCATIONS.slice(0, 10).map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}">Escort ${esc(l.name)}</a></li>`).join("")}</ul>
 <p><a href="${navTo("/kontakt", lang)}">${esc(t("cta.bookNow", lang))}</a> · <a href="${navTo("/models", lang)}">${esc(t("cta.discoverModels", lang))}</a></p>
@@ -73,8 +76,8 @@ ${s.image ? `<img src="${escAttr(s.image)}" alt="${escAttr(s.title)}" width="800
   return renderShell({
     ...buildAssets,
     lang,
-    title: s.metaTitle,
-    description: s.metaDescription,
+    title: metaTitle,
+    description: metaDescription,
     canonicalPath: `/services/${s.slug}`,
     ogImage: s.image,
     jsonLd: [
@@ -82,7 +85,7 @@ ${s.image ? `<img src="${escAttr(s.image)}" alt="${escAttr(s.title)}" width="800
         "@context": "https://schema.org",
         "@type": "Service",
         name: s.title,
-        description: s.metaDescription,
+        description: metaDescription,
         provider: { "@type": "LocalBusiness", name: "Noir Hamburg", areaServed: "Hamburg" },
         areaServed: { "@type": "City", name: "Hamburg" },
         serviceType: s.shortLabel,

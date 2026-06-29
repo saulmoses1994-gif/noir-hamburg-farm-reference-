@@ -37,7 +37,6 @@ async function renderBlogList(buildAssets, lang = "de") {
 ${renderBreadcrumbs([{ label: t("crumb.blog", lang) }], lang)}
 <h1>${esc(h1ByLang[lang])}</h1>
 <p>${esc(leadByLang[lang])}</p>
-${englishComingSoonBanner(lang)}
 ${posts.map((p) => `<article><h2><a href="${navTo(`/blog/${p.slug}`, lang)}">${esc(p.title)}</a></h2><p><strong>${esc(p.category)}</strong></p><p>${esc(p.excerpt)}</p></article>`).join("")}
 </main>`;
   return renderShell({

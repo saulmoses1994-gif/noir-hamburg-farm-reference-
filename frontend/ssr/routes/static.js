@@ -26,8 +26,7 @@ function renderFAQ(buildAssets, lang = "de") {
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.faq", lang) }], lang)}
 <h1>${esc(t("sec.faqH1", lang))}</h1>
-${englishComingSoonBanner(lang)}
-${FAQS.map((f) => `<details open><summary><h2 style="display:inline">${esc(f.q)}</h2></summary><p>${esc(f.a)}</p></details>`).join("")}
+${FAQS.map((f) => `<details open><summary><h2 style="display:inline">${esc(lang === "en" ? f.qEn : f.q)}</h2></summary><p>${esc(lang === "en" ? f.aEn : f.a)}</p></details>`).join("")}
 </main>`;
   return renderShell({
     ...buildAssets,
@@ -41,8 +40,8 @@ ${FAQS.map((f) => `<details open><summary><h2 style="display:inline">${esc(f.q)}
         "@type": "FAQPage",
         mainEntity: FAQS.map((f) => ({
           "@type": "Question",
-          name: f.q,
-          acceptedAnswer: { "@type": "Answer", text: f.a },
+          name: lang === "en" ? f.qEn : f.q,
+          acceptedAnswer: { "@type": "Answer", text: lang === "en" ? f.aEn : f.a },
         })),
       },
       breadcrumbSchema([{ label: t("crumb.faq", lang) }], lang),

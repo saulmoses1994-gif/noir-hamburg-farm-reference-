@@ -94,9 +94,17 @@ def test_en_nav_labels_are_english():
     assert ">Magazine<" in html
 
 
-def test_en_preview_banner_present_in_ssr_html():
-    html = _fetch("/en/services").text
-    assert "EN preview" in html
+def test_en_preview_banner_present_on_cms_routes_only():
+    # As of Feb 2026, all site.js-driven pages have full EN copy; the banner
+    # is shown only on /en/models/:slug and /en/blog/:slug where body content
+    # is admin-managed via the CMS and still German.
+    static_pages_html = _fetch("/en/services").text
+    assert "EN preview" not in static_pages_html, \
+        "static EN routes should NOT carry the banner now that site.js has EN copy"
+
+    model_html = _fetch("/en/models/aurelia").text
+    assert "EN preview" in model_html, \
+        "model detail still shows banner (bio is CMS-managed, still German)"
 
 
 def test_404_outside_en_namespace_still_works():
