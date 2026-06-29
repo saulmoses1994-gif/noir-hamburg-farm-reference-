@@ -11,12 +11,18 @@ export default function ModelCard({ model, index = 0 }) {
       data-testid={`model-card-${model.slug}`}
       className={`group block ${isWide ? "md:col-span-8" : "md:col-span-4"} fade-in`}
     >
-      <div className={`editorial-image ${heightClass}`}>
-        <img
-          src={model.cover_image}
-          alt={`${model.name} – Escort Hamburg`}
-          loading="lazy"
-        />
+      <div className={`editorial-image ${heightClass} bg-[#1A1A1D]`}>
+        {model.cover_image ? (
+          <img
+            src={model.cover_image}
+            alt={`${model.name} – Escort Hamburg`}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center font-heading text-6xl text-[#52525B]">
+            {model.name?.[0] || "N"}
+          </div>
+        )}
       </div>
       <div className="mt-5 flex items-baseline justify-between">
         <h3 className="font-heading text-2xl tracking-tight">

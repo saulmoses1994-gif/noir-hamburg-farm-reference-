@@ -9,6 +9,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let mounted = true;
+    const token = typeof window !== "undefined" ? localStorage.getItem("noir_token") : null;
+    if (!token) {
+      setUser(false);
+      setLoading(false);
+      return () => { mounted = false; };
+    }
     api.get("/auth/me")
       .then((r) => mounted && setUser(r.data))
       .catch(() => mounted && setUser(false))
