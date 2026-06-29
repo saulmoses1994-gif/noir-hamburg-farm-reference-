@@ -1,0 +1,33 @@
+{
+  "summary": "SSR migration verified end-to-end. All 13 required public routes now serve full HTML (title, h1, meta description, canonical, JSON-LD, internal links) WITHOUT executing JavaScript — Googlebot/curl gets real content. React SPA still mounts cleanly on top and hides the SSR layer to avoid duplicate content. Admin auth + admin pages work via SPA fallthrough. Backend regression 23/23 pass. New SSR suite 17/17 pass.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ssr_routes.py",
+    "/app/backend/tests/test_noir_hamburg.py",
+    "/app/test_reports/pytest/ssr_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ssr-server.js is 695 lines — still readable but approaching the 700-line guidance; consider splitting route renderers into a /routes folder for future maintainability.",
+    "ssr-data.js duplicates SERVICES/LOCATIONS/FAQS/NAV/BRAND from src/data/site.js. Any future content edit must be made in BOTH files or risk SSR drifting from SPA. Suggest a build step that imports from a single source.",
+    "SSR fetches /api/models, /api/blog on every request to localhost:8001. For high traffic, consider in-memory caching with TTL (e.g., 60s) to reduce backend load.",
+    "Two <h1> elements end up in the DOM (SSR seo-content + React rendered) — the SSR one is hidden via display:none after React mounts, which is correct for users but Lighthouse may still flag duplicate landmark; acceptable trade-off for SEO.",
+    "Inline <style> blocks inside SSR HTML use vendor colours hardcoded; OK for SEO snapshot, but consider extracting to a tiny SSR-only CSS file."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_ssr_routes.py (new — 17 SSR verification tests)"
+  ],
+  "success_rate": { "backend": "100% (23/23 + 17/17 SSR)", "frontend": "100% (SPA mount + admin login + admin/models + admin/contacts verified)" },
+  "test_credentials": "admin@noir-hamburg.de / NoirAdmin2026! (verified working via Playwright)",
+  "seed_data_creation": "None — used existing seed data (Aurelia model, 8 services, 18 areas, blog posts).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "SSR server is at /app/frontend/ssr-server.js + /app/frontend/ssr-data.js. Run `pytest /app/backend/tests/test_ssr_routes.py` for raw-HTTP/no-JS verification. The literal string 'You need to enable JavaScript' WILL appear inside the SPA <noscript> fallback at the bottom of every page — that is expected and harmless; the test asserts that #seo-content with real <h1> content is present BEFORE that, which is what Googlebot indexes.",
+  "rca of the issue": "Original bug: CRA dev server served the SPA shell index.html for all routes, so curl/Googlebot saw only the React placeholder. Fix: replaced `craco start` with a custom Node Express SSR server (ssr-server.js) that pre-renders HTML for every public route by fetching data from FastAPI and embedding it inside a #seo-content div, then loads the React bundle which hides the SSR layer on mount. Verified by GET (no JS) returning real <h1>/<title>/<meta>/JSON-LD for /, /models, /models/aurelia, /services, /services/*, /areas, /escort/*, /escort-hamburg, /blog, /blog/{slug}, /faq, /ueber-uns, /kontakt, /sitemap.xml. Admin routes intentionally fall through to the SPA shell."
+}
