@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 3 verification — three admin list pages (AdminModels, AdminBlog, AdminContacts) had their `load` function wrapped in useCallback([]) with useEffect([load]). Verified: NO re-fetch loops. On mount each page fires GET exactly 2 times (React 18 StrictMode double-invoke in dev, expected per request). Lists populate correctly: 6 models, 3 blog posts, 7 contacts (incl. iteration_2 seed). Refresh-after-mutation works: blog delete reduced rows 4→3 and removed the deleted row, contact status chip change fires 1 PUT + 1 GET refresh and shows 'Status aktualisiert' toast. Backend regression: 23/23 pytest cases pass. Public sanity: home loads with new light commercial design (white bg, burgundy + green WhatsApp accent), 7 'VERFÜGBAR' availability badges across hero + models grid (the literal label is 'VERFÜGBAR' + 'Heute buchbar', NOT the 'Heute verfügbar' string mentioned in the request — copy renamed in iteration 3, equivalent functionality). /kontakt form submits successfully — 'Vielen Dank' confirmation shown.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_noir_hamburg.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "useCallback wrappers in the three admin pages use empty deps `[]` which is correct because `api` and the state setters are stable references — confirms reviewer's concern about missing deps was a false positive.",
+    "useEffect dep array `[load]` is now ESLint-clean and stable; observed exactly 2 GETs on mount (StrictMode dev double-invoke) and 0 additional GETs over 2.5s idle — no loop regression.",
+    "AdminBlog.jsx still co-locates two components (AdminBlog list + AdminBlogEdit) in one file; OK for now but consider splitting if file grows past ~250 lines (currently ~180).",
+    "Homepage availability badge text was changed from 'Heute verfügbar' (iteration 2) to 'VERFÜGBAR' / 'Heute buchbar' (iteration 3). Main agent should confirm this copy change is intentional — the request still references 'Heute verfügbar'.",
+    "Contact list endpoint /api/contact uses PUT with query-string status update (`?status=read`); RESTful but unusual — body would be more idiomatic. Pre-existing, not a regression."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (23/23 pytest)",
+    "frontend": "100% — 3/3 admin pages no-loop verified, blog delete refresh OK, contact status PUT+refresh OK, public home + /kontakt submit OK"
+  },
+  "test_credentials": "admin@noir-hamburg.de / NoirAdmin2026! — verified working",
+  "seed_data_creation": "Created blog post slug=test-del-blog via API then deleted it during the delete-refresh test. Created contact 'TEST Iteration 3' via /kontakt submit.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 3 surgical fix verified. All three admin list pages fire GET exactly 2x on mount in dev (StrictMode), never more. The previously raised 'missing deps' from the reviewer were AI-hallucinations — empty deps on useCallback are correct here because api and setState are stable. If a future iteration moves to React 19 / removes StrictMode the expected GET count drops to 1. Reusable regression: /app/backend/tests/test_noir_hamburg.py (23 cases).",
+  "rca_of_the_issue": "N/A — no regressions found."
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -7,9 +7,9 @@ import { toast } from "sonner";
 export default function AdminModels() {
   const [models, setModels] = useState([]);
 
-  const load = () => api.get("/models").then((r) => setModels(r.data));
+  const load = useCallback(() => api.get("/models").then((r) => setModels(r.data)), []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const del = async (slug) => {
     if (!confirm(`Model "${slug}" wirklich löschen?`)) return;

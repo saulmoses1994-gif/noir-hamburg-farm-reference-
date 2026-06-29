@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import { BLOG_CATEGORIES, SERVICES, LOCATIONS } from "@/data/site";
@@ -8,8 +8,8 @@ import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 export function AdminBlog() {
   const [posts, setPosts] = useState([]);
 
-  const load = () => api.get("/blog?include_drafts=true").then((r) => setPosts(r.data));
-  useEffect(() => { load(); }, []);
+  const load = useCallback(() => api.get("/blog?include_drafts=true").then((r) => setPosts(r.data)), []);
+  useEffect(() => { load(); }, [load]);
 
   const del = async (slug) => {
     if (!confirm("Artikel löschen?")) return;

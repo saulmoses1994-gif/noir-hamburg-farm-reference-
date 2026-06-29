@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -6,8 +6,8 @@ export default function AdminContacts() {
   const [contacts, setContacts] = useState([]);
   const [filter, setFilter] = useState("");
 
-  const load = () => api.get("/contact").then((r) => setContacts(r.data));
-  useEffect(() => { load(); }, []);
+  const load = useCallback(() => api.get("/contact").then((r) => setContacts(r.data)), []);
+  useEffect(() => { load(); }, [load]);
 
   const setStatus = async (id, status) => {
     try {
