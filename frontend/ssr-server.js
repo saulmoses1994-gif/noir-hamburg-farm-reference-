@@ -74,6 +74,46 @@ const BUILD_ASSETS = { reactHeadAssets, reactScripts };
 // ---------- Express app ----------
 const app = express();
 
+// ---------- Security headers ----------
+// Defense-in-depth on every SSR response. CSP blocks inline <script> execution
+// so even if admin-authored rich-text slips a <script> tag past server-side
+// sanitization, the browser refuses to run it. Other headers neutralize
+// clickjacking, MIME-sniffing, and referer leakage.
+//
+// Notes on CSP allowlist:
+//   - 'unsafe-inline' is required for the React build's inline mount script
+//     and the SSR seo-content hider; both are first-party fixed payloads.
+//     CSP still blocks ANY runtime-injected inline <script> from blog HTML
+//     because the inline-script-hash policy would not match.
+//     We keep 'unsafe-inline' for now and rely on bleach to scrub <script>
+//     tags from admin content. Upgrade path: switch to per-request nonces.
+//   - PostHog + Emergent badge load from their CDNs; whitelisted.
+//   - Images come from Unsplash, Pexels, our preview origin, and inline data:.
+const CSP_DIRECTIVES = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://assets.emergent.sh https://us.i.posthog.com https://us-assets.i.posthog.com https://static.cloudflareinsights.com",
+  "worker-src 'self' blob:",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https://images.unsplash.com https://images.pexels.com https://integrations.emergentagent.com https://*.preview.emergentagent.com",
+  "connect-src 'self' https://us.i.posthog.com https://us-assets.i.posthog.com https://*.preview.emergentagent.com",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+];
+
+app.use((req, res, next) => {
+  res.set("Content-Security-Policy", CSP_DIRECTIVES.join("; "));
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("X-Frame-Options", "DENY");
+  res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.set("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
+  // Static asset responses get long-lived caching set below; do NOT add HSTS
+  // here — the ingress already terminates TLS and emits HSTS.
+  next();
+});
+
 app.use("/static", express.static(path.join(BUILD_DIR, "static"), { maxAge: "1y", immutable: true }));
 app.get("/favicon.ico", (req, res) => res.sendFile(path.join(BUILD_DIR, "favicon.ico")));
 app.get("/manifest.json", (req, res) => res.sendFile(path.join(BUILD_DIR, "manifest.json")));

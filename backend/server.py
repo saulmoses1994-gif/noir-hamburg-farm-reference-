@@ -12,6 +12,7 @@ import uuid
 import logging
 import re
 import bcrypt
+import bleach
 import jwt
 import requests
 from datetime import datetime, timezone, timedelta
@@ -38,6 +39,42 @@ logger = logging.getLogger(__name__)
 
 JWT_ALGORITHM = "HS256"
 APP_NAME = os.environ.get("APP_NAME", "noir-hamburg")
+
+# ---------- HTML sanitization (admin-authored rich-text) ----------
+# Defense-in-depth against stored-XSS via a compromised admin account.
+# Whitelist editorial markup only — block <script>, <style>, event handlers,
+# javascript: URLs, etc. Output of this sanitizer is safe to interpolate into
+# SSR HTML without further escaping.
+SAFE_TAGS = [
+    "p", "br", "hr", "strong", "em", "b", "i", "u", "s",
+    "h1", "h2", "h3", "h4", "h5", "h6",
+    "ul", "ol", "li",
+    "blockquote", "pre", "code",
+    "a", "img",
+    "figure", "figcaption",
+    "table", "thead", "tbody", "tr", "th", "td",
+    "span", "div",
+]
+SAFE_ATTRS = {
+    "*": ["class", "id"],
+    "a": ["href", "title", "target", "rel"],
+    "img": ["src", "alt", "title", "width", "height", "loading"],
+}
+SAFE_PROTOCOLS = ["http", "https", "mailto", "tel"]
+
+
+def sanitize_html(raw: str) -> str:
+    """Strip dangerous tags/attrs/protocols from admin-authored rich-text."""
+    if not raw:
+        return ""
+    return bleach.clean(
+        raw,
+        tags=SAFE_TAGS,
+        attributes=SAFE_ATTRS,
+        protocols=SAFE_PROTOCOLS,
+        strip=True,
+        strip_comments=True,
+    )
 
 # ---------- Storage (Emergent Object Storage) ----------
 STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
@@ -362,8 +399,19 @@ async def list_blog(request: Request, category: Optional[str] = None, limit: int
 
 
 @api_router.get("/blog/{slug}")
-async def get_blog(slug: str):
-    doc = await db.blog.find_one({"slug": slug})
+async def get_blog(slug: str, request: Request):
+    # Drafts must NOT be readable by anonymous users via slug guessing.
+    # Same publish-gate as the listing endpoint; admins still see drafts.
+    query = {"slug": slug}
+    is_admin = False
+    try:
+        user = await get_current_user(request)
+        is_admin = user.get("role") == "admin"
+    except HTTPException:
+        pass
+    if not is_admin:
+        query["published"] = True
+    doc = await db.blog.find_one(query)
     if not doc:
         raise HTTPException(status_code=404, detail="Article not found")
     return _blog_doc_to_public(doc)
@@ -378,6 +426,7 @@ async def create_blog(payload: BlogPostCreate, _: dict = Depends(require_admin))
         n += 1
         slug = f"{base_slug}-{n}"
     doc = payload.model_dump()
+    doc["content"] = sanitize_html(doc.get("content", ""))
     doc["slug"] = slug
     doc["created_at"] = datetime.now(timezone.utc)
     doc["updated_at"] = doc["created_at"]
@@ -389,6 +438,7 @@ async def create_blog(payload: BlogPostCreate, _: dict = Depends(require_admin))
 @api_router.put("/blog/{slug}")
 async def update_blog(slug: str, payload: BlogPostUpdate, _: dict = Depends(require_admin)):
     update_doc = payload.model_dump()
+    update_doc["content"] = sanitize_html(update_doc.get("content", ""))
     update_doc["updated_at"] = datetime.now(timezone.utc)
     result = await db.blog.update_one({"slug": slug}, {"$set": update_doc})
     if result.matched_count == 0:
@@ -459,8 +509,18 @@ async def list_pages(request: Request, include_drafts: bool = False):
 
 
 @api_router.get("/pages/{slug}")
-async def get_page(slug: str):
-    doc = await db.pages.find_one({"slug": slug, "published": True})
+async def get_page(slug: str, request: Request):
+    # Admins can preview drafts; everyone else only sees published pages.
+    query = {"slug": slug}
+    is_admin = False
+    try:
+        user = await get_current_user(request)
+        is_admin = user.get("role") == "admin"
+    except HTTPException:
+        pass
+    if not is_admin:
+        query["published"] = True
+    doc = await db.pages.find_one(query)
     if not doc:
         raise HTTPException(status_code=404, detail="Page not found")
     return _page_doc_to_public(doc)
@@ -475,6 +535,7 @@ async def create_page(payload: PageCreate, _: dict = Depends(require_admin)):
         n += 1
         slug = f"{base_slug}-{n}"
     doc = payload.model_dump()
+    doc["content"] = sanitize_html(doc.get("content", ""))
     doc["slug"] = slug
     doc["created_at"] = datetime.now(timezone.utc)
     doc["updated_at"] = doc["created_at"]
@@ -485,6 +546,7 @@ async def create_page(payload: PageCreate, _: dict = Depends(require_admin)):
 @api_router.put("/pages/{slug}")
 async def update_page(slug: str, payload: PageUpdate, _: dict = Depends(require_admin)):
     update_doc = payload.model_dump()
+    update_doc["content"] = sanitize_html(update_doc.get("content", ""))
     update_doc["updated_at"] = datetime.now(timezone.utc)
     result = await db.pages.update_one({"slug": slug}, {"$set": update_doc})
     if result.matched_count == 0:

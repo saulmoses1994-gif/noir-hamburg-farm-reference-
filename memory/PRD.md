@@ -21,6 +21,7 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - Accessibility: skip-to-content link, focus-visible ring on all interactive elements, prefers-reduced-motion respected, aria-label on sticky WhatsApp CTA
 - Mobile UX: persistent sticky WhatsApp CTA on mobile only (conversion driver)
 - Security: httpOnly cookies, no token in body, draft posts admin-gated, explicit CORS allowlist, Origin/Referer check on /api/upload (closes SEC-004), honeypot field on /api/contact (silent drop)
+- Security (2026-02 audit fixes): SEC-001 — single-article/page slug endpoints now publish-gated for non-admins (drafts no longer leak); SEC-002 — bleach-sanitized admin rich-text on blog/page write + restrictive Content-Security-Policy + X-Frame-Options DENY + nosniff + Referrer-Policy + Permissions-Policy on every SSR response
 - Seeded: 6 model profiles + 3 magazine-style blog posts
 - Internal linking: Home → all services/locations/models/blog; service pages → related; area pages → nearby + related services + models; blog → related services + locations; CMS Pages → related services + locations
 - Tested: 23/23 backend tests pass, zero frontend lint errors
