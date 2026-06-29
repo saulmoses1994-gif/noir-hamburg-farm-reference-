@@ -9,6 +9,21 @@ import { api } from "@/lib/api";
 import { SERVICES, LOCATIONS, BRAND, FAQS } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
 
+// Quick DE→EN map for the small set of nationality terms used in seed data.
+// New entries can be added without a backend change.
+const NATIONALITY_EN = {
+  "Deutsch": "German",
+  "Italienisch": "Italian",
+  "Französisch": "French",
+  "Spanisch": "Spanish",
+  "Russisch": "Russian",
+  "Polnisch": "Polish",
+  "Brasilianisch": "Brazilian",
+  "Britisch": "British",
+  "Amerikanisch": "American",
+};
+const translateNationality = (n) => NATIONALITY_EN[n] || n || "Premium";
+
 export default function ModelDetail() {
   const { slug } = useParams();
   const [model, setModel] = useState(null);
@@ -98,7 +113,7 @@ export default function ModelDetail() {
 
           {/* Details */}
           <div className="lg:col-span-5">
-            <span className="overline">Noir Hamburg · {model.nationality || "Premium"}</span>
+            <span className="overline">Noir Hamburg · {isEn ? translateNationality(model.nationality) : (model.nationality || "Premium")}</span>
             <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter mt-3 leading-none">
               {model.name}
             </h1>
@@ -112,12 +127,12 @@ export default function ModelDetail() {
 
             <dl className="mt-8 grid grid-cols-2 gap-y-5 gap-x-8 text-sm">
               {[
-                ["Alter", `${model.age} Jahre`],
-                ["Größe", model.height_cm ? `${model.height_cm} cm` : "–"],
-                ["Konfektion", model.dress_size],
-                ["Maße", model.measurements],
-                ["Haar", model.hair_color],
-                ["Augen", model.eye_color],
+                [isEn ? "Age" : "Alter", `${model.age} ${isEn ? "years" : "Jahre"}`],
+                [isEn ? "Height" : "Größe", model.height_cm ? `${model.height_cm} cm` : "–"],
+                [isEn ? "Dress size" : "Konfektion", model.dress_size],
+                [isEn ? "Measurements" : "Maße", model.measurements],
+                [isEn ? "Hair" : "Haar", model.hair_color],
+                [isEn ? "Eyes" : "Augen", model.eye_color],
               ].filter(([_, v]) => v).map(([k, v]) => (
                 <div key={k}>
                   <dt className="overline text-[10px] mb-1">{k}</dt>
@@ -128,7 +143,7 @@ export default function ModelDetail() {
 
             {model.languages?.length > 0 && (
               <div className="mt-8">
-                <span className="overline text-[10px] block mb-2">Sprachen</span>
+                <span className="overline text-[10px] block mb-2">{t("model.languages")}</span>
                 <div className="flex flex-wrap gap-2">
                   {model.languages.map((l) => (
                     <span key={l} className="text-xs font-mono uppercase tracking-[0.15em] py-1 px-3 border border-[#1A1414]/15">
@@ -151,17 +166,17 @@ export default function ModelDetail() {
 
             {model.interests?.length > 0 && (
               <div className="mt-8">
-                <span className="overline text-[10px] block mb-2">Interessen</span>
+                <span className="overline text-[10px] block mb-2">{isEn ? "Interests" : "Interessen"}</span>
                 <p className="text-sm font-light text-[#1A1414]">{model.interests.join(" · ")}</p>
               </div>
             )}
 
             <div className="mt-10 flex flex-col sm:flex-row gap-3">
-              <Link to={`/kontakt?model=${model.slug}`} className="btn-primary" data-testid="book-btn">
-                {model.name} buchen <ArrowRight size={14} />
+              <Link to={to(`/kontakt?model=${model.slug}`)} className="btn-primary" data-testid="book-btn">
+                {t("cta.bookModel", { name: model.name })} <ArrowRight size={14} />
               </Link>
               <a
-                href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}?text=${encodeURIComponent("Anfrage Noir Hamburg: " + model.name)}`}
+                href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}?text=${encodeURIComponent((isEn ? "Noir Hamburg enquiry: " : "Anfrage Noir Hamburg: ") + model.name)}`}
                 target="_blank" rel="noreferrer"
                 className="btn-ghost"
                 data-testid="whatsapp-btn"
@@ -173,10 +188,10 @@ export default function ModelDetail() {
             {/* Services */}
             {modelServices.length > 0 && (
               <div className="mt-12">
-                <span className="overline text-[10px] block mb-3">Services</span>
+                <span className="overline text-[10px] block mb-3">{t("sec.services")}</span>
                 <div className="flex flex-wrap gap-2">
                   {modelServices.map((s) => (
-                    <Link key={s.slug} to={`/services/${s.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">
+                    <Link key={s.slug} to={to(`/services/${s.slug}`)} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">
                       {s.title}
                     </Link>
                   ))}
@@ -187,10 +202,10 @@ export default function ModelDetail() {
             {/* Locations */}
             {modelLocations.length > 0 && (
               <div className="mt-8">
-                <span className="overline text-[10px] block mb-3">Verfügbar in</span>
+                <span className="overline text-[10px] block mb-3">{t("sec.availableIn")}</span>
                 <div className="flex flex-wrap gap-2">
                   {modelLocations.map((l) => (
-                    <Link key={l.slug} to={`/escort/${l.slug}`} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">
+                    <Link key={l.slug} to={to(`/escort/${l.slug}`)} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">
                       {l.name}
                     </Link>
                   ))}
@@ -204,7 +219,7 @@ export default function ModelDetail() {
       {/* Related Models */}
       {related.length > 0 && (
         <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-[#1A1414]/8">
-          <h2 className="font-heading text-3xl mb-12">Weitere Models</h2>
+          <h2 className="font-heading text-3xl mb-12">{isEn ? "More companions" : "Weitere Models"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
             {related.map((m, i) => <ModelCard key={m.id} model={m} index={i} />)}
           </div>
@@ -213,15 +228,15 @@ export default function ModelDetail() {
 
       {/* FAQ */}
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]">
-        <h2 className="font-heading text-3xl mb-12">Häufige Fragen</h2>
+        <h2 className="font-heading text-3xl mb-12">{t("sec.faqH1")}</h2>
         <div className="space-y-px bg-[#1A1414]/5 max-w-4xl">
           {FAQS.slice(0, 4).map((f, i) => (
             <details key={i} className="bg-[#FBF7F4] group">
               <summary className="cursor-pointer p-6 list-none flex items-center justify-between gap-6">
-                <span className="font-heading text-xl">{f.q}</span>
+                <span className="font-heading text-xl">{isEn ? f.qEn : f.q}</span>
                 <span className="accent-text text-xl group-open:rotate-45 transition-transform">+</span>
               </summary>
-              <div className="px-6 pb-6 text-sm font-light text-[#6B5F5F] leading-relaxed">{f.a}</div>
+              <div className="px-6 pb-6 text-sm font-light text-[#6B5F5F] leading-relaxed">{isEn ? f.aEn : f.a}</div>
             </details>
           ))}
         </div>

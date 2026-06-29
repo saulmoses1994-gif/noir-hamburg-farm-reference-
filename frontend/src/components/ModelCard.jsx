@@ -1,16 +1,26 @@
 import { Link } from "react-router-dom";
+import { useI18n } from "@/lib/i18n";
 
 export default function ModelCard({ model }) {
-  const availLabel = model.available ? "Heute verfügbar" : "Heute nicht verfügbar";
+  const { lang, to } = useI18n();
+  const isEn = lang === "en";
+
+  const availLabel = isEn
+    ? (model.available ? "Available today" : "Not available today")
+    : (model.available ? "Heute verfügbar" : "Heute nicht verfügbar");
   const badgeClass = model.available ? "badge-available" : "badge-unavailable";
 
-  // City label from first location
   const cityLabel = model.locations?.[0] || "Hamburg";
   const cityName = cityLabel.charAt(0).toUpperCase() + cityLabel.slice(1).replace(/-/g, " ");
 
+  // Prefer EN tagline when present, fall back to DE.
+  const tagline = isEn && model.short_tagline_en ? model.short_tagline_en : model.short_tagline;
+  const ageSuffix = isEn ? "y" : "J.";
+  const sizeLabel = isEn ? "size" : "Größe";
+
   return (
     <Link
-      to={`/models/${model.slug}`}
+      to={to(`/models/${model.slug}`)}
       data-testid={`model-card-${model.slug}`}
       className="model-card group block bg-white border border-[#1A1414]/8 rounded-lg overflow-hidden hover:shadow-xl hover:border-[#8B1538]/40 transition-all fade-in"
     >
@@ -37,12 +47,12 @@ export default function ModelCard({ model }) {
         </div>
         <div className="text-xs accent-text uppercase tracking-wider mt-1 font-semibold">Escort {cityName}</div>
         <div className="mt-3 text-sm text-[#6B5F5F] flex items-center gap-2 flex-wrap">
-          <span>{model.age}J.</span>
+          <span>{model.age}{ageSuffix}</span>
           {model.height_cm && (<><span className="text-[#1A1414]/20">·</span><span>{model.height_cm}cm</span></>)}
-          {model.dress_size && (<><span className="text-[#1A1414]/20">·</span><span>Größe {model.dress_size}</span></>)}
+          {model.dress_size && (<><span className="text-[#1A1414]/20">·</span><span>{sizeLabel} {model.dress_size}</span></>)}
         </div>
-        {model.short_tagline && (
-          <p className="mt-3 text-sm text-[#6B5F5F] line-clamp-2 italic">{model.short_tagline}</p>
+        {tagline && (
+          <p className="mt-3 text-sm text-[#6B5F5F] line-clamp-2 italic">{tagline}</p>
         )}
       </div>
     </Link>
