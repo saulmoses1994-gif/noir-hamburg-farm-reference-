@@ -55,8 +55,8 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.1 }}
               className="font-heading text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-[#1A1414]"
             >
-              Herzlich Willkommen<br />
-              <span className="accent-text italic font-medium">bei Noir Hamburg</span>
+              Premium Escort<br />
+              <span className="accent-text italic font-medium">Hamburg</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
