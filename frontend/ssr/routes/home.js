@@ -9,6 +9,7 @@ const {
   t,
 } = require("../shell");
 const { backendJSON } = require("../backend");
+const { getSettings } = require("../settings");
 
 async function renderHome(buildAssets, lang = "de") {
   let models = [];
@@ -26,7 +27,7 @@ async function renderHome(buildAssets, lang = "de") {
 <p style="color:#8B1538;text-transform:uppercase;letter-spacing:0.2em;font-size:0.75rem;">${esc(t("home.eyebrow", lang))}</p>
 <h1>${esc(t("home.h1.welcome", lang))} <em>${esc(t("home.h1.brand", lang))}</em></h1>
 <p>${esc(t("home.lead", lang))}</p>
-<p><a href="${navTo("/models", lang)}">${esc(t("cta.discoverModels", lang))}</a> · <a href="${BRAND.whatsappUrl}">${esc(t("cta.whatsapp", lang))}</a> · <a href="${navTo("/kontakt", lang)}">${esc(t("nav.contact", lang))}</a></p>
+<p><a href="${navTo("/models", lang)}">${esc(t("cta.discoverModels", lang))}</a> · <a href="${getSettings().whatsappUrl}">${esc(t("cta.whatsapp", lang))}</a> · <a href="${navTo("/kontakt", lang)}">${esc(t("nav.contact", lang))}</a></p>
 </section>
 <section>
 <h2>${esc(t("sec.ourModels", lang))}</h2>
@@ -76,8 +77,8 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
         description: "Premium Escort Agency Hamburg",
         address: { "@type": "PostalAddress", addressLocality: "Hamburg", addressCountry: "DE" },
         areaServed: "Hamburg",
-        telephone: BRAND.phone,
-        email: BRAND.email,
+        telephone: getSettings().phone,
+        email: getSettings().email,
       },
       {
         "@context": "https://schema.org",

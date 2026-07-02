@@ -9,6 +9,7 @@ import { useSEO } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { SERVICES, LOCATIONS, ADVANTAGES, FAQS, BRAND } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 
 const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${key}En`] : o[key]);
 
@@ -16,6 +17,7 @@ export default function Home() {
   const [models, setModels] = useState([]);
   const [posts, setPosts] = useState([]);
   const { lang } = useI18n();
+  const settings = useSettings();
 
   useEffect(() => {
     api.get("/models").then((r) => setModels(r.data.slice(0, 8))).catch(() => {});
@@ -32,8 +34,8 @@ export default function Home() {
       "description": "Premium Escort Agency Hamburg",
       "address": { "@type": "PostalAddress", "addressLocality": "Hamburg", "addressCountry": "DE" },
       "areaServed": "Hamburg",
-      "telephone": BRAND.phone,
-      "email": BRAND.email,
+      "telephone": settings.phone,
+      "email": settings.email,
     },
   });
 
@@ -74,7 +76,7 @@ export default function Home() {
                 Models entdecken <ArrowRight size={16} />
               </Link>
               <a
-                href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`}
+                href={settings.whatsappUrl}
                 target="_blank" rel="noreferrer"
                 className="btn-whatsapp"
                 data-testid="hero-whatsapp-btn"
@@ -265,7 +267,7 @@ export default function Home() {
         </p>
         <div className="mt-10 flex justify-center gap-4 flex-wrap">
           <Link to="/kontakt" className="btn-primary" data-testid="cta-contact-btn">Kontakt aufnehmen</Link>
-          <a href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="btn-whatsapp">
+          <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="btn-whatsapp">
             <MessageCircle size={16} /> WhatsApp
           </a>
         </div>

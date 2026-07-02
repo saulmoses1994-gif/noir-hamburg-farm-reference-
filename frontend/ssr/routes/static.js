@@ -11,6 +11,7 @@ const {
   englishComingSoonBanner,
   t,
 } = require("../shell");
+const { getSettings } = require("../settings");
 
 function renderFAQ(buildAssets, lang = "de") {
   const titleByLang = {
@@ -105,9 +106,9 @@ function renderContact(buildAssets, lang = "de") {
 ${renderBreadcrumbs([{ label: t("crumb.contact", lang) }], lang)}
 <h1>${esc(t("sec.contact", lang))}</h1>
 <p>${esc(t("misc.contactLead", lang))}</p>
-<p>${esc(t("misc.callUs", lang))}: <a href="tel:${BRAND.phone}">${BRAND.phone}</a></p>
-<p>${esc(t("misc.emailUs", lang))}: <a href="mailto:${BRAND.email}">${BRAND.email}</a></p>
-<p>WhatsApp: <a href="${BRAND.whatsappUrl}">${BRAND.phone}</a></p>
+<p>${esc(t("misc.callUs", lang))}: <a href="tel:${esc(getSettings().phone)}">${esc(getSettings().phone)}</a></p>
+<p>${esc(t("misc.emailUs", lang))}: <a href="mailto:${esc(getSettings().email)}">${esc(getSettings().email)}</a></p>
+<p>WhatsApp: <a href="${getSettings().whatsappUrl}">${esc(getSettings().phone)}</a></p>
 </main>`;
   return renderShell({
     ...buildAssets,

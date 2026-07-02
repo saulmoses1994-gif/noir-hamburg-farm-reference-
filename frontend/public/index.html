@@ -27,29 +27,8 @@
             rel="stylesheet"
         />
 
-        <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "@id": "https://client-portal-385.preview.emergentagent.com/#org",
-          "name": "Noir Hamburg",
-          "url": "https://client-portal-385.preview.emergentagent.com",
-          "email": "kontakt@noir-hamburg.de",
-          "telephone": "+49 40 0000 0000",
-          "areaServed": { "@type": "City", "name": "Hamburg" }
-        }
-        </script>
-        <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "@id": "https://client-portal-385.preview.emergentagent.com/#website",
-          "url": "https://client-portal-385.preview.emergentagent.com",
-          "name": "Noir Hamburg",
-          "inLanguage": "de-DE",
-          "publisher": { "@id": "https://client-portal-385.preview.emergentagent.com/#org" }
-        }
-        </script>
+        <!-- Organization + WebSite JSON-LD are injected by the SSR shell so
+             they always match the live site settings (phone / email). -->
         <!--
         manifest.json provides metadata used when your web app is installed on a
         user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/

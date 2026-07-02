@@ -8,6 +8,7 @@ import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { SERVICES, LOCATIONS, BRAND, FAQS } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 
 // Quick DE→EN map for the small set of nationality terms used in seed data.
 // New entries can be added without a backend change.
@@ -30,6 +31,7 @@ export default function ModelDetail() {
   const [related, setRelated] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
   const { lang, t, to } = useI18n();
+  const settings = useSettings();
 
   useEffect(() => {
     setModel(null);
@@ -215,7 +217,7 @@ export default function ModelDetail() {
                 {t("cta.bookModel", { name: model.name })} <ArrowRight size={14} />
               </Link>
               <a
-                href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}?text=${encodeURIComponent((isEn ? "Noir Hamburg enquiry: " : "Anfrage Noir Hamburg: ") + model.name)}`}
+                href={`${settings.whatsappUrl}?text=${encodeURIComponent((isEn ? "Noir Hamburg enquiry: " : "Anfrage Noir Hamburg: ") + model.name)}`}
                 target="_blank" rel="noreferrer"
                 className="btn-ghost"
                 data-testid="whatsapp-btn"
