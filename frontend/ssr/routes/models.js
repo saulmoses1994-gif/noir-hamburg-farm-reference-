@@ -42,7 +42,14 @@ ${renderBreadcrumbs([{ label: t("crumb.models", lang) }], lang)}
 <h1>${esc(h1ByLang[lang])}</h1>
 <p>${esc(leadByLang[lang])}</p>
 <ul>
-${models.map((m) => `<li><a href="${navTo(`/models/${m.slug}`, lang)}"><strong>${esc(m.name)}</strong>, ${m.age} ${esc(t("model.years", lang))}, ${m.height_cm || ""}cm — ${esc(m.short_tagline || "")}</a><br/>${esc(t("model.languages", lang))}: ${(m.languages || []).map(esc).join(", ")}<br/>${esc(t("model.availableIn", lang))}: ${(m.locations || []).map(esc).join(", ")}</li>`).join("")}
+${models.map((m) => {
+  const cheapest = (m.prices || []).length > 0 ? Math.min(...m.prices.map((p) => p.amount)) : null;
+  const currency = (m.prices || [])[0]?.currency || "EUR";
+  const priceLine = cheapest != null
+    ? `<br/><strong>${lang === "en" ? "From" : "Ab"} ${cheapest.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} ${esc(currency)}</strong>`
+    : "";
+  return `<li><a href="${navTo(`/models/${m.slug}`, lang)}"><strong>${esc(m.name)}</strong>, ${m.age} ${esc(t("model.years", lang))}, ${m.height_cm || ""}cm — ${esc(m.short_tagline || "")}</a><br/>${esc(t("model.languages", lang))}: ${(m.languages || []).map(esc).join(", ")}<br/>${esc(t("model.availableIn", lang))}: ${(m.locations || []).map(esc).join(", ")}${priceLine}</li>`;
+}).join("")}
 </ul>
 </main>`;
   return renderShell({
