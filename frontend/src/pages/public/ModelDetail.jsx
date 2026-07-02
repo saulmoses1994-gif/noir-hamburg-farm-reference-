@@ -45,11 +45,19 @@ export default function ModelDetail() {
     : "";
   const enFallback = model && isEn && !model.bio_en;
 
+  // Prefer admin-authored SEO meta when present; fall back to auto-generated.
+  const metaTitle = model
+    ? (isEn ? (model.meta_title_en || model.meta_title) : model.meta_title) || ""
+    : "";
+  const metaDescription = model
+    ? (isEn ? (model.meta_description_en || model.meta_description) : model.meta_description) || ""
+    : "";
+
   useSEO({
-    title: model ? `${model.name} — Escort Hamburg | Noir Hamburg` : "Model",
-    description: model ? (isEn
+    title: metaTitle || (model ? `${model.name} — Escort Hamburg | Noir Hamburg` : "Model"),
+    description: metaDescription || (model ? (isEn
       ? `${model.name}, ${model.age} years old — ${shortTagline || "premium companionship in Hamburg"}. Discreet, well-educated, hanseatic elegance.`
-      : `${model.name}, ${model.age} Jahre – ${shortTagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.`) : "",
+      : `${model.name}, ${model.age} Jahre – ${shortTagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.`) : ""),
     image: model?.cover_image,
     jsonLd: model ? [
       {

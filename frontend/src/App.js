@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import "@/App.css";
 
 import { AuthProvider } from "@/lib/auth";
+import { SettingsProvider } from "@/lib/settings";
 import { detectLang, t as rawT } from "@/data/i18n";
 
 // Code splitting: each route is its own JS chunk. Public visitors no longer
@@ -34,6 +35,9 @@ const AdminBlogEdit = lazy(() => import("@/pages/admin/AdminBlog").then((m) => (
 const AdminContacts = lazy(() => import("@/pages/admin/AdminContacts"));
 const AdminPages = lazy(() => import("@/pages/admin/AdminPages").then((m) => ({ default: m.AdminPages })));
 const AdminPageEdit = lazy(() => import("@/pages/admin/AdminPages").then((m) => ({ default: m.AdminPageEdit })));
+const AdminMedia = lazy(() => import("@/pages/admin/AdminMedia"));
+const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
+const AdminAccount = lazy(() => import("@/pages/admin/AdminAccount"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -74,6 +78,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
+          <SettingsProvider>
           <ScrollToTop />
           {/* Accessibility: skip to main content (visible on keyboard focus only) */}
           <SkipLink />
@@ -128,12 +133,16 @@ function App() {
                 <Route path="pages/new" element={<AdminPageEdit />} />
                 <Route path="pages/edit/:slug" element={<AdminPageEdit />} />
                 <Route path="contacts" element={<AdminContacts />} />
+                <Route path="media" element={<AdminMedia />} />
+                <Route path="settings" element={<AdminSettings />} />
+                <Route path="account" element={<AdminAccount />} />
               </Route>
 
               {/* 404 catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+        </SettingsProvider>
         </AuthProvider>
       </BrowserRouter>
     </div>

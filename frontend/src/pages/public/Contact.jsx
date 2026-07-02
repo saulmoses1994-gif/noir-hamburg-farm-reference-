@@ -6,11 +6,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { useSEO } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { BRAND, SERVICES, LOCATIONS } from "@/data/site";
+import { useSettings } from "@/lib/settings";
 import { toast } from "sonner";
 
 export default function Contact() {
   const search = new URLSearchParams(useLocation().search);
   const preSelectedModel = search.get("model") || "";
+  const settings = useSettings();
 
   const [form, setForm] = useState({
     name: "", email: "", phone: "", message: "",
@@ -141,25 +143,25 @@ export default function Contact() {
             <div>
               <span className="overline mb-4 block">Direkt</span>
               <div className="space-y-5 mt-4">
-                <a href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="flex items-center gap-4 group" data-testid="direct-whatsapp">
+                <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="flex items-center gap-4 group" data-testid="direct-whatsapp">
                   <span className="w-10 h-10 border border-[#1A1414]/15 group-hover:border-[#8B1538] flex items-center justify-center"><MessageCircle size={16} className="group-hover:text-[#8B1538]" /></span>
                   <div>
                     <div className="overline text-[10px]">WhatsApp</div>
-                    <div className="text-lg font-light group-hover:accent-text">{BRAND.phone}</div>
+                    <div className="text-lg font-light group-hover:accent-text">{settings.phone}</div>
                   </div>
                 </a>
-                <a href={`tel:${BRAND.phone}`} className="flex items-center gap-4 group" data-testid="direct-phone">
+                <a href={`tel:${settings.phone}`} className="flex items-center gap-4 group" data-testid="direct-phone">
                   <span className="w-10 h-10 border border-[#1A1414]/15 group-hover:border-[#8B1538] flex items-center justify-center"><Phone size={16} className="group-hover:text-[#8B1538]" /></span>
                   <div>
                     <div className="overline text-[10px]">Telefon</div>
-                    <div className="text-lg font-light group-hover:accent-text">{BRAND.phone}</div>
+                    <div className="text-lg font-light group-hover:accent-text">{settings.phone}</div>
                   </div>
                 </a>
-                <a href={`mailto:${BRAND.email}`} className="flex items-center gap-4 group" data-testid="direct-email">
+                <a href={`mailto:${settings.email}`} className="flex items-center gap-4 group" data-testid="direct-email">
                   <span className="w-10 h-10 border border-[#1A1414]/15 group-hover:border-[#8B1538] flex items-center justify-center"><Mail size={16} className="group-hover:text-[#8B1538]" /></span>
                   <div>
                     <div className="overline text-[10px]">E-Mail</div>
-                    <div className="text-lg font-light group-hover:accent-text">{BRAND.email}</div>
+                    <div className="text-lg font-light group-hover:accent-text">{settings.email}</div>
                   </div>
                 </a>
               </div>

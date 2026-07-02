@@ -93,12 +93,12 @@ async function renderModelDetail(slug, buildAssets, lang = "de") {
   const enFallback = isEn && !m.bio_en;
 
   const titleByLang = {
-    de: `${m.name} — Escort Hamburg | Noir Hamburg`,
-    en: `${m.name} — Escort Hamburg | Noir Hamburg`,
+    de: m.meta_title || `${m.name} — Escort Hamburg | Noir Hamburg`,
+    en: m.meta_title_en || m.meta_title || `${m.name} — Escort Hamburg | Noir Hamburg`,
   };
   const descByLang = {
-    de: `${m.name}, ${m.age} Jahre – ${m.short_tagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.`,
-    en: `${m.name}, ${m.age} years old — ${shortTagline || "premium companionship in Hamburg"}. Discreet, well-educated, hanseatic elegance.`,
+    de: m.meta_description || `${m.name}, ${m.age} Jahre – ${m.short_tagline || "Premium Begleitung in Hamburg"}. Diskret, gebildet, hanseatisch elegant.`,
+    en: m.meta_description_en || m.meta_description || `${m.name}, ${m.age} years old — ${shortTagline || "premium companionship in Hamburg"}. Discreet, well-educated, hanseatic elegance.`,
   };
 
   const body = `

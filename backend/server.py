@@ -250,10 +250,39 @@ class ModelCreate(BaseModel):
     interests: List[str] = []
     # Tiered pricing list (admin-managed). Empty list → no price shown.
     prices: List[Price] = []
+    # SEO overrides — optional. Empty → auto-derived from name+tagline.
+    meta_title: Optional[str] = ""
+    meta_description: Optional[str] = ""
+    meta_title_en: Optional[str] = ""
+    meta_description_en: Optional[str] = ""
 
 
 class ModelUpdate(ModelCreate):
     pass
+
+
+class SiteSettings(BaseModel):
+    """Global site-wide settings, editable through the admin CMS.
+
+    Rendered by the public site (React + SSR) via GET /api/settings and
+    replaces the previously hardcoded BRAND object in data/site.js.
+    """
+    business_name: str = "Noir Hamburg"
+    tagline_de: str = "Premium Begleitagentur · Hamburg"
+    tagline_en: str = "Premium Companion Agency · Hamburg"
+    phone: str = "+49 40 0000 0000"
+    email: EmailStr = "kontakt@noir-hamburg.de"
+    whatsapp_number: str = "+4940000000000"  # digits only, used to build wa.me URL
+    hours_de: str = "Mo – Fr · 10 – 22 Uhr  ·  Sa, So, Feiertag · 13 – 22 Uhr"
+    hours_en: str = "Mon – Fri · 10 am – 10 pm  ·  Sat, Sun, Holidays · 1 pm – 10 pm"
+    instagram_url: Optional[str] = ""
+    facebook_url: Optional[str] = ""
+    twitter_url: Optional[str] = ""
+
+
+class ChangePasswordInput(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=10)
 
 
 class BlogPostCreate(BaseModel):
@@ -339,6 +368,115 @@ async def logout(response: Response):
 @api_router.get("/auth/me")
 async def me(user: dict = Depends(get_current_user)):
     return {"id": user["_id"], "email": user["email"], "name": user.get("name"), "role": user.get("role")}
+
+
+@api_router.post("/auth/change-password")
+async def change_password(payload: ChangePasswordInput, user: dict = Depends(require_admin)):
+    """Admin self-service password rotation. Requires the current password
+    (defense against session-hijack scenarios) and a new one ≥ 10 chars.
+    Bcrypt cost stays at library default (12 rounds)."""
+    db_user = await db.users.find_one({"_id": ObjectId(user["_id"])})
+    if not db_user or not verify_password(payload.current_password, db_user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Aktuelles Passwort ist nicht korrekt")
+    if payload.new_password == payload.current_password:
+        raise HTTPException(status_code=400, detail="Neues Passwort muss sich vom aktuellen unterscheiden")
+    await db.users.update_one(
+        {"_id": ObjectId(user["_id"])},
+        {"$set": {"password_hash": hash_password(payload.new_password)}},
+    )
+    return {"ok": True}
+
+
+# ---------- Site Settings ----------
+_SETTINGS_KEY = "singleton"  # single-document collection
+
+
+def _settings_defaults() -> dict:
+    return SiteSettings().model_dump()
+
+
+@api_router.get("/settings")
+async def get_settings():
+    """Public: returns the current site-wide settings (contact info, hours,
+    social links). Auto-creates the singleton document with defaults on first
+    read so the site never breaks if the admin has not saved yet."""
+    doc = await db.site_settings.find_one({"_key": _SETTINGS_KEY})
+    if not doc:
+        defaults = _settings_defaults()
+        await db.site_settings.insert_one({"_key": _SETTINGS_KEY, **defaults})
+        return defaults
+    doc.pop("_id", None)
+    doc.pop("_key", None)
+    return doc
+
+
+@api_router.put("/settings")
+async def update_settings(payload: SiteSettings, _: dict = Depends(require_admin)):
+    """Admin-only: overwrite the singleton settings document. All fields
+    required (Pydantic model validation ensures shape)."""
+    data = payload.model_dump()
+    await db.site_settings.update_one(
+        {"_key": _SETTINGS_KEY},
+        {"$set": data},
+        upsert=True,
+    )
+    return data
+
+
+# ---------- Media Library ----------
+@api_router.get("/media")
+async def list_media(_: dict = Depends(require_admin), limit: int = 500):
+    """Admin-only: paginated list of uploaded files (metadata only)."""
+    cursor = db.files.find({"is_deleted": {"$ne": True}}).sort("created_at", -1).limit(limit)
+    items = []
+    async for doc in cursor:
+        items.append({
+            "id": doc.get("id"),
+            "storage_path": doc.get("storage_path"),
+            "original_filename": doc.get("original_filename"),
+            "content_type": doc.get("content_type"),
+            "size": doc.get("size"),
+            "created_at": doc.get("created_at"),
+            "url": f"/api/files/{doc.get('storage_path')}",
+        })
+    return items
+
+
+@api_router.delete("/media/{file_id}")
+async def delete_media(file_id: str, _: dict = Depends(require_admin)):
+    """Soft-delete an uploaded file. Kept as a soft delete so any historical
+    references (older blog posts, models) don't hard-fail — they just 404 on
+    /api/files/... which the admin can then repair."""
+    result = await db.files.update_one({"id": file_id}, {"$set": {"is_deleted": True}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"ok": True}
+
+
+# ---------- Sitemap status (admin dashboard widget) ----------
+@api_router.get("/sitemap/status")
+async def sitemap_status(_: dict = Depends(require_admin)):
+    """Return counts of every URL type currently in the sitemap, for the
+    admin dashboard widget. Cheap enough to compute on-demand — < 20ms."""
+    static_count = 9  # matches the static_pages list in sitemap()
+    service_count = len(SERVICE_SLUGS)
+    location_count = len(LOCATION_SLUGS)
+    model_count = await db.models.count_documents({})
+    blog_count = await db.blog.count_documents({"published": True})
+    page_count = await db.pages.count_documents({"published": True})
+    total = static_count + service_count + location_count + model_count + blog_count + page_count
+    return {
+        "total": total,
+        "static": static_count,
+        "services": service_count,
+        "locations": location_count,
+        "models": model_count,
+        "blog_posts": blog_count,
+        "pages": page_count,
+        "sitemap_url": "/api/sitemap.xml",
+        "robots_url": "/api/robots.txt",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 # ---------- Models CRUD ----------

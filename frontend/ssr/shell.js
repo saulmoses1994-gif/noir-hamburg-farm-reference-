@@ -18,6 +18,7 @@
  */
 const { BRAND, NAV, SERVICES, LOCATIONS } = require("../src/data/site");
 const { t, localizePath } = require("../src/data/i18n");
+const { getSettings } = require("./settings");
 
 const SITE_ORIGIN =
   process.env.SITE_URL || "https://client-portal-385.preview.emergentagent.com";
@@ -66,11 +67,12 @@ ${NAV.map((n) => {
 }
 
 function renderFooter(lang) {
+  const s = getSettings();
   return `<footer role="contentinfo" style="padding:2rem;background:#1A1414;color:#fff;margin-top:3rem;">
-<h2>Noir Hamburg</h2>
+<h2>${esc(s.business_name)}</h2>
 <p>${esc(t("misc.footerTagline", lang))}</p>
-<p>${esc(t("misc.callUs", lang))}: <a href="tel:${BRAND.phone}" style="color:#E5A5B5;">${BRAND.phone}</a> · ${esc(t("misc.emailUs", lang))}: <a href="mailto:${BRAND.email}" style="color:#E5A5B5;">${BRAND.email}</a></p>
-<nav aria-label="${esc(t("sec.services", lang))}"><h3>${esc(t("sec.services", lang))}</h3><ul>${SERVICES.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}" style="color:#fff;">${esc(s.title)}</a></li>`).join("")}</ul></nav>
+<p>${esc(t("misc.callUs", lang))}: <a href="tel:${esc(s.phone)}" style="color:#E5A5B5;">${esc(s.phone)}</a> · ${esc(t("misc.emailUs", lang))}: <a href="mailto:${esc(s.email)}" style="color:#E5A5B5;">${esc(s.email)}</a></p>
+<nav aria-label="${esc(t("sec.services", lang))}"><h3>${esc(t("sec.services", lang))}</h3><ul>${SERVICES.map((sv) => `<li><a href="${navTo(`/services/${sv.slug}`, lang)}" style="color:#fff;">${esc(sv.title)}</a></li>`).join("")}</ul></nav>
 <nav aria-label="${esc(t("nav.areas", lang))}"><h3>${esc(t("nav.areas", lang))}</h3><ul>${LOCATIONS.map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}" style="color:#fff;">Escort ${esc(l.name)}</a></li>`).join("")}</ul></nav>
 </footer>`;
 }
@@ -137,6 +139,7 @@ function renderShell({
     .join("\n");
 
   const htmlLang = lang === "en" ? "en-DE" : "de-DE";
+  const s = getSettings();
 
   return `<!doctype html>
 <html lang="${lang === "en" ? "en" : "de"}">
@@ -171,8 +174,8 @@ ${ogImage ? `<meta name="twitter:image" content="${escAttr(ogImage)}" />` : ""}
 <script type="application/ld+json">
 {
   "@context":"https://schema.org","@type":"Organization","@id":"${SITE_ORIGIN}/#org",
-  "name":"Noir Hamburg","url":"${SITE_ORIGIN}",
-  "email":"${BRAND.email}","telephone":"${BRAND.phone}",
+  "name":"${esc(s.business_name)}","url":"${SITE_ORIGIN}",
+  "email":"${esc(s.email)}","telephone":"${esc(s.phone)}",
   "areaServed":{"@type":"City","name":"Hamburg"}
 }
 </script>

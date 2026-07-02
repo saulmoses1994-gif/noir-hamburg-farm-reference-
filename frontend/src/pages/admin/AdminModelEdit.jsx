@@ -15,6 +15,8 @@ const empty = {
   available: true, featured: false, nationality: "Deutsch",
   interests: [],
   prices: [],  // [{label, amount, currency, unit}]
+  meta_title: "", meta_description: "",
+  meta_title_en: "", meta_description_en: "",
 };
 
 export default function AdminModelEdit() {
@@ -324,6 +326,66 @@ export default function AdminModelEdit() {
             <input type="checkbox" checked={form.available} onChange={(e) => set("available", e.target.checked)} /> Verfügbar
           </label>
         </div>
+
+        {/* ---- SEO Meta Overrides ---- */}
+        <details className="border border-[#1A1414]/10 rounded" data-testid="model-seo-panel">
+          <summary className="cursor-pointer px-4 py-3 text-sm uppercase tracking-[0.15em] text-[#6B5F5F] hover:bg-[#FBF7F4]">
+            SEO — Titel & Meta-Beschreibung (optional)
+          </summary>
+          <div className="p-4 space-y-4 border-t border-[#1A1414]/10">
+            <p className="text-xs text-[#9B8F8F]">
+              Leer lassen, um die automatisch generierten Werte aus Name + Kurzbio zu verwenden. Ideale Länge: Titel ≤ 60 Zeichen, Beschreibung 140–160 Zeichen.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="overline text-[10px] block mb-2">Meta Titel (DE)</label>
+                <input
+                  type="text"
+                  value={form.meta_title || ""}
+                  onChange={(e) => set("meta_title", e.target.value)}
+                  className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-2 text-sm"
+                  data-testid="model-meta-title-de"
+                />
+                <p className="text-[10px] text-[#9B8F8F] mt-1">{(form.meta_title || "").length}/60</p>
+              </div>
+              <div>
+                <label className="overline text-[10px] block mb-2">Meta Titel (EN)</label>
+                <input
+                  type="text"
+                  value={form.meta_title_en || ""}
+                  onChange={(e) => set("meta_title_en", e.target.value)}
+                  className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-2 text-sm"
+                  data-testid="model-meta-title-en"
+                />
+                <p className="text-[10px] text-[#9B8F8F] mt-1">{(form.meta_title_en || "").length}/60</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="overline text-[10px] block mb-2">Meta Beschreibung (DE)</label>
+                <textarea
+                  value={form.meta_description || ""}
+                  onChange={(e) => set("meta_description", e.target.value)}
+                  rows={3}
+                  className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-2 text-sm"
+                  data-testid="model-meta-desc-de"
+                />
+                <p className="text-[10px] text-[#9B8F8F] mt-1">{(form.meta_description || "").length}/160</p>
+              </div>
+              <div>
+                <label className="overline text-[10px] block mb-2">Meta Beschreibung (EN)</label>
+                <textarea
+                  value={form.meta_description_en || ""}
+                  onChange={(e) => set("meta_description_en", e.target.value)}
+                  rows={3}
+                  className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-2 text-sm"
+                  data-testid="model-meta-desc-en"
+                />
+                <p className="text-[10px] text-[#9B8F8F] mt-1">{(form.meta_description_en || "").length}/160</p>
+              </div>
+            </div>
+          </div>
+        </details>
 
         <div className="pt-6 border-t border-[#1A1414]/8">
           <button type="submit" disabled={busy} className="btn-primary disabled:opacity-50" data-testid="admin-model-save">

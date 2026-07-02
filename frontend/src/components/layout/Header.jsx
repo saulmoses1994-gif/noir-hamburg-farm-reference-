@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, MessageCircle, Phone, Globe } from "lucide-react";
 import { BRAND, NAV } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 
 // Map NAV entries' `to` (DE canonical) to their i18n keys for label translation.
 const NAV_KEYS = {
@@ -21,6 +22,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { lang, t, to, switchTo, switchPath } = useI18n();
+  const settings = useSettings();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -28,10 +30,9 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const hours =
-    lang === "en"
-      ? "Mon – Fri · 10 am – 10 pm  ·  Sat, Sun, Holidays · 1 pm – 10 pm"
-      : "Mo – Fr · 10 – 22 Uhr  ·  Sa, So, Feiertag · 13 – 22 Uhr";
+  const hours = lang === "en"
+    ? (settings.hours_en || "Mon – Fri · 10 am – 10 pm  ·  Sat, Sun, Holidays · 1 pm – 10 pm")
+    : (settings.hours_de || "Mo – Fr · 10 – 22 Uhr  ·  Sa, So, Feiertag · 13 – 22 Uhr");
 
   return (
     <>
@@ -39,8 +40,8 @@ export default function Header() {
       <div className="hidden md:block bg-[#1A1414] text-white text-xs py-2 px-6 md:px-12 lg:px-16">
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-5 text-white/90">
-            <a href={`tel:${BRAND.phone}`} className="inline-flex items-center gap-2 hover:accent-text"><Phone size={12} /> {BRAND.phone}</a>
-            <a href={`mailto:${BRAND.email}`} className="hover:accent-text">{BRAND.email}</a>
+            <a href={`tel:${settings.phone}`} className="inline-flex items-center gap-2 hover:accent-text"><Phone size={12} /> {settings.phone}</a>
+            <a href={`mailto:${settings.email}`} className="hover:accent-text">{settings.email}</a>
           </div>
           <div className="text-white/70 tracking-wide">{hours}</div>
         </div>
@@ -84,7 +85,7 @@ export default function Header() {
               <Globe size={12} /> {t("lang.switch")}
             </Link>
             <a
-              href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`}
+              href={settings.whatsappUrl}
               target="_blank" rel="noreferrer"
               className="btn-whatsapp"
               data-testid="header-whatsapp-btn"
@@ -145,7 +146,7 @@ export default function Header() {
               </Link>
               <div className="flex gap-3 mt-8">
                 <a
-                  href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`}
+                  href={settings.whatsappUrl}
                   className="btn-whatsapp"
                   data-testid="mobile-whatsapp-btn"
                 >

@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { Phone, Mail, MessageCircle, Sparkles } from "lucide-react";
 import { BRAND, SERVICES, LOCATIONS } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 
 export default function Footer() {
   const { lang, t, to } = useI18n();
+  const settings = useSettings();
 
   const taglineByLang = {
     de: "Ihre vertrauenswürdige Premium-Begleitagentur in Hamburg und Umland. Ehrlich, diskret und mit Herz für Service seit 2014.",
@@ -34,9 +36,9 @@ export default function Footer() {
               {taglineByLang[lang] || taglineByLang.de}
             </p>
             <div className="mt-6 space-y-3 text-sm">
-              <a href={`tel:${BRAND.phone}`} className="flex items-center gap-2 text-white/90 hover:accent-text"><Phone size={14} /> {BRAND.phone}</a>
-              <a href={`mailto:${BRAND.email}`} className="flex items-center gap-2 text-white/90 hover:accent-text"><Mail size={14} /> {BRAND.email}</a>
-              <a href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-white/90 hover:accent-text"><MessageCircle size={14} /> WhatsApp</a>
+              <a href={`tel:${settings.phone}`} className="flex items-center gap-2 text-white/90 hover:accent-text"><Phone size={14} /> {settings.phone}</a>
+              <a href={`mailto:${settings.email}`} className="flex items-center gap-2 text-white/90 hover:accent-text"><Mail size={14} /> {settings.email}</a>
+              <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-white/90 hover:accent-text"><MessageCircle size={14} /> WhatsApp</a>
             </div>
           </div>
 

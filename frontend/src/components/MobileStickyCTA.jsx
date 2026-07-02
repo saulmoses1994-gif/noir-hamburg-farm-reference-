@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
-import { BRAND } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 
 /**
  * Sticky mobile WhatsApp CTA — hidden on /admin and on desktop.
@@ -9,10 +9,12 @@ import { useI18n } from "@/lib/i18n";
  */
 export default function MobileStickyCTA() {
   const { lang } = useI18n();
+  const settings = useSettings();
   if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) return null;
+  if (!settings.whatsappUrl) return null;
   return (
     <a
-      href={`https://wa.me/${BRAND.whatsapp.replace(/[^\d]/g, "")}`}
+      href={settings.whatsappUrl}
       target="_blank"
       rel="noreferrer"
       data-testid="sticky-whatsapp"
