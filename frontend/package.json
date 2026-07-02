@@ -63,7 +63,7 @@
     "zod": "3.24.4"
   },
   "scripts": {
-    "start": "node ssr-server.js",
+    "start": "sh -c 'if [ ! -f build/index.html ]; then echo \"[start] build/ missing — running yarn build first...\"; yarn build; fi' && node ssr-server.js",
     "dev": "craco start",
     "build": "craco build",
     "test": "craco test"
