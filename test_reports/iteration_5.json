@@ -1,0 +1,14 @@
+{
+  "summary": "SSR SEO HTML validation on preview URL: 18/18 pytest cases pass. Raw HTML (curl/requests, no JS) contains full H1, all 8 H2 SEO sections, Organization/WebSite/LocalBusiness/Service/Article/Person/FAQPage JSON-LD schemas, canonical tags, unique title/meta for all 5 tested pages, internal links to services/areas/models/blog, English route works, and homepage weighs 24560 bytes.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_ssr_seo_html.py", "/app/test_reports/pytest/ssr_seo.xml"],
+  "action_items": [],
+  "critical_code_review_comments": ["ssr-server.js auto-build guard via execSync is fine for cold boot but blocks event loop for the full yarn build duration; consider a build lock/health endpoint if scaling to multi-instance.", "backend CORS_ORIGINS='*' is permissive — acceptable while both preview+prod share backend, but consider explicit allow-list once prod URL is finalized."],
+  "updated_files": ["/app/backend/tests/test_ssr_seo_html.py"],
+  "success_rate": {"backend": "100%", "frontend": "n/a"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "SSR test suite at /app/backend/tests/test_ssr_seo_html.py hits preview URL (Googlebot UA) via raw requests and asserts SEO structure in initial HTML response. All 18 checks pass. Homepage=24560B. Do NOT test production URL (fix not deployed there yet)."
+}
