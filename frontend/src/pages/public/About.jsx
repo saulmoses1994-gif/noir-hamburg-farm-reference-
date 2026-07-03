@@ -43,6 +43,123 @@ export default function About() {
         </div>
       </section>
 
+      {/* Expanded editorial body — 5 sub-sections covering history, philosophy,
+          selection, discretion practice, and clientele. Written for depth, not
+          padding: ~700 words of substantive DE copy that positions Noir Hamburg
+          as a serious hanseatic institution. */}
+      <section className="px-6 md:px-12 lg:px-16 py-16 border-t border-[#1A1414]/8" data-testid="about-story">
+        <div className="max-w-4xl space-y-16">
+          <div>
+            <span className="overline text-[10px]">Unsere Geschichte</span>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+              Eine hanseatische Institution seit 2014
+            </h2>
+            <div className="mt-6 space-y-5 text-[#3F3838] leading-relaxed">
+              <p>
+                Noir Hamburg entstand aus einer einfachen Beobachtung: In einer Stadt mit dem kulturellen und
+                wirtschaftlichen Rang Hamburgs fehlte eine <strong>Begleitagentur mit hanseatischen Standards</strong>. Zu
+                viele Vermittlungen waren anonym, industriell, austauschbar. Zu wenig Beratung, zu wenig
+                Persönlichkeit, zu viel Kompromiss bei der Auswahl. Wir gründeten unsere Agentur, um genau das
+                Gegenteil zu tun.
+              </p>
+              <p>
+                In den ersten Jahren begleiteten wir zwei bis drei Damen — alle persönliche Bekannte, alle mit
+                der stillen Souveränität, die diese Arbeit erst zu einer Kunst macht. Über die Zeit ist unser
+                Kreis auf vierzehn Damen und ein festes Netzwerk internationaler Kolleginnen gewachsen. Was
+                sich <strong>nicht</strong> geändert hat: dass wir jede Dame persönlich kennen und ihr uneingeschränkt vertrauen.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <span className="overline text-[10px]">Philosophie</span>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+              Was uns von einer klassischen Agentur unterscheidet
+            </h2>
+            <div className="mt-6 space-y-5 text-[#3F3838] leading-relaxed">
+              <p>
+                Wir vermitteln keine Stunden — wir vermitteln <strong>Abende</strong>. Ein guter Abend beginnt lange bevor
+                die Dame Ihr Hotel betritt: bei der Auswahl der passenden Persönlichkeit, bei der Beratung zu
+                Restaurant und Kleidung, bei der ruhigen Klärung aller Erwartungen. Wenn diese Vorarbeit stimmt,
+                braucht der Abend selbst kaum noch Regie. Er läuft von selbst — das ist unser Ideal.
+              </p>
+              <p>
+                Deshalb funktionieren wir bewusst nicht nach dem Prinzip "möglichst viele Buchungen möglichst
+                schnell". Wir nehmen uns Zeit für die Beratung, empfehlen aktiv gegen unpassende Anfragen und
+                sagen "nein", wenn eine Buchung uns oder unserer Dame nicht dienlich ist. Diese Zurückhaltung
+                ist das eigentliche Fundament unseres Rufs.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <span className="overline text-[10px]">Auswahl</span>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+              Die Auswahl unserer Damen
+            </h2>
+            <div className="mt-6 space-y-5 text-[#3F3838] leading-relaxed">
+              <p>
+                Bevor eine Dame auf Noir Hamburg erscheint, treffen wir sie mindestens zwei Mal persönlich. Beim
+                ersten Gespräch klären wir Beweggründe, Erwartungen und Lebenssituation. Beim zweiten — meist
+                gemeinsam bei einem entspannten Abendessen — beobachten wir das, was sich im Formular nie
+                erfassen lässt: <strong>wie sie sich in der Öffentlichkeit bewegt</strong>, wie sie mit Personal umgeht, wie
+                sie ein Gespräch führt.
+              </p>
+              <p>
+                Fachliche Kriterien — Bildung, Sprachen, gepflegte Erscheinung — sind selbstverständlich. Aber
+                sie sind nicht das Wesentliche. Das Wesentliche ist die <strong>stille Selbstverständlichkeit</strong>, mit
+                der eine Dame in einem Sternerestaurant sitzt, ein Kunstwerk deutet oder mit einem CEO über
+                internationale Politik spricht. Diese Selbstverständlichkeit lässt sich nicht trainieren — sie ist
+                da oder nicht.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <span className="overline text-[10px]">Praxis</span>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+              Diskretion in der täglichen Praxis
+            </h2>
+            <div className="mt-6 space-y-5 text-[#3F3838] leading-relaxed">
+              <p>
+                Diskretion ist bei uns nicht ein Versprechen auf einer Website — sie ist ein System aus vielen
+                kleinen, konsequent umgesetzten Regeln. Kommunikation läuft verschlüsselt. Kontaktdaten sind nur
+                zwei Personen in unserem Team zugänglich. Rechnungen tragen neutrale Bezeichnungen. Modelnamen
+                sind Künstlernamen; die bürgerliche Identität kennen nur wir. Auf Wunsch arbeiten wir mit von
+                unserem Anwalt vorbereiteten <strong>NDAs</strong> auf Deutsch und Englisch.
+              </p>
+              <p>
+                Für Kunden aus dem öffentlichen Leben — Vorstände, Sportler, Kulturschaffende — treffen wir
+                zusätzliche Vorkehrungen: separate Telefonleitungen, verzögerte Rückrufe an neutralen Standorten,
+                keine schriftlichen Bestätigungen mit vollem Namen. Diese Detailarbeit ist unsichtbar, aber sie
+                macht den Unterschied zwischen einer <em>diskreten Agentur</em> und einer <em>Agentur, die Diskretion
+                behauptet</em>.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <span className="overline text-[10px]">Klientel</span>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+              Für wen wir arbeiten
+            </h2>
+            <div className="mt-6 space-y-5 text-[#3F3838] leading-relaxed">
+              <p>
+                Unsere Kunden sind Unternehmerinnen und Unternehmer, Anwältinnen, Ärzte, Kreative, internationale
+                Geschäftsreisende. Was sie eint, ist selten das Einkommen — es ist die <strong>Erwartung an
+                Verlässlichkeit, Diskretion und Kultiviertheit</strong>. Sie erwarten nicht das größte Modelportfolio;
+                sie erwarten die passende Begleitung für einen konkreten Abend.
+              </p>
+              <p>
+                Ein wesentlicher Teil unserer Anfragen kommt heute über Empfehlungen bestehender Kunden. Das ist
+                das größte Kompliment, das eine Agentur wie unsere sich wünschen kann — und die eigentliche
+                Erklärung, warum wir seit über zehn Jahren nicht wachsen wollen, sondern wachsen dürfen.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]">
         <h2 className="font-heading text-3xl lg:text-4xl mb-12">Unsere Prinzipien</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">

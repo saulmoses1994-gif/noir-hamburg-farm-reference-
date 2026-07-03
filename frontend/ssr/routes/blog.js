@@ -67,6 +67,23 @@ async function renderBlogDetail(slug, buildAssets, lang = "de") {
   const metaDesc = isEn && p.meta_description_en ? p.meta_description_en : p.meta_description;
   const enFallback = isEn && !p.content_en;
 
+  // Fetch related content in parallel so the article ends with a strong
+  // internal-linking block (services, areas, other articles, models).
+  const { SERVICES, LOCATIONS } = require("../../src/data/site");
+  const relatedServices = SERVICES.filter((s) => (p.related_services || []).includes(s.slug));
+  const relatedLocations = LOCATIONS.filter((l) => (p.related_locations || []).includes(l.slug));
+  const [relatedPosts, featuredModels] = await Promise.all([
+    backendJSON(`/api/blog?category=${encodeURIComponent(p.category || "")}`).catch(() => []),
+    backendJSON("/api/models?featured=true").catch(() => []),
+  ]);
+  const otherPosts = relatedPosts.filter((r) => r.slug !== p.slug).slice(0, 3);
+  const relModels = (featuredModels || []).slice(0, 3);
+
+  const linkList = (label, items, hrefFn, labelFn) =>
+    items.length > 0
+      ? `<aside><h2>${esc(label)}</h2><ul>${items.map((it) => `<li><a href="${navTo(hrefFn(it), lang)}">${esc(labelFn(it))}</a></li>`).join("")}</ul></aside>`
+      : "";
+
   const body = `
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.blog", lang), to: "/blog" }, { label: title }], lang)}
@@ -77,6 +94,17 @@ ${enFallback ? englishComingSoonBanner(lang) : ""}
 ${p.cover_image ? `<img src="${escAttr(p.cover_image)}" alt="${escAttr(title)}" width="800" loading="eager"/>` : ""}
 ${content}
 </article>
+
+${linkList(isEn ? "Related Services" : "Verwandte Services", relatedServices,
+    (s) => `/services/${s.slug}`, (s) => s.title)}
+${linkList(isEn ? "Related Areas" : "Verwandte Orte", relatedLocations,
+    (l) => `/escort/${l.slug}`, (l) => `Escort ${l.name}`)}
+${linkList(isEn ? "Meet Our Models" : "Unsere Models", relModels,
+    (m) => `/models/${m.slug}`, (m) => `${m.name} — ${m.short_tagline || ""}`)}
+${linkList(isEn ? "More from the Magazine" : "Weitere Artikel", otherPosts,
+    (a) => `/blog/${a.slug}`, (a) => (isEn && a.title_en ? a.title_en : a.title))}
+
+<p><a href="${navTo("/blog", lang)}">← ${esc(isEn ? "Back to the Magazine" : "Zurück zum Magazin")}</a></p>
 </main>`;
   return renderShell({
     ...buildAssets,

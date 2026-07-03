@@ -61,6 +61,35 @@ async function renderHome(buildAssets, lang = "de") {
 </section>
 
 <section>
+<h2>${esc(lang === "en" ? "Why clients trust us" : "Warum Kunden uns vertrauen")}</h2>
+<p>${esc(lang === "en"
+  ? "Five pillars that separate a random matchmaking service from a lasting relationship — and that explain why a significant part of our clientele has been returning to us for many years."
+  : "Fünf Grundpfeiler, die den Unterschied zwischen einer beliebigen Vermittlung und einer gewachsenen Beziehung ausmachen — und die erklären, warum ein wesentlicher Teil unserer Kunden seit vielen Jahren immer wieder zu uns zurückkehrt.")}</p>
+<dl>
+<dt><strong>${esc(lang === "en" ? "1. Absolute discretion" : "1. Absolute Diskretion")}</strong></dt>
+<dd>${esc(lang === "en"
+  ? "Encrypted communication, minimal data storage and — on request — written non-disclosure agreements. Neither your companion nor any third party learn more than the evening itself requires."
+  : "Verschlüsselte Kommunikation, minimale Datenspeicherung und — auf Wunsch — schriftliche Geheimhaltungsvereinbarungen. Weder Ihre Begleitung noch Dritte erfahren mehr, als der Abend selbst erfordert.")}</dd>
+<dt><strong>${esc(lang === "en" ? "2. Uncompromising privacy" : "2. Kompromissloser Datenschutz")}</strong></dt>
+<dd>${esc(lang === "en"
+  ? "No newsletter, no retargeting, no third-party analytics trackers on sensitive pages. Your contact details are accessible only to the two staff members who personally handle your booking."
+  : "Kein Newsletter, kein Retargeting, keine Analytics-Tracker Dritter auf sensiblen Seiten. Ihre Kontaktdaten sind nur den zwei Mitarbeitern zugänglich, die Ihre Buchung persönlich betreuen.")}</dd>
+<dt><strong>${esc(lang === "en" ? "3. Hanseatic quality standards" : "3. Hanseatische Qualitätsstandards")}</strong></dt>
+<dd>${esc(lang === "en"
+  ? "Every lady is personally met and vetted at least twice before appearing on Noir Hamburg. Education, linguistic ease, polished presentation — non-negotiable."
+  : "Jede Dame wird von uns persönlich kennengelernt und mindestens zwei Mal getroffen, bevor sie auf Noir Hamburg erscheint. Bildung, sprachliche Gewandtheit, gepflegtes Auftreten — nicht verhandelbar.")}</dd>
+<dt><strong>${esc(lang === "en" ? "4. Verified model profiles" : "4. Verifizierte Modelprofile")}</strong></dt>
+<dd>${esc(lang === "en"
+  ? "All photos are current, unretouched and come from professional shoots we have personally commissioned. No catalogue images, no stock photos, no surprises."
+  : "Alle Fotos sind aktuell, unretuschiert und stammen aus professionellen Shootings, die wir persönlich in Auftrag gegeben haben. Keine Katalogbilder, keine Stock-Fotos, keine Überraschungen.")}</dd>
+<dt><strong>${esc(lang === "en" ? "5. Personal service" : "5. Persönlicher Service")}</strong></dt>
+<dd>${esc(lang === "en"
+  ? "You speak with a real person — not a bot, not a call centre. We know our ladies personally and select the right companion for you by occasion, language and chemistry."
+  : "Sie sprechen mit einem echten Menschen — nicht mit einem Bot, nicht mit einem Callcenter. Wir kennen unsere Damen persönlich und wählen für Sie die passende Begleitung nach Anlass, Sprache und Chemie aus.")}</dd>
+</dl>
+</section>
+
+<section>
 <h2>${esc(lang === "en" ? "Our exclusive escort models in Hamburg" : "Unsere exklusiven Escort Models in Hamburg")}</h2>
 <ul>${models.map((m) => `<li><a href="${navTo(`/models/${m.slug}`, lang)}"><strong>${esc(m.name)}</strong>, ${m.age} ${esc(t("model.years", lang))} — ${esc(m.short_tagline || "Premium")}</a></li>`).join("")}</ul>
 <p><a href="${navTo("/models", lang)}">${esc(t("cta.allModels", lang))}</a></p>

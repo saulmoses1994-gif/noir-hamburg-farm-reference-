@@ -92,12 +92,28 @@ export function BlogList() {
 export function BlogDetail() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
+  const [relatedPosts, setRelatedPosts] = useState([]);
+  const [relatedModels, setRelatedModels] = useState([]);
   const { lang, t, to } = useI18n();
   const isEn = lang === "en";
 
   useEffect(() => {
     api.get(`/blog/${slug}`).then((r) => setPost(r.data)).catch(() => setPost(false));
   }, [slug]);
+
+  // Once the post is loaded, fetch other articles in the same category and a
+  // handful of featured models — cheap parallel calls that power the internal
+  // linking block at the bottom of every article.
+  useEffect(() => {
+    if (!post || !post.slug) return;
+    const p1 = api.get(`/blog?category=${encodeURIComponent(post.category || "")}`)
+      .then((r) => setRelatedPosts((r.data || []).filter((p) => p.slug !== post.slug).slice(0, 3)))
+      .catch(() => setRelatedPosts([]));
+    const p2 = api.get("/models?featured=true")
+      .then((r) => setRelatedModels((r.data || []).slice(0, 3)))
+      .catch(() => setRelatedModels([]));
+    return () => { p1?.catch?.(() => {}); p2?.catch?.(() => {}); };
+  }, [post]);
 
   const title = post ? (isEn && post.title_en ? post.title_en : post.title) : "";
   const excerpt = post ? (isEn && post.excerpt_en ? post.excerpt_en : post.excerpt) : "";
@@ -199,6 +215,48 @@ export function BlogDetail() {
                 </ul>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Related models — 3 featured profiles that give the reader a natural
+            next click, without breaking the editorial rhythm. */}
+        {relatedModels.length > 0 && (
+          <div className="max-w-5xl mx-auto mt-16" data-testid="blog-related-models">
+            <span className="overline mb-6 block">{isEn ? "Meet Our Models" : "Unsere Models"}</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {relatedModels.map((m) => (
+                <Link key={m.slug} to={to(`/models/${m.slug}`)} className="group block" data-testid={`blog-related-model-${m.slug}`}>
+                  {m.cover_image && (
+                    <div className="editorial-image aspect-[3/4] overflow-hidden mb-4">
+                      <img src={m.cover_image} alt={m.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  )}
+                  <h3 className="font-heading text-xl group-hover:accent-text">{m.name}</h3>
+                  <p className="text-xs font-light text-[#6B5F5F] mt-1">{isEn && m.short_tagline_en ? m.short_tagline_en : m.short_tagline}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Related articles — same category, drives session depth and reduces
+            bounce. Powered by /api/blog?category=…. */}
+        {relatedPosts.length > 0 && (
+          <div className="max-w-5xl mx-auto mt-16" data-testid="blog-related-articles">
+            <span className="overline mb-6 block">{isEn ? "More from the Magazine" : "Weitere Artikel"}</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {relatedPosts.map((p) => (
+                <Link key={p.slug} to={to(`/blog/${p.slug}`)} className="group block" data-testid={`blog-related-post-${p.slug}`}>
+                  {p.cover_image && (
+                    <div className="editorial-image aspect-[4/3] overflow-hidden mb-4">
+                      <img src={p.cover_image} alt={p.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  )}
+                  <span className="overline text-[10px] accent-text">{p.category}</span>
+                  <h3 className="font-heading text-xl mt-2 group-hover:accent-text">{isEn && p.title_en ? p.title_en : p.title}</h3>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 

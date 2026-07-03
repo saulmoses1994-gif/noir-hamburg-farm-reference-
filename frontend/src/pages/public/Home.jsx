@@ -212,6 +212,61 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Warum Kunden uns vertrauen — five trust pillars */}
+      <section className="px-6 md:px-12 lg:px-16 py-24 border-t border-[#1A1414]/8 bg-[#FBF7F4]" data-testid="home-trust-pillars">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-3xl">
+            <span className="overline text-[10px]">Vertrauen seit 2014</span>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">Warum Kunden uns vertrauen</h2>
+            <p className="mt-6 text-[#3F3838] leading-relaxed">
+              Fünf Grundpfeiler, die den Unterschied zwischen einer beliebigen Vermittlung und einer{" "}
+              <strong>gewachsenen Beziehung</strong> ausmachen — und die erklären, warum ein wesentlicher Teil
+              unserer Kunden seit vielen Jahren immer wieder zu uns zurückkehrt.
+            </p>
+          </div>
+          <dl className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-12">
+            {[
+              {
+                overline: "01 · Diskretion",
+                title: "Absolute Diskretion",
+                body: "Verschlüsselte Kommunikation, minimale Datenspeicherung und — auf Wunsch — schriftliche Geheimhaltungsvereinbarungen. Weder Ihre Begleitung noch Dritte erfahren mehr, als der Abend selbst erfordert.",
+                testid: "trust-diskretion",
+              },
+              {
+                overline: "02 · Datenschutz",
+                title: "Kompromissloser Datenschutz",
+                body: "Kein Newsletter, kein Retargeting, keine Analytics-Tracker Dritter auf sensiblen Seiten. Ihre Kontaktdaten sind nur den zwei Mitarbeitern zugänglich, die Ihre Buchung persönlich betreuen.",
+                testid: "trust-datenschutz",
+              },
+              {
+                overline: "03 · Qualität",
+                title: "Hanseatische Qualitätsstandards",
+                body: "Jede Dame wird von uns persönlich kennengelernt und mindestens zwei Mal getroffen, bevor sie auf Noir Hamburg erscheint. Bildung, sprachliche Gewandtheit, gepflegtes Auftreten — nicht verhandelbar.",
+                testid: "trust-qualitaet",
+              },
+              {
+                overline: "04 · Verifiziert",
+                title: "Verifizierte Modelprofile",
+                body: "Alle Fotos sind aktuell, unretuschiert und stammen aus professionellen Shootings, die wir persönlich in Auftrag gegeben haben. Keine Katalogbilder, keine Stock-Fotos, keine Überraschungen.",
+                testid: "trust-verifiziert",
+              },
+              {
+                overline: "05 · Persönlich",
+                title: "Persönlicher Service",
+                body: "Sie sprechen mit einem echten Menschen — nicht mit einem Bot, nicht mit einem Callcenter. Wir kennen unsere Damen persönlich und wählen für Sie die passende Begleitung nach Anlass, Sprache und Chemie aus.",
+                testid: "trust-persoenlich",
+              },
+            ].map((p) => (
+              <div key={p.testid} data-testid={p.testid}>
+                <span className="overline text-[10px] accent-text">{p.overline}</span>
+                <dt className="mt-3 font-heading text-2xl text-[#1A1414]">{p.title}</dt>
+                <dd className="mt-4 text-sm font-light text-[#3F3838] leading-relaxed">{p.body}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
       {/* Featured Models */}
       <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-models">
         <div className="flex flex-wrap items-end justify-between gap-6 mb-12">
