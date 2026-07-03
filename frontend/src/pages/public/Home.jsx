@@ -25,8 +25,8 @@ export default function Home() {
   }, []);
 
   useSEO({
-    title: "Noir Hamburg — Premium Escort Hamburg | Diskrete Begleitung von höchster Eleganz",
-    description: "Noir Hamburg ist die Premium-Begleitagentur für anspruchsvolle Herren in Hamburg. Diskret, gebildet, hanseatisch elegant. Buchen Sie Ihre persönliche Begleitung.",
+    title: "Luxus Escort Hamburg – Exklusive Begleitung mit Stil | Noir Hamburg",
+    description: "Luxus Escort Hamburg — exklusive, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -57,8 +57,8 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.1 }}
               className="font-heading text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-[#1A1414]"
             >
-              Premium Escort<br />
-              <span className="accent-text italic font-medium">Hamburg</span>
+              Luxus Escort Hamburg<br />
+              <span className="accent-text italic font-medium">Exklusive Begleitung mit Stil</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
@@ -139,10 +139,83 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SEO copy — Why a professional agency */}
+      <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-[#1A1414]/8" data-testid="home-seo-why">
+        <div className="max-w-4xl">
+          <span className="overline text-[10px]">Warum Noir Hamburg</span>
+          <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+            Warum eine professionelle Escort Agentur in Hamburg wählen?
+          </h2>
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 text-[#3F3838] leading-relaxed">
+            <p>
+              Hamburg ist eine der anspruchsvollsten Städte Europas — hanseatisch, weltoffen, mit einem
+              außergewöhnlich hohen Standard in Kultur, Gastronomie und Business. Wer sich hier für eine{" "}
+              <strong>Escort Agentur</strong> entscheidet, sollte nicht auf zufällige Vermittlung setzen,
+              sondern auf gewachsene Erfahrung und ein Team, das die Stadt versteht.
+            </p>
+            <p>
+              Seit 2014 begleitet <strong>Noir Hamburg</strong> Herren und Damen von Rang zu privaten Dinner-Verabredungen,
+              geschäftlichen Empfängen an der Elbphilharmonie, exklusiven Kunstvernissagen in der HafenCity und
+              diskreten Wochenenden zwischen Blankenese und Winterhude. Unsere Vermittlung ist persönlich,
+              handverlesen und diskret — nie automatisiert.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO copy — Luxus Escort Service */}
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-seo-luxus">
+        <div className="max-w-4xl">
+          <span className="overline text-[10px]">Luxus Escort Service</span>
+          <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+            Luxus Escort Service in Hamburg — auf höchstem Niveau
+          </h2>
+          <div className="mt-8 space-y-6 text-[#3F3838] leading-relaxed">
+            <p>
+              Ein <strong>Luxus Escort in Hamburg</strong> unterscheidet sich in jedem Detail: die Damen tragen
+              Kleider von Chanel, Dior oder maßgeschneiderte deutsche Ateliers. Sie sprechen mindestens zwei
+              Sprachen fließend, verfügen über akademische Bildung oder eine künstlerische Karriere und bewegen
+              sich mit der stillen Selbstsicherheit einer echten Dame — nicht mit einer einstudierten Rolle.
+            </p>
+            <p>
+              Wir arbeiten ausschließlich mit Frauen, die wir persönlich kennen und deren Persönlichkeit,
+              Kultiviertheit und Diskretion wir garantieren können. Für jeden Anlass — vom stillen Abendessen
+              im Fischereihafen bis zur mehrtägigen Reise nach Sylt oder Cortina — finden wir die passende
+              Begleitung. Kein Katalog, keine Massenware, sondern maßgeschneiderte Vermittlung.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO copy — Diskretion */}
+      <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-seo-diskretion">
+        <div className="max-w-4xl">
+          <span className="overline text-[10px]">Vertrauen</span>
+          <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+            Diskretion, Vertrauen und Professionalität
+          </h2>
+          <div className="mt-8 space-y-6 text-[#3F3838] leading-relaxed">
+            <p>
+              Diskretion ist bei uns keine Marketing-Formel, sondern Arbeitsweise. Alle Anfragen laufen
+              verschlüsselt, wir speichern keine unnötigen Daten, und selbstverständlich erfahren weder Ihre
+              Begleitung noch Dritte mehr, als für den Abend zwingend erforderlich ist. NDAs auf Wunsch —
+              schriftlich, gegengezeichnet.
+            </p>
+            <p>
+              <strong>Professionalität</strong> beginnt für uns lange vor der Buchung: bei der Auswahl unserer
+              Damen, bei der ehrlichen Beratung im Vorgespräch, bei transparenten Tarifen ohne versteckte Zusätze,
+              und bei einer Erreichbarkeit sieben Tage die Woche — auch für kurzfristige Wünsche. Wenn Sie unsere
+              Agentur einmal getestet haben, verstehen Sie, warum Kunden nach zehn Jahren immer wieder zu uns
+              zurückkehren.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Models */}
       <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-models">
         <div className="flex flex-wrap items-end justify-between gap-6 mb-12">
-          <SectionTitle overline="Models" title="Unsere Escort Damen" description="Eine Auswahl unserer aktuellen Models — sorgfältig ausgewählt, authentisch und stilvoll." />
+          <SectionTitle overline="Models" title="Unsere exklusiven Escort Models in Hamburg" description="Eine Auswahl unserer aktuellen Damen — sorgfältig ausgewählt, kultiviert und authentisch. Jedes Profil finden Sie mit ausführlicher Bio, Sprachen, Interessen und Tarifen." />
           <Link to="/models" className="btn-ghost" data-testid="home-all-models-btn">
             Alle Models <ArrowRight size={14} />
           </Link>
@@ -156,7 +229,7 @@ export default function Home() {
 
       {/* Services */}
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-services">
-        <SectionTitle overline="Unsere Leistungen" title="Was wir bieten" description="Acht spezielle Begleitarten — für jeden Anlass die passende Begleitung." />
+        <SectionTitle overline="Anlässe" title="Begleitung für Business, Dinner und Events" description="Acht spezialisierte Begleitarten — vom Geschäftsempfang über Dinner-Verabredung bis zur mehrtägigen Reise. Für jeden Anlass die passende Begleitung mit klarem Rahmen." />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
           {SERVICES.map((s) => (
             <Link
@@ -194,7 +267,7 @@ export default function Home() {
 
       {/* Hamburg Areas */}
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-coverage">
-        <SectionTitle overline="Reichweite" title="Hamburg & Umland" description="Wir begleiten Sie in der gesamten Metropolregion." />
+        <SectionTitle overline="Reichweite" title="Escort Service in Hamburg Stadtteilen" description="Wir begleiten Sie diskret in der gesamten Hansestadt und Metropolregion — von HafenCity und Elbphilharmonie über Blankenese und Winterhude bis Norderstedt, Pinneberg und Lüneburg." />
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-12">
           {LOCATIONS.map((l) => (
             <Link
@@ -239,7 +312,7 @@ export default function Home() {
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-faq">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
           <div className="md:col-span-4">
-            <SectionTitle overline="FAQ" title="Häufige Fragen" />
+            <SectionTitle overline="FAQ" title="Häufig gestellte Fragen" />
             <Link to="/faq" className="btn-ghost mt-8 inline-flex">Alle Fragen <ArrowRight size={14} /></Link>
           </div>
           <div className="md:col-span-7 md:col-start-6 space-y-3">

@@ -20,7 +20,7 @@ def _fetch(path):
 
 
 EN_ROUTES = [
-    ("/en", "Premium Escort"),
+    ("/en", "Luxury Escort"),
     ("/en/models", "Our Companions"),
     ("/en/services", "Escort Services Hamburg"),
     ("/en/areas", "Hamburg Areas"),
@@ -77,13 +77,13 @@ def test_about_and_contact_slug_mapping():
 
 def test_en_page_carries_en_specific_meta_title():
     html = _fetch("/en").text
-    assert "Discreet Companionship" in html, "EN home should use English meta title"
+    assert "Exclusive Companionship" in html, "EN home should use English meta title"
 
 
 def test_en_h1_is_english():
     html = _fetch("/en").text
     h1 = re.search(r"<h1>([^<]*<em>[^<]*</em>[^<]*)</h1>", html, re.S).group(1)
-    assert "Premium Escort" in h1
+    assert "Luxury Escort" in h1
 
 
 def test_en_nav_labels_are_english():

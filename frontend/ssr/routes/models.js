@@ -131,6 +131,38 @@ ${(m.prices || []).length > 0 ? `
 <ul>${relServices.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}">${esc(s.title)}</a></li>`).join("")}</ul>
 <h2>${esc(t("sec.availableIn", lang))}</h2>
 <ul>${relLocs.map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}">Escort ${esc(l.name)}</a></li>`).join("")}</ul>
+
+<h2>${esc(lang === "en" ? `Frequently asked questions about ${m.name}` : `Häufig gestellte Fragen zu ${m.name}`)}</h2>
+${(() => {
+  const langs = (m.languages || []).slice(0, 3).join(", ");
+  const cities = (m.locations || []).slice(0, 3)
+    .map((s) => s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())).join(", ");
+  const svs = relServices.slice(0, 3).map((sv) => sv.title).join(", ");
+  const cheapest = (m.prices || []).length > 0 ? Math.min(...m.prices.map((p) => p.amount)) : null;
+  const cur = (m.prices || [])[0]?.currency || "EUR";
+  const faqs = lang === "en" ? [
+    { q: `Where can I meet ${m.name} in Hamburg?`,
+      a: `${m.name} is available for bookings ${cities ? `across ${cities} ` : ""}and, on request, throughout the greater Hamburg metropolitan area. Outcall to your hotel, private residence or event location is standard.` },
+    { q: `What languages does ${m.name} speak?`,
+      a: `${m.name} speaks ${langs || "German and English"} fluently — an important detail if your evening involves international guests or a business setting.` },
+    { q: `Which occasions is ${m.name} best suited for?`,
+      a: `${m.name} is especially recommended for ${svs || "dinner engagements, business receptions and cultural events"}. She moves with equal ease through gala evenings, private dinners and multi-day travel.` },
+    { q: `How do I book ${m.name}?`,
+      a: `Send a discreet enquiry via our contact form or WhatsApp with your preferred date, duration and occasion. ${cheapest ? `Rates start at ${cheapest.toLocaleString("en-GB")} ${cur} for a single hour, ` : ""}with tiered packages for longer engagements. Confirmation is usually within a few hours.` },
+  ] : [
+    { q: `Wo kann ich ${m.name} in Hamburg treffen?`,
+      a: `${m.name} ist ${cities ? `in ${cities} ` : ""}und auf Anfrage in der gesamten Metropolregion Hamburg buchbar. Outcall zu Ihrem Hotel, Ihrem privaten Rahmen oder Ihrem Event ist selbstverständlich.` },
+    { q: `Welche Sprachen spricht ${m.name}?`,
+      a: `${m.name} spricht ${langs || "Deutsch und Englisch"} fließend — wichtig, wenn Ihr Abend internationale Gäste oder einen geschäftlichen Rahmen einbezieht.` },
+    { q: `Für welche Anlässe eignet sich ${m.name} besonders?`,
+      a: `${m.name} empfehlen wir vor allem für ${svs || "Dinner-Verabredungen, Geschäftsempfänge und kulturelle Ereignisse"}. Sie bewegt sich mit gleicher Selbstverständlichkeit auf Gala-Abenden, in privaten Dinner-Runden und auf mehrtägigen Reisen.` },
+    { q: `Wie buche ich ${m.name}?`,
+      a: `Senden Sie eine diskrete Anfrage über unser Kontaktformular oder per WhatsApp mit Ihrem Wunschtermin, der gewünschten Dauer und dem Anlass. ${cheapest ? `Die Tarife beginnen bei ${cheapest.toLocaleString("de-DE")} ${cur} für eine Stunde, ` : ""}mit gestaffelten Paketen für längere Buchungen. Die Bestätigung erfolgt in der Regel innerhalb weniger Stunden.` },
+  ];
+  m._faqs = faqs;  // stash for the JSON-LD builder below
+  return faqs.map((f) => `<details><summary><strong>${esc(f.q)}</strong></summary><p>${esc(f.a)}</p></details>`).join("");
+})()}
+
 <p><a href="${navTo("/kontakt", lang)}?model=${escAttr(m.slug)}">${esc(t("cta.bookModel", lang, { name: m.name }))}</a></p>
 </article>
 </main>`;
@@ -150,6 +182,16 @@ ${(m.prices || []).length > 0 ? `
         knowsLanguage: m.languages,
         image: m.cover_image,
         nationality: m.nationality,
+      },
+      // FAQPage rich-snippet schema for the per-model Q&A block above.
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: (m._faqs || []).map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
       },
       breadcrumbSchema([{ label: t("crumb.models", lang), to: "/models" }, { label: m.name }], lang),
     ],

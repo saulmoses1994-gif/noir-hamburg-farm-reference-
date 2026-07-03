@@ -58,7 +58,7 @@ class TestSSRHomepage:
         assert r.status_code == 200
         assert "text/html" in r.headers.get("content-type", "")
         _assert_no_js_placeholder(r.text)
-        _assert_seo_basics(r.text, "Noir Hamburg", "Premium Escort")
+        _assert_seo_basics(r.text, "Luxus Escort Hamburg", "Luxus Escort Hamburg")
         # internal links
         for href in ["/models", "/services/", "/escort/", "/blog", "/faq", "/kontakt"]:
             assert href in r.text, f"missing link: {href}"

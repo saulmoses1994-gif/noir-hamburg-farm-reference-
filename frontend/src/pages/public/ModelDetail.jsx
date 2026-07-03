@@ -267,19 +267,68 @@ export default function ModelDetail() {
         </section>
       )}
 
-      {/* FAQ */}
+      {/* Model-specific FAQ — unique per-page SEO copy that references the model
+          by name. Rendered with FAQPage JSON-LD to earn rich snippets in Google. */}
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]">
-        <h2 className="font-heading text-3xl mb-12">{t("sec.faqH1")}</h2>
+        <h2 className="font-heading text-3xl mb-12">
+          {isEn ? `Frequently asked questions about ${model.name}` : `Häufig gestellte Fragen zu ${model.name}`}
+        </h2>
         <div className="space-y-px bg-[#1A1414]/5 max-w-4xl">
-          {FAQS.slice(0, 4).map((f, i) => (
-            <details key={i} className="bg-[#FBF7F4] group">
-              <summary className="cursor-pointer p-6 list-none flex items-center justify-between gap-6">
-                <span className="font-heading text-xl">{isEn ? f.qEn : f.q}</span>
-                <span className="accent-text text-xl group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <div className="px-6 pb-6 text-sm font-light text-[#6B5F5F] leading-relaxed">{isEn ? f.aEn : f.a}</div>
-            </details>
-          ))}
+          {(() => {
+            const langs = (model.languages || []).slice(0, 3).join(", ");
+            const cities = (model.locations || []).slice(0, 3).map((s) =>
+              s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+            ).join(", ");
+            const services = (model.services || []).slice(0, 3)
+              .map((slug) => (SERVICES.find((sv) => sv.slug === slug)?.title) || slug)
+              .join(", ");
+            const cheapest = (model.prices || []).length > 0
+              ? Math.min(...model.prices.map((p) => p.amount)) : null;
+            const cur = (model.prices || [])[0]?.currency || "EUR";
+            const modelFaqs = isEn ? [
+              { q: `Where can I meet ${model.name} in Hamburg?`,
+                a: `${model.name} is available for bookings ${cities ? `across ${cities} ` : ""}and, on request, throughout the greater Hamburg metropolitan area. Outcall to your hotel, private residence or event location is standard.` },
+              { q: `What languages does ${model.name} speak?`,
+                a: `${model.name} speaks ${langs || "German and English"} fluently — an important detail if your evening involves international guests or a business setting.` },
+              { q: `Which occasions is ${model.name} best suited for?`,
+                a: `${model.name} is especially recommended for ${services || "dinner engagements, business receptions and cultural events"}. She moves with equal ease through gala evenings, private dinners and multi-day travel.` },
+              { q: `How do I book ${model.name}?`,
+                a: `Send a discreet enquiry via our contact form or WhatsApp with your preferred date, duration and occasion. ${cheapest ? `Rates start at ${cheapest.toLocaleString("en-GB")} ${cur} for a single hour, ` : ""}with tiered packages for longer engagements. Confirmation is usually within a few hours.` },
+            ] : [
+              { q: `Wo kann ich ${model.name} in Hamburg treffen?`,
+                a: `${model.name} ist ${cities ? `in ${cities} ` : ""}und auf Anfrage in der gesamten Metropolregion Hamburg buchbar. Outcall zu Ihrem Hotel, Ihrem privaten Rahmen oder Ihrem Event ist selbstverständlich.` },
+              { q: `Welche Sprachen spricht ${model.name}?`,
+                a: `${model.name} spricht ${langs || "Deutsch und Englisch"} fließend — wichtig, wenn Ihr Abend internationale Gäste oder einen geschäftlichen Rahmen einbezieht.` },
+              { q: `Für welche Anlässe eignet sich ${model.name} besonders?`,
+                a: `${model.name} empfehlen wir vor allem für ${services || "Dinner-Verabredungen, Geschäftsempfänge und kulturelle Ereignisse"}. Sie bewegt sich mit gleicher Selbstverständlichkeit auf Gala-Abenden, in privaten Dinner-Runden und auf mehrtägigen Reisen.` },
+              { q: `Wie buche ich ${model.name}?`,
+                a: `Senden Sie eine diskrete Anfrage über unser Kontaktformular oder per WhatsApp mit Ihrem Wunschtermin, der gewünschten Dauer und dem Anlass. ${cheapest ? `Die Tarife beginnen bei ${cheapest.toLocaleString("de-DE")} ${cur} für eine Stunde, ` : ""}mit gestaffelten Paketen für längere Buchungen. Die Bestätigung erfolgt in der Regel innerhalb weniger Stunden.` },
+            ];
+            // Emit FAQPage JSON-LD for rich snippets.
+            const jsonLd = {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: modelFaqs.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: { "@type": "Answer", text: f.a },
+              })),
+            };
+            return (
+              <>
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+                {modelFaqs.map((f, i) => (
+                  <details key={i} className="bg-[#FBF7F4] group" data-testid={`model-faq-${i}`}>
+                    <summary className="cursor-pointer p-6 list-none flex items-center justify-between gap-6">
+                      <span className="font-heading text-xl">{f.q}</span>
+                      <span className="accent-text text-xl group-open:rotate-45 transition-transform">+</span>
+                    </summary>
+                    <div className="px-6 pb-6 text-sm font-light text-[#6B5F5F] leading-relaxed">{f.a}</div>
+                  </details>
+                ))}
+              </>
+            );
+          })()}
         </div>
       </section>
     </PublicLayout>

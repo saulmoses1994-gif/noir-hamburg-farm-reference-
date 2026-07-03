@@ -29,17 +29,48 @@ async function renderHome(buildAssets, lang = "de") {
 <p>${esc(t("home.lead", lang))}</p>
 <p><a href="${navTo("/models", lang)}">${esc(t("cta.discoverModels", lang))}</a> · <a href="${getSettings().whatsappUrl}">${esc(t("cta.whatsapp", lang))}</a> · <a href="${navTo("/kontakt", lang)}">${esc(t("nav.contact", lang))}</a></p>
 </section>
+
 <section>
-<h2>${esc(t("sec.ourModels", lang))}</h2>
+<h2>${esc(lang === "en" ? "Why choose a professional escort agency in Hamburg?" : "Warum eine professionelle Escort Agentur in Hamburg wählen?")}</h2>
+<p>${esc(lang === "en"
+  ? "Hamburg is one of Europe's most demanding cities — hanseatic, cosmopolitan, with an exceptionally high standard in culture, gastronomy and business. Anyone choosing an escort agency here should not rely on random matchmaking, but on established experience and a team that understands the city."
+  : "Hamburg ist eine der anspruchsvollsten Städte Europas — hanseatisch, weltoffen, mit einem außergewöhnlich hohen Standard in Kultur, Gastronomie und Business. Wer sich hier für eine Escort Agentur entscheidet, sollte nicht auf zufällige Vermittlung setzen, sondern auf gewachsene Erfahrung und ein Team, das die Stadt versteht.")}</p>
+<p>${esc(lang === "en"
+  ? "Since 2014, Noir Hamburg has accompanied gentlemen and ladies of rank to private dinner engagements, business receptions at the Elbphilharmonie, exclusive art openings in HafenCity and discreet weekends between Blankenese and Winterhude. Our matchmaking is personal, hand-picked and discreet — never automated."
+  : "Seit 2014 begleitet Noir Hamburg Herren und Damen von Rang zu privaten Dinner-Verabredungen, geschäftlichen Empfängen an der Elbphilharmonie, exklusiven Kunstvernissagen in der HafenCity und diskreten Wochenenden zwischen Blankenese und Winterhude. Unsere Vermittlung ist persönlich, handverlesen und diskret — nie automatisiert.")}</p>
+</section>
+
+<section>
+<h2>${esc(lang === "en" ? "Luxury escort service in Hamburg — at the highest level" : "Luxus Escort Service in Hamburg — auf höchstem Niveau")}</h2>
+<p>${esc(lang === "en"
+  ? "A luxury escort in Hamburg differs in every detail: the ladies wear Chanel, Dior or bespoke German ateliers. They speak at least two languages fluently, hold academic degrees or artistic careers, and carry themselves with the quiet self-assurance of a real lady — not a rehearsed role."
+  : "Ein Luxus Escort in Hamburg unterscheidet sich in jedem Detail: die Damen tragen Kleider von Chanel, Dior oder maßgeschneiderte deutsche Ateliers. Sie sprechen mindestens zwei Sprachen fließend, verfügen über akademische Bildung oder eine künstlerische Karriere und bewegen sich mit der stillen Selbstsicherheit einer echten Dame — nicht mit einer einstudierten Rolle.")}</p>
+<p>${esc(lang === "en"
+  ? "We work exclusively with women we know personally and whose personality, sophistication and discretion we can guarantee. For every occasion — from a quiet dinner in the Fischereihafen to a multi-day trip to Sylt or Cortina — we find the right companion. No catalogue, no mass production, but tailored matchmaking."
+  : "Wir arbeiten ausschließlich mit Frauen, die wir persönlich kennen und deren Persönlichkeit, Kultiviertheit und Diskretion wir garantieren können. Für jeden Anlass — vom stillen Abendessen im Fischereihafen bis zur mehrtägigen Reise nach Sylt oder Cortina — finden wir die passende Begleitung. Kein Katalog, keine Massenware, sondern maßgeschneiderte Vermittlung.")}</p>
+</section>
+
+<section>
+<h2>${esc(lang === "en" ? "Discretion, trust and professionalism" : "Diskretion, Vertrauen und Professionalität")}</h2>
+<p>${esc(lang === "en"
+  ? "For us, discretion is not a marketing phrase but a way of working. All enquiries are encrypted, we store no unnecessary data, and neither your companion nor any third party learn more than is strictly required for the evening. NDAs on request — written and countersigned."
+  : "Diskretion ist bei uns keine Marketing-Formel, sondern Arbeitsweise. Alle Anfragen laufen verschlüsselt, wir speichern keine unnötigen Daten, und selbstverständlich erfahren weder Ihre Begleitung noch Dritte mehr, als für den Abend zwingend erforderlich ist. NDAs auf Wunsch — schriftlich, gegengezeichnet.")}</p>
+<p>${esc(lang === "en"
+  ? "Professionalism begins for us long before the booking: in the selection of our ladies, in an honest consultation, in transparent rates without hidden extras, and in availability seven days a week — including short-notice requests. Once you have experienced our agency, you understand why clients return to us after ten years."
+  : "Professionalität beginnt für uns lange vor der Buchung: bei der Auswahl unserer Damen, bei der ehrlichen Beratung im Vorgespräch, bei transparenten Tarifen ohne versteckte Zusätze, und bei einer Erreichbarkeit sieben Tage die Woche — auch für kurzfristige Wünsche. Wenn Sie unsere Agentur einmal getestet haben, verstehen Sie, warum Kunden nach zehn Jahren immer wieder zu uns zurückkehren.")}</p>
+</section>
+
+<section>
+<h2>${esc(lang === "en" ? "Our exclusive escort models in Hamburg" : "Unsere exklusiven Escort Models in Hamburg")}</h2>
 <ul>${models.map((m) => `<li><a href="${navTo(`/models/${m.slug}`, lang)}"><strong>${esc(m.name)}</strong>, ${m.age} ${esc(t("model.years", lang))} — ${esc(m.short_tagline || "Premium")}</a></li>`).join("")}</ul>
 <p><a href="${navTo("/models", lang)}">${esc(t("cta.allModels", lang))}</a></p>
 </section>
 <section>
-<h2>${esc(t("sec.whatWeOffer", lang))}</h2>
+<h2>${esc(lang === "en" ? "Companionship for business, dinner and events" : "Begleitung für Business, Dinner und Events")}</h2>
 <ul>${SERVICES.map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}"><strong>${esc(s.title)}</strong> — ${esc(lang === "en" ? s.descriptionEn : s.description)}</a></li>`).join("")}</ul>
 </section>
 <section>
-<h2>${esc(t("sec.hamburgRegion", lang))}</h2>
+<h2>${esc(lang === "en" ? "Escort service across Hamburg districts" : "Escort Service in Hamburg Stadtteilen")}</h2>
 <ul>${LOCATIONS.map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}">Escort ${esc(l.name)}</a></li>`).join("")}</ul>
 </section>
 <section>
@@ -48,18 +79,18 @@ ${posts.map((p) => `<article><h3><a href="${navTo(`/blog/${p.slug}`, lang)}">${e
 <p><a href="${navTo("/blog", lang)}">${esc(t("cta.allPosts", lang))}</a></p>
 </section>
 <section>
-<h2>${esc(t("sec.faq", lang))}</h2>
+<h2>${esc(lang === "en" ? "Frequently asked questions" : "Häufig gestellte Fragen")}</h2>
 ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f.qEn : f.q)}</strong></summary><p>${esc(lang === "en" ? f.aEn : f.a)}</p></details>`).join("")}
 </section>
 </main>`;
 
   const titleByLang = {
-    de: "Noir Hamburg — Premium Escort Hamburg | Diskrete Begleitung von höchster Eleganz",
-    en: "Noir Hamburg — Premium Escort Hamburg | Discreet Companionship of the Highest Elegance",
+    de: "Luxus Escort Hamburg – Exklusive Begleitung mit Stil | Noir Hamburg",
+    en: "Luxury Escort Hamburg – Exclusive Companionship with Style | Noir Hamburg",
   };
   const descByLang = {
-    de: "Noir Hamburg ist die Premium-Begleitagentur für anspruchsvolle Herren in Hamburg. Diskret, gebildet, hanseatisch elegant. Buchen Sie Ihre persönliche Begleitung.",
-    en: "Noir Hamburg is the premium companion agency for discerning gentlemen in Hamburg. Discreet, well-educated, hanseatic elegance. Book your personal companion.",
+    de: "Luxus Escort Hamburg — exklusive, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
+    en: "Luxury Escort Hamburg — exclusive, discreet companion agency for dinner, business and events. Hand-picked models since 2014, transparent rates, coverage across Hamburg and the surrounding region.",
   };
 
   return renderShell({

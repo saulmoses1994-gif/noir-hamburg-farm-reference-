@@ -609,18 +609,20 @@ const ADVANTAGES_EN = [
   { title: "Reliable Punctuality", text: "Reliability and smooth coordination are the minimum we promise." },
 ];
 
+// SEO taxonomy — 10 defined categories. Each drives a filtered blog view and
+// its own /api/sitemap.xml URL. Extend cautiously — new categories dilute
+// authority. See Phase 2 spec.
 const BLOG_CATEGORIES = [
+  "Hamburg Lifestyle",
   "Luxury Lifestyle",
-  "Hamburg Guide",
   "Hotels",
   "Restaurants",
   "Nightlife",
   "Business Travel",
-  "Luxury Events",
+  "Events",
   "Escort Advice",
-  "Frequently Asked Questions",
-  "Privacy",
-  "Travel Tips",
+  "Privacy & Discretion",
+  "FAQ Guides",
 ];
 
 module.exports = {
