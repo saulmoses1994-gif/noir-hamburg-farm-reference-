@@ -74,6 +74,8 @@ function renderFooter(lang) {
 <p>${esc(t("misc.callUs", lang))}: <a href="tel:${esc(s.phone)}" style="color:#E5A5B5;">${esc(s.phone)}</a> · ${esc(t("misc.emailUs", lang))}: <a href="mailto:${esc(s.email)}" style="color:#E5A5B5;">${esc(s.email)}</a></p>
 <nav aria-label="${esc(t("sec.services", lang))}"><h3>${esc(t("sec.services", lang))}</h3><ul>${SERVICES.map((sv) => `<li><a href="${navTo(`/services/${sv.slug}`, lang)}" style="color:#fff;">${esc(sv.title)}</a></li>`).join("")}</ul></nav>
 <nav aria-label="${esc(t("nav.areas", lang))}"><h3>${esc(t("nav.areas", lang))}</h3><ul>${LOCATIONS.map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}" style="color:#fff;">Escort ${esc(l.name)}</a></li>`).join("")}</ul></nav>
+<p style="margin-top:1.5rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.15em;color:#888;">${esc(lang === "en" ? "Featured on" : "Verzeichnis-Partner")}</p>
+<a href="https://www.eurogirlsescort.com" target="_blank" rel="noopener noreferrer nofollow" title="EuroGirlsEscort.com"><img src="https://www.eurogirlsescort.com/dist/images/banners/120X60.jpg" alt="EuroGirlsEscort.com" title="EuroGirlsEscort.com" width="120" height="60" loading="lazy"/></a>
 </footer>`;
 }
 

@@ -80,7 +80,30 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4 text-xs text-white/50">
+        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <span className="overline text-[10px] text-white/50" data-testid="partner-badge-label">
+            {lang === "en" ? "Featured on" : "Verzeichnis-Partner"}
+          </span>
+          <a
+            href="https://www.eurogirlsescort.com"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            title="EuroGirlsEscort.com"
+            className="opacity-70 hover:opacity-100 transition-opacity"
+            data-testid="partner-banner-eurogirls"
+          >
+            <img
+              src="https://www.eurogirlsescort.com/dist/images/banners/120X60.jpg"
+              alt="EuroGirlsEscort.com"
+              title="EuroGirlsEscort.com"
+              width="120"
+              height="60"
+              loading="lazy"
+            />
+          </a>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between gap-4 text-xs text-white/50">
           <div className="flex items-center gap-2">
             <Sparkles size={12} className="text-[#E5A5B5]" /> © {new Date().getFullYear()} Noir Hamburg. {rightsByLang[lang] || rightsByLang.de}
           </div>
