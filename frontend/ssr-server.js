@@ -22,6 +22,24 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
+
+const PORT = parseInt(process.env.PORT || "3000", 10);
+const BUILD_DIR = path.join(__dirname, "build");
+
+// Auto-build safeguard for production deploys: some platforms (including
+// Emergent's) hand us a fresh container without running `yarn build` first.
+// Rather than crash-loop, we run the build in-process before the server
+// starts. This keeps deploys self-healing without a shell start script.
+if (!fs.existsSync(path.join(BUILD_DIR, "index.html"))) {
+  console.log("[ssr] build/ missing — running `yarn build` now (one-time)...");
+  try {
+    execSync("yarn build", { cwd: __dirname, stdio: "inherit" });
+  } catch (err) {
+    console.error("[ssr] yarn build failed:", err);
+    process.exit(1);
+  }
+}
 
 const { backendRaw } = require("./ssr/backend");
 const { renderHome } = require("./ssr/routes/home");
@@ -30,14 +48,6 @@ const { renderServicesList, renderServiceDetail } = require("./ssr/routes/servic
 const { renderAreasList, renderAreaDetail, renderEscortHamburg } = require("./ssr/routes/areas");
 const { renderBlogList, renderBlogDetail, renderPageDetail } = require("./ssr/routes/blog");
 const { renderFAQ, renderAbout, renderContact } = require("./ssr/routes/static");
-
-const PORT = parseInt(process.env.PORT || "3000", 10);
-const BUILD_DIR = path.join(__dirname, "build");
-
-if (!fs.existsSync(BUILD_DIR)) {
-  console.error("ERR: build/ folder not found. Run `yarn build` first.");
-  process.exit(1);
-}
 
 const TEMPLATE = fs.readFileSync(path.join(BUILD_DIR, "index.html"), "utf8");
 
