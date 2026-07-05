@@ -122,6 +122,14 @@ export function BlogDetail() {
   const metaDesc = post ? (isEn && post.meta_description_en ? post.meta_description_en : post.meta_description) : "";
   const enFallback = post && isEn && !post.content_en;
 
+  // Normalise per-article FAQs (each entry: {q, a, q_en?, a_en?}).
+  const articleFaqs = (post?.faqs || [])
+    .map((f) => ({
+      q: (isEn && f.q_en ? f.q_en : f.q) || "",
+      a: (isEn && f.a_en ? f.a_en : f.a) || "",
+    }))
+    .filter((f) => f.q && f.a);
+
   // Build a Table of Contents by adding `id` attributes to every <h2> in the
   // article HTML and collecting anchor text + slug for the sidebar TOC.
   const slugifyToc = (s) =>
@@ -161,6 +169,15 @@ export function BlogDetail() {
         { label: t("crumb.blog"), to: "/blog" },
         { label: title },
       ]),
+      ...(articleFaqs.length ? [{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": articleFaqs.map((f) => ({
+          "@type": "Question",
+          "name": f.q,
+          "acceptedAnswer": { "@type": "Answer", "text": f.a },
+        })),
+      }] : []),
     ] : null,
   });
 
@@ -174,6 +191,16 @@ export function BlogDetail() {
     <PublicLayout>
       <section className="px-6 md:px-12 lg:px-16 pt-8 pb-4">
         <Breadcrumbs items={[{ label: t("crumb.blog"), to: "/blog" }, { label: title }]} />
+        {/* Top CTA — never leave the reader without a next step */}
+        <div className="mt-4 flex flex-wrap gap-3 text-sm" data-testid="blog-cta-top">
+          <Link to={to("/kontakt")} className="text-[#8B1538] hover:underline font-semibold" data-testid="blog-cta-contact-top">
+            {isEn ? "Contact / Booking →" : "Kontakt / Buchung →"}
+          </Link>
+          <span className="text-[#6B5F5F]">·</span>
+          <Link to={to("/models")} className="text-[#3F3838] hover:accent-text" data-testid="blog-cta-models-top">
+            {isEn ? "Escort Hamburg — All Models" : "Escort Hamburg — Alle Models"}
+          </Link>
+        </div>
       </section>
 
       <article className="px-6 md:px-12 lg:px-16 pb-20">
@@ -217,6 +244,34 @@ export function BlogDetail() {
           dangerouslySetInnerHTML={{ __html: content }}
           data-testid="blog-content"
         />
+
+        {/* Middle CTA — View Models */}
+        <div className="max-w-3xl mx-auto mt-16 flex flex-wrap gap-4 justify-center" data-testid="blog-cta-middle">
+          <Link to={to("/models")} className="btn-primary" data-testid="blog-cta-view-models">
+            {isEn ? "View our Escort Hamburg Models" : "Unsere Escort Hamburg Models ansehen"} <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {/* Per-article FAQ */}
+        {articleFaqs.length > 0 && (
+          <div className="max-w-3xl mx-auto mt-16" data-testid="blog-faq">
+            <span className="overline">{isEn ? "Questions" : "Fragen"}</span>
+            <h2 className="font-heading text-2xl lg:text-3xl text-[#1A1414] mt-3 mb-6">
+              {isEn ? "Frequently asked questions" : "Häufige Fragen"}
+            </h2>
+            <div className="space-y-3">
+              {articleFaqs.map((f, i) => (
+                <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`blog-faq-${i}`}>
+                  <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
+                    <span className="font-heading text-lg text-[#1A1414]">{f.q}</span>
+                    <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
+                  </summary>
+                  <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{f.a}</div>
+                </details>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="max-w-3xl mx-auto mt-20 thin-divider" />
 
@@ -291,8 +346,22 @@ export function BlogDetail() {
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto mt-16 text-center">
-          <Link to={to("/blog")} className="btn-ghost">← {isEn ? "Back to the Magazine" : "Zurück zum Magazin"}</Link>
+        <div className="max-w-3xl mx-auto mt-16 text-center space-y-6" data-testid="blog-cta-bottom">
+          <div className="p-8 bg-[#FBF7F4] border-l-4 border-[#8B1538] text-left">
+            <h2 className="font-heading text-2xl md:text-3xl text-[#1A1414] mb-3">{isEn ? "Contact Noir Hamburg" : "Kontakt Noir Hamburg"}</h2>
+            <p className="text-[#3F3838] leading-relaxed mb-5">
+              {isEn ? "Discreet, personal, seven days a week. Reach out via WhatsApp, e-mail or our contact form." : "Diskret, persönlich, sieben Tage die Woche. Kontaktieren Sie uns per WhatsApp, E-Mail oder Kontaktformular."}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link to={to("/kontakt")} className="btn-primary" data-testid="blog-cta-contact">
+                {isEn ? "Contact / Booking" : "Kontakt / Buchung"} <ArrowRight size={14} />
+              </Link>
+              <Link to={to("/models")} className="btn-ghost" data-testid="blog-cta-models-bottom">
+                {isEn ? "View Models" : "Models ansehen"}
+              </Link>
+            </div>
+          </div>
+          <Link to={to("/blog")} className="btn-ghost inline-block">← {isEn ? "Back to the Magazine" : "Zurück zum Magazin"}</Link>
         </div>
       </article>
     </PublicLayout>

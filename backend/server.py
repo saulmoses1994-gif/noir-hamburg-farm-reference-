@@ -16,7 +16,7 @@ import bleach
 import jwt
 import requests
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Annotated
+from typing import List, Optional, Annotated, Dict, Any
 
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, UploadFile, File, Header, Query
 from fastapi.responses import Response as FastResponse, PlainTextResponse
@@ -308,6 +308,9 @@ class BlogPostCreate(BaseModel):
     meta_description_en: Optional[str] = ""
     related_services: List[str] = []
     related_locations: List[str] = []
+    # Optional FAQ block appended to the article (rendered on public detail
+    # page + emitted as FAQPage JSON-LD). Each entry: {q, a, q_en?, a_en?}.
+    faqs: List[Dict[str, Any]] = []
     published: bool = True
 
 

@@ -103,10 +103,28 @@ async function renderBlogDetail(slug, buildAssets, lang = "de") {
       ? `<aside><h2>${esc(label)}</h2><ul>${items.map((it) => `<li><a href="${navTo(hrefFn(it), lang)}">${esc(labelFn(it))}</a></li>`).join("")}</ul></aside>`
       : "";
 
+  // Per-article FAQ block (rendered + emitted as FAQPage JSON-LD).
+  const articleFaqs = (p.faqs || [])
+    .map((f) => ({
+      q: (isEn && f.q_en ? f.q_en : f.q) || "",
+      a: (isEn && f.a_en ? f.a_en : f.a) || "",
+    }))
+    .filter((f) => f.q && f.a);
+  const faqHtml = articleFaqs.length
+    ? `<section><h2>${esc(isEn ? "Frequently asked questions" : "Häufige Fragen")}</h2>${articleFaqs.map((f) => `<details><summary><strong>${esc(f.q)}</strong></summary><p>${esc(f.a)}</p></details>`).join("")}</section>`
+    : "";
+
+  // Top CTA (above the article) — send readers to booking/contact early.
+  const topCtaHtml = `<p style="margin:1rem 0;"><a href="${navTo("/kontakt", lang)}"><strong>${esc(isEn ? "Contact / Booking →" : "Kontakt / Buchung →")}</strong></a> · <a href="${navTo("/models", lang)}">${esc(isEn ? "Escort Hamburg — All Models" : "Escort Hamburg — Alle Models")}</a></p>`;
+
+  // Bottom CTA (below related blocks) — the final "no dead end" nudge.
+  const bottomCtaHtml = `<section style="margin-top:2rem;padding:1.5rem;background:#FBF7F4;border-left:4px solid #8B1538;"><h2>${esc(isEn ? "Contact Noir Hamburg" : "Kontakt Noir Hamburg")}</h2><p>${esc(isEn ? "Discreet, personal, seven days a week. Reach out via WhatsApp, e-mail or our contact form." : "Diskret, persönlich, sieben Tage die Woche. Kontaktieren Sie uns per WhatsApp, E-Mail oder Kontaktformular.")}</p><p><a href="${navTo("/kontakt", lang)}"><strong>${esc(isEn ? "Book your evening →" : "Ihren Abend buchen →")}</strong></a></p></section>`;
+
   const body = `
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.blog", lang), to: "/blog" }, { label: title }], lang)}
 ${enFallback ? englishComingSoonBanner(lang) : ""}
+${topCtaHtml}
 ${tocHtml}
 <article>
 <p style="text-transform:uppercase;color:#8B1538;">${esc(p.category)}</p>
@@ -115,25 +133,21 @@ ${p.cover_image ? `<img src="${escAttr(p.cover_image)}" alt="${escAttr(title)}" 
 ${contentWithAnchors}
 </article>
 
-${linkList(isEn ? "Related Services" : "Verwandte Services", relatedServices,
+${faqHtml}
+
+${linkList(isEn ? "Related Escort Services" : "Verwandte Escort Services", relatedServices,
     (s) => `/services/${s.slug}`, (s) => s.title)}
-${linkList(isEn ? "Related Areas" : "Verwandte Orte", relatedLocations,
-    (l) => `/escort/${l.slug}`, (l) => `Escort ${l.name}`)}
-${linkList(isEn ? "Meet Our Models" : "Unsere Models", relModels,
-    (m) => `/models/${m.slug}`, (m) => `${m.name} — ${m.short_tagline || ""}`)}
-${linkList(isEn ? "More from the Magazine" : "Weitere Artikel", otherPosts,
+${linkList(isEn ? "Escort Hamburg by Area" : "Escort Hamburg nach Stadtteil", relatedLocations,
+    (l) => `/escort/${l.slug}`, (l) => `Escort ${l.name} — ${isEn ? "premium companionship" : "Premium Begleitung"}`)}
+${linkList(isEn ? "Suggested Escort Hamburg Models" : "Passende Hamburger Escort Models", relModels,
+    (m) => `/models/${m.slug}`, (m) => `${m.name} — Escort ${m.cities?.[0] || "Hamburg"}`)}
+${linkList(isEn ? "Related articles" : "Verwandte Artikel", otherPosts,
     (a) => `/blog/${a.slug}`, (a) => (isEn && a.title_en ? a.title_en : a.title))}
 
+${bottomCtaHtml}
 <p><a href="${navTo("/blog", lang)}">← ${esc(isEn ? "Back to the Magazine" : "Zurück zum Magazin")}</a></p>
 </main>`;
-  return renderShell({
-    ...buildAssets,
-    lang,
-    title: metaTitle || `${title} | Noir Hamburg`,
-    description: metaDesc || excerpt,
-    canonicalPath: `/blog/${p.slug}`,
-    ogImage: p.cover_image,
-    jsonLd: [
+  const jsonLdBlocks = [
       {
         "@context": "https://schema.org",
         "@type": "Article",
@@ -147,7 +161,26 @@ ${linkList(isEn ? "More from the Magazine" : "Weitere Artikel", otherPosts,
         articleSection: p.category,
       },
       breadcrumbSchema([{ label: t("crumb.blog", lang), to: "/blog" }, { label: title }], lang),
-    ],
+  ];
+  if (articleFaqs.length) {
+    jsonLdBlocks.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: articleFaqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+  }
+  return renderShell({
+    ...buildAssets,
+    lang,
+    title: metaTitle || `${title} | Noir Hamburg`,
+    description: metaDesc || excerpt,
+    canonicalPath: `/blog/${p.slug}`,
+    ogImage: p.cover_image,
+    jsonLd: jsonLdBlocks,
     bodyContent: body,
   });
 }

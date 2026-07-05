@@ -68,13 +68,52 @@ ${NAV.map((n) => {
 
 function renderFooter(lang) {
   const s = getSettings();
+  const isEn = lang === "en";
+
+  // Curated SEO-friendly anchor labels for the footer navigation.
+  const svcLinks = [
+    { slug: "luxury-escort-hamburg",   label: isEn ? "Luxury Escort Hamburg"    : "Luxus Escort Hamburg" },
+    { slug: "vip-escort-hamburg",      label: isEn ? "VIP Escort Hamburg"       : "VIP Escort Hamburg" },
+    { slug: "business-escort-hamburg", label: isEn ? "Business Escort Hamburg"  : "Business Escort Hamburg" },
+    { slug: "hotel-escort-hamburg",    label: isEn ? "Hotel Escort Hamburg"     : "Hotel Escort Hamburg" },
+    { slug: "dinner-companion-hamburg",label: isEn ? "Dinner Companion Hamburg" : "Dinner Escort Hamburg" },
+  ];
+  const areaLinks = [
+    { slug: "st-pauli",   label: "Escort St. Pauli" },
+    { slug: "hafencity",  label: "Escort HafenCity" },
+    { slug: "eppendorf",  label: "Escort Eppendorf" },
+    { slug: "winterhude", label: "Escort Winterhude" },
+    { slug: "altona",     label: "Escort Altona" },
+    { slug: "blankenese", label: "Escort Blankenese" },
+  ];
+
   return `<footer role="contentinfo" style="padding:2rem;background:#1A1414;color:#fff;margin-top:3rem;">
-<h2>${esc(s.business_name)}</h2>
+<h3>${esc(s.business_name)}</h3>
 <p>${esc(t("misc.footerTagline", lang))}</p>
 <p>${esc(t("misc.callUs", lang))}: <a href="tel:${esc(s.phone)}" style="color:#E5A5B5;">${esc(s.phone)}</a> · ${esc(t("misc.emailUs", lang))}: <a href="mailto:${esc(s.email)}" style="color:#E5A5B5;">${esc(s.email)}</a></p>
-<nav aria-label="${esc(t("sec.services", lang))}"><h3>${esc(t("sec.services", lang))}</h3><ul>${SERVICES.map((sv) => `<li><a href="${navTo(`/services/${sv.slug}`, lang)}" style="color:#fff;">${esc(sv.title)}</a></li>`).join("")}</ul></nav>
-<nav aria-label="${esc(t("nav.areas", lang))}"><h3>${esc(t("nav.areas", lang))}</h3><ul>${LOCATIONS.map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}" style="color:#fff;">Escort ${esc(l.name)}</a></li>`).join("")}</ul></nav>
-<p style="margin-top:1.5rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.15em;color:#888;">${esc(lang === "en" ? "Featured on" : "Verzeichnis-Partner")}</p>
+<p><a href="${navTo("/kontakt", lang)}" style="color:#E5A5B5;">${esc(isEn ? "Contact Noir Hamburg →" : "Kontakt Noir Hamburg →")}</a></p>
+
+<nav aria-label="${esc(isEn ? "Escort Services" : "Escort Services")}"><h3>${esc(isEn ? "Escort Services" : "Escort Services")}</h3><ul>
+<li><a href="${navTo("/models", lang)}" style="color:#fff;">${esc(isEn ? "Escort Hamburg — All Models" : "Escort Hamburg — Alle Models")}</a></li>
+${svcLinks.map((sv) => `<li><a href="${navTo(`/services/${sv.slug}`, lang)}" style="color:#fff;">${esc(sv.label)}</a></li>`).join("")}
+<li><a href="${navTo("/services", lang)}" style="color:#fff;">${esc(isEn ? "All Escort Services →" : "Alle Escort Services →")}</a></li>
+</ul></nav>
+
+<nav aria-label="${esc(isEn ? "Escort Hamburg by Area" : "Escort Hamburg nach Stadtteil")}"><h3>${esc(isEn ? "Escort Hamburg by Area" : "Escort Hamburg nach Stadtteil")}</h3><ul>
+${areaLinks.map((a) => `<li><a href="${navTo(`/escort/${a.slug}`, lang)}" style="color:#fff;">${esc(a.label)}</a></li>`).join("")}
+<li><a href="${navTo("/areas", lang)}" style="color:#fff;">${esc(isEn ? "All Hamburg areas →" : "Alle Hamburg-Stadtteile →")}</a></li>
+</ul></nav>
+
+<nav aria-label="${esc(isEn ? "Information" : "Informationen")}"><h3>${esc(isEn ? "Information" : "Informationen")}</h3><ul>
+<li><a href="${navTo("/blog", lang)}" style="color:#fff;">${esc(isEn ? "Magazine" : "Magazin")}</a></li>
+<li><a href="${navTo("/faq", lang)}" style="color:#fff;">FAQ</a></li>
+<li><a href="${navTo("/ueber-uns", lang)}" style="color:#fff;">${esc(isEn ? "About Noir Hamburg" : "Über Noir Hamburg")}</a></li>
+<li><a href="${navTo("/kontakt", lang)}" style="color:#fff;">${esc(isEn ? "Contact" : "Kontakt")}</a></li>
+<li><a href="${navTo("/p/diskretion", lang)}" style="color:#fff;">${esc(isEn ? "Discretion Promise" : "Diskretion")}</a></li>
+<li><a href="${navTo("/impressum", lang)}" style="color:#fff;">${esc(isEn ? "Imprint" : "Impressum")}</a></li>
+</ul></nav>
+
+<p style="margin-top:1.5rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.15em;color:#888;">${esc(isEn ? "Featured on" : "Verzeichnis-Partner")}</p>
 <a href="https://www.eurogirlsescort.com" target="_blank" rel="noopener noreferrer nofollow" title="EuroGirlsEscort.com"><img src="https://www.eurogirlsescort.com/dist/images/banners/120X60.jpg" alt="EuroGirlsEscort.com" title="EuroGirlsEscort.com" width="120" height="60" loading="lazy"/></a>
 </footer>`;
 }

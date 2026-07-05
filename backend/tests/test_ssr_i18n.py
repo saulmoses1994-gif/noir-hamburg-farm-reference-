@@ -11,7 +11,7 @@ import requests
 import pytest
 
 BASE = "http://localhost:3000"
-ORIGIN = "https://client-portal-385.preview.emergentagent.com"
+ORIGIN = "https://noir-hamburg.com"  # canonical origin (matches SITE_ORIGIN default in ssr/shell.js)
 
 
 def _fetch(path):

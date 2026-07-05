@@ -56,7 +56,9 @@ const emptyPost = {
   title_en: "", excerpt_en: "", content_en: "",
   cover_image: "", meta_title: "", meta_description: "",
   meta_title_en: "", meta_description_en: "",
-  related_services: [], related_locations: [], published: true,
+  related_services: [], related_locations: [],
+  faqs: [],  // [{q, a, q_en, a_en}]
+  published: true,
 };
 
 export function AdminBlogEdit() {
@@ -234,6 +236,30 @@ export function AdminBlogEdit() {
               <button key={l.slug} type="button" onClick={() => toggleArr("related_locations", l.slug)} className={`text-xs uppercase tracking-[0.15em] py-2 px-3 border ${form.related_locations?.includes(l.slug) ? "border-[#8B1538] text-[#8B1538]" : "border-[#1A1414]/15 text-[#6B5F5F]"}`}>{l.name}</button>
             ))}
           </div>
+        </div>
+
+        {/* Per-article FAQ editor — emitted as FAQPage JSON-LD + rendered
+            at the bottom of the article. Optional; up to ~6 items works well. */}
+        <div className="pt-4 border-t border-[#1A1414]/8">
+          <label className="overline text-[10px] block mb-3">FAQ (optional)</label>
+          <p className="text-xs text-[#6B5F5F] mb-4">Zeigt Häufige Fragen unter dem Artikel und erzeugt FAQPage-Schema für Google. Deutsch ist Pflicht, EN optional.</p>
+          <div className="space-y-3">
+            {(form.faqs || []).map((f, i) => (
+              <div key={i} className="p-4 border border-[#1A1414]/15 rounded space-y-2" data-testid={`admin-faq-row-${i}`}>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono text-[#6B5F5F]">#{i + 1}</span>
+                  <button type="button" onClick={() => set("faqs", form.faqs.filter((_, j) => j !== i))} className="text-xs text-red-500 hover:underline" data-testid={`admin-faq-remove-${i}`}>Entfernen</button>
+                </div>
+                <input type="text" value={f.q || ""} onChange={(e) => set("faqs", form.faqs.map((x, j) => j === i ? { ...x, q: e.target.value } : x))} placeholder="Frage (Deutsch)" className="w-full bg-transparent border border-[#1A1414]/15 p-2 text-sm" data-testid={`admin-faq-q-${i}`} />
+                <textarea value={f.a || ""} onChange={(e) => set("faqs", form.faqs.map((x, j) => j === i ? { ...x, a: e.target.value } : x))} placeholder="Antwort (Deutsch)" rows={2} className="w-full bg-transparent border border-[#1A1414]/15 p-2 text-sm" data-testid={`admin-faq-a-${i}`} />
+                <input type="text" value={f.q_en || ""} onChange={(e) => set("faqs", form.faqs.map((x, j) => j === i ? { ...x, q_en: e.target.value } : x))} placeholder="Question (English, optional)" className="w-full bg-transparent border border-[#1A1414]/15 p-2 text-sm" />
+                <textarea value={f.a_en || ""} onChange={(e) => set("faqs", form.faqs.map((x, j) => j === i ? { ...x, a_en: e.target.value } : x))} placeholder="Answer (English, optional)" rows={2} className="w-full bg-transparent border border-[#1A1414]/15 p-2 text-sm" />
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={() => set("faqs", [...(form.faqs || []), { q: "", a: "", q_en: "", a_en: "" }])} className="mt-3 text-xs uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]" data-testid="admin-faq-add">
+            + FAQ-Eintrag hinzufügen
+          </button>
         </div>
 
         <div className="pt-6 border-t border-[#1A1414]/8">

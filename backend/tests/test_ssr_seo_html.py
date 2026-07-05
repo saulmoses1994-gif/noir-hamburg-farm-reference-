@@ -56,7 +56,7 @@ class TestHomepage:
             "Warum eine professionelle Escort Agentur",
             "Luxus Escort Service in Hamburg",
             "Diskretion",
-            "Warum Kunden uns vertrauen",
+            "Warum Noir Hamburg?",
             "Unsere exklusiven Escort Models",
             "Begleitung für Business",
             "Escort Service in Hamburg",
