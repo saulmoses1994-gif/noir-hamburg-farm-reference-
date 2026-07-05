@@ -160,6 +160,36 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Homepage hero animations — replace framer-motion with pure CSS to keep the
+   main JS bundle small (saves ~50KB gzipped). Elements start hidden and fade
+   up with a staggered delay via inline `style={{ animationDelay }}`. */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+.animate-hero-in {
+  opacity: 0;
+  animation: heroIn 1s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up, .animate-hero-in { animation: none; opacity: 1; }
+}
+
+/* content-visibility on far-below-fold sections defers layout/paint costs
+   until the browser is ready to render them — helps mobile LCP + TBT. */
+.deferred-paint {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}
+
 /* Editorial / model imagery */
 .editorial-image {
   overflow: hidden;

@@ -167,6 +167,8 @@ function renderShell({
   bodyContent,
   reactHeadAssets,
   reactScripts,
+  preloadImage,  // optional URL — emitted as <link rel="preload" as="image">
+                 // to prioritise fetching the LCP image.
 }) {
   const dePath = localizePath(canonicalPath || "/", "de");
   const enPath = localizePath(canonicalPath || "/", "en");
@@ -211,6 +213,8 @@ ${ogImage ? `<meta property="og:image" content="${escAttr(ogImage)}" />` : ""}
 ${ogImage ? `<meta name="twitter:image" content="${escAttr(ogImage)}" />` : ""}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://images.unsplash.com" />
+${preloadImage ? `<link rel="preload" as="image" href="${escAttr(preloadImage)}" fetchpriority="high" />` : ""}
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <script type="application/ld+json">
 {

@@ -175,7 +175,8 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
     title: titleByLang[lang] || titleByLang.de,
     description: descByLang[lang] || descByLang.de,
     canonicalPath: "/",
-    ogImage: "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=85",
+    ogImage: "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80",
+    preloadImage: "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=900&q=78",
     jsonLd: [
       {
         "@context": "https://schema.org",

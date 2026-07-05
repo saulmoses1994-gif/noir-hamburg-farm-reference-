@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import SectionTitle from "@/components/SectionTitle";
@@ -45,33 +44,17 @@ export default function Home() {
       <section className="px-6 md:px-12 lg:px-16 pt-16 pb-20" data-testid="home-hero">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
           <div className="lg:col-span-7">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#F4E4E4] text-[#8B1538] text-xs font-semibold uppercase tracking-wider rounded-full mb-6"
-            >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#F4E4E4] text-[#8B1538] text-xs font-semibold uppercase tracking-wider rounded-full mb-6 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
               <Sparkles size={12} /> Premium · Hamburg seit 2014
-            </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              className="font-heading text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-[#1A1414]"
-            >
+            </div>
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-[#1A1414] animate-fade-in-up" style={{ animationDelay: "100ms" }}>
               Luxus Escort Hamburg<br />
               <span className="accent-text italic font-medium">Premium Begleitung mit Stil</span>
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="mt-8 max-w-xl text-base lg:text-lg font-normal text-[#6B5F5F] leading-relaxed"
-            >
+            </h1>
+            <p className="mt-8 max-w-xl text-base lg:text-lg font-normal text-[#6B5F5F] leading-relaxed animate-fade-in-up" style={{ animationDelay: "300ms" }}>
               Ihre vertrauenswürdige Begleitagentur in Hamburg und Umland — ehrlich, diskret und stilvoll. Wir vermitteln charmante, gebildete Persönlichkeiten für unvergessliche Begegnungen.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="mt-10 flex flex-wrap gap-4"
-            >
+            </p>
+            <div className="mt-10 flex flex-wrap gap-4 animate-fade-in-up" style={{ animationDelay: "500ms" }}>
               <Link to="/models" className="btn-primary" data-testid="hero-models-btn">
                 Models entdecken <ArrowRight size={16} />
               </Link>
@@ -83,7 +66,7 @@ export default function Home() {
               >
                 <MessageCircle size={16} /> WhatsApp
               </a>
-            </motion.div>
+            </div>
 
             <div className="mt-12 grid grid-cols-3 gap-6 max-w-md">
               {[
@@ -99,14 +82,15 @@ export default function Home() {
             </div>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1 }}
-            className="lg:col-span-5 relative"
+          <div
+            className="lg:col-span-5 relative animate-hero-in"
+            style={{ animationDuration: "1s", animationTimingFunction: "ease-out" }}
           >
             <div className="relative aspect-[4/5] overflow-hidden rounded-tl-[120px] rounded-br-[120px]">
               <img
-                src="https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=85"
+                src="https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80"
+                srcSet="https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=600&q=75 600w, https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=900&q=78 900w, https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80 1200w"
+                sizes="(max-width: 768px) 100vw, 42vw"
                 alt="Premium Escort Hamburg — Noir Hamburg Begleitagentur"
                 width="1200"
                 height="1500"
@@ -122,7 +106,7 @@ export default function Home() {
                 <div className="text-xs text-[#6B5F5F]">Hamburg & Umland</div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -444,7 +428,7 @@ export default function Home() {
       </section>
 
       {/* Featured Articles — magazine hero cards + secondary grid */}
-      <section className="px-6 md:px-12 lg:px-16 py-24 bg-[#FBF7F4]" data-testid="home-featured-articles">
+      <section className="px-6 md:px-12 lg:px-16 py-24 bg-[#FBF7F4] deferred-paint" data-testid="home-featured-articles">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
             <div>
@@ -542,7 +526,7 @@ export default function Home() {
       </section>
 
       {/* FAQ Preview */}
-      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-faq">
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4] deferred-paint" data-testid="home-faq">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
           <div className="md:col-span-4">
             <SectionTitle overline="FAQ" title="Häufig gestellte Fragen" />
