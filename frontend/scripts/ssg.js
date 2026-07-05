@@ -41,6 +41,7 @@ const headAssetsMatch = TEMPLATE.match(/<head>([\s\S]*?)<\/head>/i);
 const bodyScriptsMatch = TEMPLATE.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
 
 const reactScripts = (bodyScriptsMatch ? bodyScriptsMatch[1] : "")
+  .replace(/<div id="seo-content">[\s\S]*?<\/div>\s*<div id="root">/i, '<div id="root">')
   .replace(/<div id="root">[\s\S]*?<\/div>/i, "")
   .replace(/<noscript>[\s\S]*?<\/noscript>/gi, "");
 

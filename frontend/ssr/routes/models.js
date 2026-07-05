@@ -115,9 +115,12 @@ ${m.cover_image ? `<img src="${escAttr(m.cover_image)}" alt="${escAttr(m.name)} 
 <dt>${esc(t("model.nationality", lang))}</dt><dd>${esc(m.nationality || "")}</dd>
 <dt>${esc(t("model.languages", lang))}</dt><dd>${(m.languages || []).map(esc).join(", ")}</dd>
 <dt>${esc(t("model.hairEyes", lang))}</dt><dd>${esc(m.hair_color || "")} / ${esc(m.eye_color || "")}</dd>
+${(isEn ? m.availability_en : m.availability) ? `<dt>${esc(isEn ? "Availability" : "Verfügbarkeit")}</dt><dd>${esc(isEn ? m.availability_en : m.availability)}</dd>` : ""}
 </dl>
 <h2>${esc(t("sec.aboutPerson", lang, { name: m.name }))}</h2>
 <p>${esc(bio)}</p>
+${(isEn ? m.personality_en : m.personality) ? `<h2>${esc(isEn ? "Personality" : "Persönlichkeit")}</h2><p>${esc(isEn ? m.personality_en : m.personality)}</p>` : ""}
+${(m.interests || []).length ? `<h2>${esc(isEn ? "Interests" : "Interessen")}</h2><ul>${m.interests.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>` : ""}
 ${(m.prices || []).length > 0 ? `
 <h2>${esc(lang === "en" ? "Rates" : "Tarife")}</h2>
 <dl>${m.prices.map((p) => {

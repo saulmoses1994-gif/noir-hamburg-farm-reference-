@@ -7,6 +7,7 @@ import ModelCard from "@/components/ModelCard";
 import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { api } from "@/lib/api";
 import { LOCATIONS, SERVICES } from "@/data/site";
+import { AREA_CONTENT, GENERIC_AREA_FAQS } from "@/data/areaContent";
 import { useI18n } from "@/lib/i18n";
 
 const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${key}En`] : o[key]);
@@ -80,6 +81,14 @@ export function AreaDetail() {
 
   const intro = area ? pick(area, "intro", lang) : "";
   const description = area ? pick(area, "description", lang) : "";
+  const extra = area ? (AREA_CONTENT[area.slug] || { bodyExtra: [], bodyExtraEn: [] }) : { bodyExtra: [], bodyExtraEn: [] };
+  const bodyExtra = lang === "en" ? (extra.bodyExtraEn || []) : (extra.bodyExtra || []);
+  const areaFaqs = area
+    ? (extra.faqs || GENERIC_AREA_FAQS).map((f) => ({
+        q: (lang === "en" ? f.qEn : f.q).replace(/\{name\}/g, area.name),
+        a: (lang === "en" ? f.aEn : f.a).replace(/\{name\}/g, area.name),
+      }))
+    : [];
 
   useSEO({
     title: area ? (lang === "en"
@@ -101,6 +110,15 @@ export function AreaDetail() {
         { label: t("crumb.areas"), to: "/areas" },
         { label: area.name },
       ]),
+      ...(areaFaqs.length ? [{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": areaFaqs.map((f) => ({
+          "@type": "Question",
+          "name": f.q,
+          "acceptedAnswer": { "@type": "Answer", "text": f.a },
+        })),
+      }] : []),
     ] : null,
   });
 
@@ -131,7 +149,13 @@ export function AreaDetail() {
             <h2 className="font-heading text-3xl lg:text-4xl mb-8">
               {lang === "en" ? `Companionship in ${area.name}` : `Begleitung in ${area.name}`}
             </h2>
-            <p className="text-base lg:text-lg font-light text-[#6B5F5F] leading-relaxed">{description}</p>
+            <p className="text-base lg:text-lg font-light text-[#3F3838] leading-relaxed">{description}</p>
+
+            {bodyExtra.length > 0 && (
+              <div className="mt-8 space-y-5 text-[#3F3838] leading-relaxed" data-testid="area-body-extra">
+                {bodyExtra.map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+            )}
 
             {area.landmarks?.length > 0 && (
               <div className="mt-12">
@@ -144,8 +168,28 @@ export function AreaDetail() {
               </div>
             )}
 
+            {areaFaqs.length > 0 && (
+              <div className="mt-14" data-testid="area-faq">
+                <span className="overline">{lang === "en" ? "Questions" : "Fragen"}</span>
+                <h2 className="font-heading text-2xl lg:text-3xl text-[#1A1414] mt-3 mb-6">
+                  {lang === "en" ? `FAQ — Escort in ${area.name}` : `Häufige Fragen — Escort in ${area.name}`}
+                </h2>
+                <div className="space-y-3">
+                  {areaFaqs.map((f, i) => (
+                    <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`area-faq-${i}`}>
+                      <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
+                        <span className="font-heading text-lg text-[#1A1414]">{f.q}</span>
+                        <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
+                      </summary>
+                      <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{f.a}</div>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-12 flex gap-4 flex-wrap">
-              <Link to={to("/kontakt")} className="btn-primary">{t("cta.bookInArea", { name: area.name })} <ArrowRight size={14} /></Link>
+              <Link to={to("/kontakt")} className="btn-primary" data-testid="area-contact-btn">{t("cta.bookInArea", { name: area.name })} <ArrowRight size={14} /></Link>
             </div>
           </div>
 

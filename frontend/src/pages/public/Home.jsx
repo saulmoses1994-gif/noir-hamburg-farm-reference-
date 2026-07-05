@@ -25,8 +25,8 @@ export default function Home() {
   }, []);
 
   useSEO({
-    title: "Luxus Escort Hamburg – Exklusive Begleitung mit Stil | Noir Hamburg",
-    description: "Luxus Escort Hamburg — exklusive, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
+    title: "Luxus Escort Hamburg – Premium Begleitung mit Stil | Noir Hamburg",
+    description: "Luxus Escort Hamburg — premium, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -58,7 +58,7 @@ export default function Home() {
               className="font-heading text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-[#1A1414]"
             >
               Luxus Escort Hamburg<br />
-              <span className="accent-text italic font-medium">Exklusive Begleitung mit Stil</span>
+              <span className="accent-text italic font-medium">Premium Begleitung mit Stil</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
@@ -192,7 +192,7 @@ export default function Home() {
         <div className="max-w-4xl">
           <span className="overline text-[10px]">Vertrauen</span>
           <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
-            Diskretion, Vertrauen und Professionalität
+            Diskretion und Privatsphäre in Hamburg
           </h2>
           <div className="mt-8 space-y-6 text-[#3F3838] leading-relaxed">
             <p>
@@ -207,6 +207,46 @@ export default function Home() {
               und bei einer Erreichbarkeit sieben Tage die Woche — auch für kurzfristige Wünsche. Wenn Sie unsere
               Agentur einmal getestet haben, verstehen Sie, warum Kunden nach zehn Jahren immer wieder zu uns
               zurückkehren.
+            </p>
+            <p>
+              Konkret bedeutet das: keine SMS an Ihre Privatnummer ohne Ihre ausdrückliche Freigabe, keine
+              Kalendereinträge auf Diensttelefonen, kein Foto-Austausch, den Sie später nicht mehr zurückholen
+              können. Wir verstehen die <strong>Vertraulichkeit</strong> hanseatischer Herren — und arbeiten
+              nach diesem Maßstab.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW: VIP & Business Begleitung */}
+      <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4] border-t border-[#1A1414]/8" data-testid="home-seo-vip-business">
+        <div className="max-w-4xl">
+          <span className="overline text-[10px]">VIP · Business</span>
+          <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
+            VIP &amp; Business Begleitung in Hamburg
+          </h2>
+          <div className="mt-8 space-y-6 text-[#3F3838] leading-relaxed">
+            <p>
+              Für <strong>Persönlichkeiten des öffentlichen Lebens</strong>, internationale Investoren und
+              Geschäftsführer bieten wir eine eigene Klasse der Begleitung: <Link to="/services/vip-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">VIP Escort</Link>{" "}
+              und <Link to="/services/business-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Business Escort Hamburg</Link>.
+              Diese Damen sind nicht nur präsentabel, sondern konferenzfähig — vertraut mit hanseatischer
+              Etikette, mit Board-Dinner-Codes und mit dem international üblichen Umgang unter CEOs, Anwälten
+              und Diplomaten.
+            </p>
+            <p>
+              Ob ein diskretes <Link to="/services/dinner-companion-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Dinner im Vier Jahreszeiten</Link>,
+              ein Empfang in der Elbphilharmonie oder eine mehrtägige Delegation von{" "}
+              <Link to="/services/travel-companion-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Sylt bis Dubai</Link>{" "}
+              — Ihre Begleitung tritt souverän auf, spricht mindestens Englisch und Deutsch fließend und
+              versteht, wann sie unterhält und wann sie sich elegant zurücknimmt. Auf Wunsch mit
+              wirtschaftlichem Hintergrund, akademischem Grad oder künstlerischer Karriere.
+            </p>
+            <p>
+              Für <strong>Führungspersönlichkeiten</strong> gilt bei uns eine erweiterte Vertraulichkeitsstufe:
+              keine öffentlichen Profile, keine gemeinsamen Fotos, kein Zwischenkontakt außerhalb Ihres
+              Ansprechpartners. Buchungen werden ausschließlich zwischen Ihnen und einem festen Betreuer
+              koordiniert — auf Wunsch mit NDA.
             </p>
           </div>
         </div>

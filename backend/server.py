@@ -248,6 +248,11 @@ class ModelCreate(BaseModel):
     featured: bool = False
     nationality: Optional[str] = ""
     interests: List[str] = []
+    # Optional editorial fields (rendered on the model detail page when set).
+    personality: Optional[str] = ""       # 1–2 sentence character sketch
+    personality_en: Optional[str] = ""
+    availability: Optional[str] = ""      # free-text availability window
+    availability_en: Optional[str] = ""
     # Tiered pricing list (admin-managed). Empty list → no price shown.
     prices: List[Price] = []
     # SEO overrides — optional. Empty → auto-derived from name+tagline.

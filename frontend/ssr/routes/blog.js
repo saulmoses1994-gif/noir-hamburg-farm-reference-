@@ -79,6 +79,25 @@ async function renderBlogDetail(slug, buildAssets, lang = "de") {
   const otherPosts = relatedPosts.filter((r) => r.slug !== p.slug).slice(0, 3);
   const relModels = (featuredModels || []).slice(0, 3);
 
+  // Build a Table of Contents by injecting `id` attributes into <h2> tags and
+  // collecting anchor entries.
+  const slugifyToc = (s) =>
+    String(s).toLowerCase().replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 60);
+  const toc = [];
+  const contentWithAnchors = String(content || "").replace(
+    /<h2([^>]*)>([\s\S]*?)<\/h2>/gi,
+    (m, attrs, inner) => {
+      const text = inner.replace(/<[^>]+>/g, "").trim();
+      if (!text) return m;
+      const id = slugifyToc(text);
+      toc.push({ id, text });
+      return /\bid=/.test(attrs) ? m : `<h2${attrs} id="${id}">${inner}</h2>`;
+    },
+  );
+  const tocHtml = toc.length >= 3
+    ? `<aside><h2>${esc(isEn ? "Table of Contents" : "Inhaltsverzeichnis")}</h2><ol>${toc.map((it) => `<li><a href="#${escAttr(it.id)}">${esc(it.text)}</a></li>`).join("")}</ol></aside>`
+    : "";
+
   const linkList = (label, items, hrefFn, labelFn) =>
     items.length > 0
       ? `<aside><h2>${esc(label)}</h2><ul>${items.map((it) => `<li><a href="${navTo(hrefFn(it), lang)}">${esc(labelFn(it))}</a></li>`).join("")}</ul></aside>`
@@ -88,11 +107,12 @@ async function renderBlogDetail(slug, buildAssets, lang = "de") {
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.blog", lang), to: "/blog" }, { label: title }], lang)}
 ${enFallback ? englishComingSoonBanner(lang) : ""}
+${tocHtml}
 <article>
 <p style="text-transform:uppercase;color:#8B1538;">${esc(p.category)}</p>
 <h1>${esc(title)}</h1>
 ${p.cover_image ? `<img src="${escAttr(p.cover_image)}" alt="${escAttr(title)}" width="800" loading="eager"/>` : ""}
-${content}
+${contentWithAnchors}
 </article>
 
 ${linkList(isEn ? "Related Services" : "Verwandte Services", relatedServices,

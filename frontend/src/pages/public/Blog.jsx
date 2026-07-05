@@ -117,10 +117,28 @@ export function BlogDetail() {
 
   const title = post ? (isEn && post.title_en ? post.title_en : post.title) : "";
   const excerpt = post ? (isEn && post.excerpt_en ? post.excerpt_en : post.excerpt) : "";
-  const content = post ? (isEn && post.content_en ? post.content_en : post.content) : "";
+  const rawContent = post ? (isEn && post.content_en ? post.content_en : post.content) : "";
   const metaTitle = post ? (isEn && post.meta_title_en ? post.meta_title_en : post.meta_title) : "";
   const metaDesc = post ? (isEn && post.meta_description_en ? post.meta_description_en : post.meta_description) : "";
   const enFallback = post && isEn && !post.content_en;
+
+  // Build a Table of Contents by adding `id` attributes to every <h2> in the
+  // article HTML and collecting anchor text + slug for the sidebar TOC.
+  const slugifyToc = (s) =>
+    String(s).toLowerCase().replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 60);
+  const toc = [];
+  const content = rawContent.replace(
+    /<h2([^>]*)>([\s\S]*?)<\/h2>/gi,
+    (m, attrs, inner) => {
+      const text = inner.replace(/<[^>]+>/g, "").trim();
+      if (!text) return m;
+      const id = slugifyToc(text);
+      toc.push({ id, text });
+      // Preserve existing attrs unless an id already exists.
+      const hasId = /\bid=/.test(attrs);
+      return hasId ? m : `<h2${attrs} id="${id}">${inner}</h2>`;
+    },
+  );
 
   useSEO({
     title: metaTitle || (post ? `${title} | Noir Hamburg` : ""),
@@ -171,7 +189,7 @@ export function BlogDetail() {
 
         {post.cover_image && (
           <div className="editorial-image h-[60vh] mb-16 max-w-6xl mx-auto">
-            <img src={post.cover_image} alt={title} />
+            <img src={post.cover_image} alt={title} loading="eager" fetchpriority="high" />
           </div>
         )}
 
@@ -179,6 +197,19 @@ export function BlogDetail() {
           <div className="max-w-3xl mx-auto mb-8 p-4 border-l-4 border-[#8B1538] bg-[#FAF5F2] text-sm text-[#4A3F3F]" data-testid="en-fallback-note">
             <strong className="text-[#8B1538]">EN preview.</strong> {t("misc.englishComingSoon")}
           </div>
+        )}
+
+        {toc.length >= 3 && (
+          <aside className="max-w-3xl mx-auto mb-12 p-6 bg-[#FBF7F4] border-l-4 border-[#8B1538] rounded-r-lg" data-testid="blog-toc">
+            <div className="overline text-[10px] mb-3">{isEn ? "Table of Contents" : "Inhaltsverzeichnis"}</div>
+            <ol className="space-y-2 list-decimal list-inside marker:accent-text marker:font-mono marker:text-xs">
+              {toc.map((item) => (
+                <li key={item.id} className="text-sm text-[#3F3838]">
+                  <a href={`#${item.id}`} className="hover:accent-text underline decoration-transparent hover:decoration-[#8B1538] transition-colors" data-testid={`toc-${item.id}`}>{item.text}</a>
+                </li>
+              ))}
+            </ol>
+          </aside>
         )}
 
         <div

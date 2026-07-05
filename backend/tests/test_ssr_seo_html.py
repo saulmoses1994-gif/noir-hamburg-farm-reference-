@@ -49,7 +49,7 @@ class TestHomepage:
 
     def test_h1_present(self):
         assert "Luxus Escort Hamburg" in self.html
-        assert re.search(r"<h1[^>]*>.*?Luxus Escort Hamburg.*?Exklusive Begleitung mit Stil.*?</h1>", self.html, re.DOTALL | re.IGNORECASE), "H1 not fully present in raw HTML"
+        assert re.search(r"<h1[^>]*>.*?Luxus Escort Hamburg.*?Premium Begleitung mit Stil.*?</h1>", self.html, re.DOTALL | re.IGNORECASE), "H1 not fully present in raw HTML"
 
     def test_h2_sections(self):
         expected = [

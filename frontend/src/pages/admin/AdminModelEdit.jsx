@@ -14,6 +14,8 @@ const empty = {
   cover_image: "", gallery: [],
   available: true, featured: false, nationality: "Deutsch",
   interests: [],
+  personality: "", personality_en: "",
+  availability: "", availability_en: "",
   prices: [],  // [{label, amount, currency, unit}]
   meta_title: "", meta_description: "",
   meta_title_en: "", meta_description_en: "",
@@ -165,6 +167,60 @@ export default function AdminModelEdit() {
             className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
             data-testid="model-tagline-en"
           />
+        </div>
+
+        {/* Personality (DE + EN) — 1–2 sentence character sketch shown after
+            the bio on the public detail page. Optional. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="overline text-[10px] block mb-2">Persönlichkeit (Deutsch)</label>
+            <textarea
+              value={form.personality || ""}
+              onChange={(e) => set("personality", e.target.value)}
+              rows={3}
+              placeholder="Kurzer Charakter-Steckbrief, 1–2 Sätze"
+              className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
+              data-testid="model-personality-de"
+            />
+          </div>
+          <div>
+            <label className="overline text-[10px] block mb-2">Personality (English)</label>
+            <textarea
+              value={form.personality_en || ""}
+              onChange={(e) => set("personality_en", e.target.value)}
+              rows={3}
+              placeholder="Short character sketch, 1–2 sentences"
+              className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
+              data-testid="model-personality-en"
+            />
+          </div>
+        </div>
+
+        {/* Availability free-text (DE + EN). Rendered under the spec table
+            on public /models/:slug when set. Example: "Mo–Fr 10–22h; Reisen weltweit". */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="overline text-[10px] block mb-2">Verfügbarkeit (Deutsch)</label>
+            <input
+              type="text"
+              value={form.availability || ""}
+              onChange={(e) => set("availability", e.target.value)}
+              placeholder="z.B. Mo–Fr, 10–22 Uhr · Wochenende auf Anfrage"
+              className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
+              data-testid="model-availability-de"
+            />
+          </div>
+          <div>
+            <label className="overline text-[10px] block mb-2">Availability (English)</label>
+            <input
+              type="text"
+              value={form.availability_en || ""}
+              onChange={(e) => set("availability_en", e.target.value)}
+              placeholder="e.g. Mon–Fri, 10 am – 10 pm · weekends on request"
+              className="w-full bg-transparent border border-[#1A1414]/15 focus:border-[#8B1538] outline-none p-3 font-light"
+              data-testid="model-availability-en"
+            />
+          </div>
         </div>
 
         {/* ---- Tarife / Prices ---- */}

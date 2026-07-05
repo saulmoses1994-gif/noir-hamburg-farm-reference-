@@ -102,7 +102,7 @@ export default function ModelDetail() {
           <div className="lg:col-span-7">
             <div className="lg:sticky lg:top-24 space-y-4">
               <div className="editorial-image h-[80vh]">
-                <img src={gallery[activeImg]} alt={`${model.name} – Portrait`} />
+                <img src={gallery[activeImg]} alt={`${model.name} – Portrait`} loading="eager" fetchpriority="high" />
               </div>
               {gallery.length > 1 && (
                 <div className="grid grid-cols-4 gap-3">
@@ -113,7 +113,7 @@ export default function ModelDetail() {
                       className={`editorial-image h-24 ${i === activeImg ? "ring-1 ring-[#8B1538]" : "opacity-60 hover:opacity-100"}`}
                       data-testid={`gallery-thumb-${i}`}
                     >
-                      <img src={img} alt={`${model.name} ${i + 1}`} />
+                      <img src={img} alt={`${model.name} ${i + 1}`} loading="lazy" />
                     </button>
                   ))}
                 </div>
@@ -202,13 +202,27 @@ export default function ModelDetail() {
                   <strong className="text-[#8B1538]">EN preview.</strong> {t("misc.englishComingSoon")}
                 </div>
               )}
-              <p className="text-base font-light text-[#6B5F5F] leading-relaxed">{bio}</p>
+              <p className="text-base font-light text-[#3F3838] leading-relaxed">{bio}</p>
             </div>
 
+            {(isEn ? model.personality_en : model.personality) && (
+              <div className="mt-8" data-testid="model-personality">
+                <span className="overline text-[10px] block mb-2">{isEn ? "Personality" : "Persönlichkeit"}</span>
+                <p className="text-base font-light text-[#3F3838] leading-relaxed">{isEn ? model.personality_en : model.personality}</p>
+              </div>
+            )}
+
             {model.interests?.length > 0 && (
-              <div className="mt-8">
+              <div className="mt-8" data-testid="model-interests">
                 <span className="overline text-[10px] block mb-2">{isEn ? "Interests" : "Interessen"}</span>
                 <p className="text-sm font-light text-[#1A1414]">{model.interests.join(" · ")}</p>
+              </div>
+            )}
+
+            {(isEn ? model.availability_en : model.availability) && (
+              <div className="mt-8" data-testid="model-availability">
+                <span className="overline text-[10px] block mb-2">{isEn ? "Availability" : "Verfügbarkeit"}</span>
+                <p className="text-sm font-light text-[#1A1414]">{isEn ? model.availability_en : model.availability}</p>
               </div>
             )}
 

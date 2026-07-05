@@ -77,7 +77,7 @@ def test_about_and_contact_slug_mapping():
 
 def test_en_page_carries_en_specific_meta_title():
     html = _fetch("/en").text
-    assert "Exclusive Companionship" in html, "EN home should use English meta title"
+    assert "Premium Companionship" in html, "EN home should use English meta title"
 
 
 def test_en_h1_is_english():

@@ -31,7 +31,7 @@ export function AdminBlog() {
       <div className="border border-[#1A1414]/8 bg-[#FBF7F4]">
         {posts.map((p) => (
           <div key={p.id} className="flex items-center gap-6 p-4 border-b border-[#1A1414]/8 hover:bg-[#F2EAE4]" data-testid={`admin-blog-row-${p.slug}`}>
-            {p.cover_image && <img src={p.cover_image} alt="" className="w-20 h-14 object-cover" />}
+            {p.cover_image && <img src={p.cover_image} alt={p.title || "Blog cover"} className="w-20 h-14 object-cover" />}
             <div className="flex-1">
               <div className="font-heading text-xl">{p.title}</div>
               <div className="overline text-[10px] mt-1 flex items-center gap-3">

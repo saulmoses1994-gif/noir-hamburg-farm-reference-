@@ -1,10 +1,14 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useSEO, breadcrumbSchema } from "@/lib/seo";
 import { SERVICES, LOCATIONS } from "@/data/site";
+import { SERVICE_CONTENT, RELATED_SERVICES } from "@/data/serviceContent";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
+import { api } from "@/lib/api";
 
 // Pick the EN field if lang=en and *En variant exists, otherwise the DE field.
 const pick = (s, key, lang) => (lang === "en" && s[`${key}En`] != null ? s[`${key}En`] : s[key]);
@@ -71,6 +75,16 @@ export function ServiceDetail() {
   const { slug } = useParams();
   const service = SERVICES.find((s) => s.slug === slug);
   const { lang, t, to } = useI18n();
+  const settings = useSettings();
+  const [models, setModels] = useState([]);
+
+  useEffect(() => {
+    api.get("/models").then((r) => setModels(r.data.slice(0, 4))).catch(() => {});
+  }, []);
+
+  const extra = service ? (SERVICE_CONTENT[service.slug] || { sections: [], faqs: [] }) : { sections: [], faqs: [] };
+  const relatedSlugs = service ? (RELATED_SERVICES[service.slug] || []) : [];
+  const relatedServices = relatedSlugs.map((sl) => SERVICES.find((x) => x.slug === sl)).filter(Boolean);
 
   useSEO({
     title: service ? pick(service, "metaTitle", lang) : undefined,
@@ -90,6 +104,15 @@ export function ServiceDetail() {
         { label: t("crumb.services"), to: "/services" },
         { label: service.title },
       ]),
+      ...(extra.faqs.length ? [{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": extra.faqs.map((f) => ({
+          "@type": "Question",
+          "name": lang === "en" ? f.qEn : f.q,
+          "acceptedAnswer": { "@type": "Answer", "text": lang === "en" ? f.aEn : f.a },
+        })),
+      }] : []),
     ] : null,
   });
 
@@ -97,14 +120,13 @@ export function ServiceDetail() {
     return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">{lang === "en" ? "Service not found." : "Service nicht gefunden."}</div></PublicLayout>;
   }
 
-  const relatedServices = SERVICES.filter((s) => s.slug !== service.slug).slice(0, 3);
   const tagline = pick(service, "tagline", lang);
 
   return (
     <PublicLayout>
       <section className="relative h-[60vh] flex items-end" data-testid="service-hero">
         <div className="absolute inset-0">
-          <img src={service.image} alt={service.title} className="w-full h-full object-cover" />
+          <img src={service.image} alt={`${service.title} — Noir Hamburg Premium Escort Service`} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
         </div>
         <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">
@@ -119,7 +141,17 @@ export function ServiceDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-7">
             <h2 className="font-heading text-3xl lg:text-4xl mb-8">{tagline}</h2>
-            <p className="text-base lg:text-lg font-light text-[#6B5F5F] leading-relaxed">{pick(service, "longCopy", lang)}</p>
+            <p className="text-base lg:text-lg font-light text-[#3F3838] leading-relaxed">{pick(service, "longCopy", lang)}</p>
+
+            {/* Extended editorial sections */}
+            {extra.sections.map((sec, i) => (
+              <div key={i} className="mt-14" data-testid={`service-section-${i}`}>
+                <h2 className="font-heading text-2xl lg:text-3xl text-[#1A1414] mb-5">{lang === "en" ? sec.h2En : sec.h2}</h2>
+                <div className="space-y-4 text-[#3F3838] leading-relaxed">
+                  {(lang === "en" ? sec.bodyEn : sec.body).map((p, j) => <p key={j}>{p}</p>)}
+                </div>
+              </div>
+            ))}
 
             <div className="mt-16">
               <span className="overline">{t("sec.characteristics")}</span>
@@ -133,30 +165,81 @@ export function ServiceDetail() {
               </ul>
             </div>
 
+            {/* Per-service FAQ */}
+            {extra.faqs.length > 0 && (
+              <div className="mt-16" data-testid="service-faq">
+                <span className="overline">{lang === "en" ? "Questions" : "Fragen"}</span>
+                <h2 className="font-heading text-2xl lg:text-3xl text-[#1A1414] mt-3 mb-6">
+                  {lang === "en" ? `FAQ — ${service.title}` : `Häufige Fragen zu ${service.title}`}
+                </h2>
+                <div className="space-y-3">
+                  {extra.faqs.map((f, i) => (
+                    <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`service-faq-${i}`}>
+                      <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
+                        <span className="font-heading text-lg text-[#1A1414]">{lang === "en" ? f.qEn : f.q}</span>
+                        <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
+                      </summary>
+                      <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{lang === "en" ? f.aEn : f.a}</div>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-16 flex gap-4 flex-wrap">
-              <Link to={to("/kontakt")} className="btn-primary">{t("cta.bookNow")} <ArrowRight size={14} /></Link>
+              <Link to={to("/kontakt")} className="btn-primary" data-testid="service-contact-btn">{t("cta.bookNow")} <ArrowRight size={14} /></Link>
+              <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="btn-whatsapp" data-testid="service-whatsapp-btn">
+                <MessageCircle size={16} /> WhatsApp
+              </a>
               <Link to={to("/models")} className="btn-ghost">{t("cta.discoverModels")}</Link>
             </div>
           </div>
 
           <aside className="lg:col-span-4 lg:col-start-9 space-y-10">
+            {/* Available models */}
+            {models.length > 0 && (
+              <div>
+                <span className="overline mb-3 block">{lang === "en" ? "Available companions" : "Verfügbare Damen"}</span>
+                <ul className="space-y-4">
+                  {models.map((m) => (
+                    <li key={m.id}>
+                      <Link to={to(`/models/${m.slug}`)} className="flex items-center gap-3 hover:accent-text transition-colors" data-testid={`related-model-${m.slug}`}>
+                        {m.cover_image && <img src={m.cover_image} alt={`${m.name} — Escort Hamburg`} className="w-14 h-14 object-cover rounded" loading="lazy" />}
+                        <div>
+                          <div className="font-heading text-lg text-[#1A1414]">{m.name}</div>
+                          <div className="text-xs text-[#6B5F5F]">{m.short_tagline}</div>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <Link to={to("/models")} className="btn-ghost mt-4 inline-flex">{t("cta.allModels")} <ArrowRight size={14} /></Link>
+              </div>
+            )}
+
+            {/* Related services */}
+            {relatedServices.length > 0 && (
+              <div>
+                <span className="overline mb-3 block">{lang === "en" ? "Related services" : "Verwandte Services"}</span>
+                <ul className="space-y-3">
+                  {relatedServices.map((s) => (
+                    <li key={s.slug}>
+                      <Link to={to(`/services/${s.slug}`)} className="font-heading text-xl hover:accent-text transition-colors" data-testid={`related-service-${s.slug}`}>{s.title}</Link>
+                      <p className="text-xs text-[#6B5F5F] mt-1">{pick(s, "description", lang)}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Serviced areas */}
             <div>
               <span className="overline mb-3 block">{t("sec.availableIn")}</span>
               <div className="flex flex-wrap gap-2">
-                {LOCATIONS.slice(0, 10).map((l) => (
-                  <Link key={l.slug} to={to(`/escort/${l.slug}`)} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]">{l.name}</Link>
+                {LOCATIONS.slice(0, 12).map((l) => (
+                  <Link key={l.slug} to={to(`/escort/${l.slug}`)} className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]" data-testid={`related-area-${l.slug}`}>{l.name}</Link>
                 ))}
               </div>
-            </div>
-            <div>
-              <span className="overline mb-3 block">{lang === "en" ? "Other Services" : "Weitere Services"}</span>
-              <ul className="space-y-3">
-                {relatedServices.map((s) => (
-                  <li key={s.slug}>
-                    <Link to={to(`/services/${s.slug}`)} className="font-heading text-xl hover:accent-text transition-colors">{s.title}</Link>
-                  </li>
-                ))}
-              </ul>
             </div>
           </aside>
         </div>

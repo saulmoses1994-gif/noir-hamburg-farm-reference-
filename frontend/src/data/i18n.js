@@ -63,7 +63,7 @@ const STRINGS = {
     // hero/home
     "home.eyebrow": "Premium · Hamburg seit 2014",
     "home.h1.welcome": "Luxus Escort Hamburg",
-    "home.h1.brand": "Exklusive Begleitung mit Stil",
+    "home.h1.brand": "Premium Begleitung mit Stil",
     "home.lead":
       "Ihre vertrauenswürdige Premium-Begleitagentur in Hamburg und Umland — ehrlich, diskret und stilvoll. Wir vermitteln charmante, gebildete Persönlichkeiten für unvergessliche Begegnungen.",
 
@@ -154,7 +154,7 @@ const STRINGS = {
 
     "home.eyebrow": "Premium · Hamburg since 2014",
     "home.h1.welcome": "Luxury Escort Hamburg",
-    "home.h1.brand": "Exclusive Companionship with Style",
+    "home.h1.brand": "Premium Companionship with Style",
     "home.lead":
       "Your trusted premium companion agency in Hamburg and the surrounding region — honest, discreet and stylish. We connect you with charming, well-educated personalities for unforgettable encounters.",
 

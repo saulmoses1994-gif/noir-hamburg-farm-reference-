@@ -51,13 +51,30 @@ async function renderHome(buildAssets, lang = "de") {
 </section>
 
 <section>
-<h2>${esc(lang === "en" ? "Discretion, trust and professionalism" : "Diskretion, Vertrauen und Professionalität")}</h2>
+<h2>${esc(lang === "en" ? "Discretion and privacy in Hamburg" : "Diskretion und Privatsphäre in Hamburg")}</h2>
 <p>${esc(lang === "en"
   ? "For us, discretion is not a marketing phrase but a way of working. All enquiries are encrypted, we store no unnecessary data, and neither your companion nor any third party learn more than is strictly required for the evening. NDAs on request — written and countersigned."
   : "Diskretion ist bei uns keine Marketing-Formel, sondern Arbeitsweise. Alle Anfragen laufen verschlüsselt, wir speichern keine unnötigen Daten, und selbstverständlich erfahren weder Ihre Begleitung noch Dritte mehr, als für den Abend zwingend erforderlich ist. NDAs auf Wunsch — schriftlich, gegengezeichnet.")}</p>
 <p>${esc(lang === "en"
   ? "Professionalism begins for us long before the booking: in the selection of our ladies, in an honest consultation, in transparent rates without hidden extras, and in availability seven days a week — including short-notice requests. Once you have experienced our agency, you understand why clients return to us after ten years."
   : "Professionalität beginnt für uns lange vor der Buchung: bei der Auswahl unserer Damen, bei der ehrlichen Beratung im Vorgespräch, bei transparenten Tarifen ohne versteckte Zusätze, und bei einer Erreichbarkeit sieben Tage die Woche — auch für kurzfristige Wünsche. Wenn Sie unsere Agentur einmal getestet haben, verstehen Sie, warum Kunden nach zehn Jahren immer wieder zu uns zurückkehren.")}</p>
+<p>${esc(lang === "en"
+  ? "In practice this means: no SMS to your private number without your explicit consent, no calendar entries on business phones, no photo exchange you cannot recall later. We understand the confidentiality expected by hanseatic gentlemen — and work to that standard."
+  : "Konkret bedeutet das: keine SMS an Ihre Privatnummer ohne Ihre ausdrückliche Freigabe, keine Kalendereinträge auf Diensttelefonen, kein Foto-Austausch, den Sie später nicht mehr zurückholen können. Wir verstehen die Vertraulichkeit hanseatischer Herren — und arbeiten nach diesem Maßstab.")}</p>
+</section>
+
+<section>
+<h2>${esc(lang === "en" ? "VIP & Business companionship in Hamburg" : "VIP & Business Begleitung in Hamburg")}</h2>
+<p>${esc(lang === "en"
+  ? "For public figures, international investors and executives we offer a class of their own: VIP Escort and Business Escort Hamburg. These ladies are not merely presentable but boardroom-ready — familiar with Hanseatic etiquette, with board dinner codes, and with the international manners expected among CEOs, lawyers and diplomats."
+  : "Für Persönlichkeiten des öffentlichen Lebens, internationale Investoren und Geschäftsführer bieten wir eine eigene Klasse der Begleitung: VIP Escort und Business Escort Hamburg. Diese Damen sind nicht nur präsentabel, sondern konferenzfähig — vertraut mit hanseatischer Etikette, mit Board-Dinner-Codes und mit dem international üblichen Umgang unter CEOs, Anwälten und Diplomaten.")}</p>
+<p>${esc(lang === "en"
+  ? "Whether a discreet dinner at the Vier Jahreszeiten, a reception at the Elbphilharmonie, or a multi-day delegation from Sylt to Dubai — your companion carries herself with poise, speaks at least English and German fluently, and understands when to entertain and when to step elegantly back. On request with a business background, an academic degree or an artistic career."
+  : "Ob ein diskretes Dinner im Vier Jahreszeiten, ein Empfang in der Elbphilharmonie oder eine mehrtägige Delegation von Sylt bis Dubai — Ihre Begleitung tritt souverän auf, spricht mindestens Englisch und Deutsch fließend und versteht, wann sie unterhält und wann sie sich elegant zurücknimmt. Auf Wunsch mit wirtschaftlichem Hintergrund, akademischem Grad oder künstlerischer Karriere.")}</p>
+<p>${esc(lang === "en"
+  ? "For leadership figures we apply an extended confidentiality tier: no public profiles, no joint photographs, no intermediate contact outside your dedicated handler. Bookings are coordinated exclusively between you and one permanent contact — on request under NDA."
+  : "Für Führungspersönlichkeiten gilt bei uns eine erweiterte Vertraulichkeitsstufe: keine öffentlichen Profile, keine gemeinsamen Fotos, kein Zwischenkontakt außerhalb Ihres Ansprechpartners. Buchungen werden ausschließlich zwischen Ihnen und einem festen Betreuer koordiniert — auf Wunsch mit NDA.")}</p>
+<p><a href="${navTo("/services/vip-escort-hamburg", lang)}">${esc(lang === "en" ? "VIP Escort Hamburg" : "VIP Escort Hamburg")}</a> · <a href="${navTo("/services/business-escort-hamburg", lang)}">${esc(lang === "en" ? "Business Escort Hamburg" : "Business Escort Hamburg")}</a> · <a href="${navTo("/services/dinner-companion-hamburg", lang)}">${esc(lang === "en" ? "Dinner Companion" : "Dinner Companion")}</a> · <a href="${navTo("/services/travel-companion-hamburg", lang)}">${esc(lang === "en" ? "Travel Companion" : "Travel Companion")}</a></p>
 </section>
 
 <section>
@@ -114,12 +131,12 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
 </main>`;
 
   const titleByLang = {
-    de: "Luxus Escort Hamburg – Exklusive Begleitung mit Stil | Noir Hamburg",
-    en: "Luxury Escort Hamburg – Exclusive Companionship with Style | Noir Hamburg",
+    de: "Luxus Escort Hamburg – Premium Begleitung mit Stil | Noir Hamburg",
+    en: "Luxury Escort Hamburg – Premium Companionship with Style | Noir Hamburg",
   };
   const descByLang = {
-    de: "Luxus Escort Hamburg — exklusive, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
-    en: "Luxury Escort Hamburg — exclusive, discreet companion agency for dinner, business and events. Hand-picked models since 2014, transparent rates, coverage across Hamburg and the surrounding region.",
+    de: "Luxus Escort Hamburg — premium, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
+    en: "Luxury Escort Hamburg — premium, discreet companion agency for dinner, business and events. Hand-picked models since 2014, transparent rates, coverage across Hamburg and the surrounding region.",
   };
 
   return renderShell({
