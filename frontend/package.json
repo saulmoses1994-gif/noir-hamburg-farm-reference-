@@ -65,7 +65,7 @@
   "scripts": {
     "start": "node ssr-server.js",
     "dev": "craco start",
-    "build": "craco build",
+    "build": "craco build && node scripts/ssg.js",
     "test": "craco test"
   },
   "browserslist": {
