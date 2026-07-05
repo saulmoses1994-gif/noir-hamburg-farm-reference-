@@ -10,4 +10,4 @@ Disallow: /
 User-agent: CCBot
 Disallow: /
 
-Sitemap: https://client-portal-385.preview.emergentagent.com/api/sitemap.xml
+Sitemap: https://noir-hamburg.com/sitemap.xml

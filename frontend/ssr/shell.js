@@ -21,7 +21,7 @@ const { t, localizePath } = require("../src/data/i18n");
 const { getSettings } = require("./settings");
 
 const SITE_ORIGIN =
-  process.env.SITE_URL || "https://client-portal-385.preview.emergentagent.com";
+  process.env.SITE_URL || "https://noir-hamburg.com";
 
 const esc = (s) =>
   String(s || "").replace(/[&<>"']/g, (c) => ({

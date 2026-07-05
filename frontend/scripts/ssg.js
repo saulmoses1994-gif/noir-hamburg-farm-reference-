@@ -142,5 +142,31 @@ function writeHtml(urlPath, html) {
   }
 
   console.log(`[ssg] ✓ done in ${((Date.now() - t0) / 1000).toFixed(1)}s: ${ok} ok, ${fail} failed`);
+
+  // ---- Emit static sitemap.xml at build/sitemap.xml ----
+  // On the static CDN there is no proxy to /api/sitemap.xml, so we must
+  // materialise the sitemap as a real file. We reuse the same URL enumeration
+  // we already have in `targets`, with per-URL-family priority/changefreq.
+  const SITE = process.env.SITE_URL || "https://noir-hamburg.com";
+  const today = new Date().toISOString().slice(0, 10);
+  const priority = (u) => {
+    if (u === "/" || u === "/en") return { p: 1.0, cf: "daily" };
+    if (/^\/(en\/)?models$/.test(u)) return { p: 0.9, cf: "daily" };
+    if (/^\/(en\/)?(services|areas|escort-hamburg|blog)$/.test(u)) return { p: 0.9, cf: "weekly" };
+    if (/\/(services|escort|models|blog|p)\//.test(u)) return { p: 0.8, cf: "weekly" };
+    return { p: 0.6, cf: "monthly" };
+  };
+  const uniqUrls = [...new Set(targets.map((t) => t.url))];
+  const sitemapXml =
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    uniqUrls.map((u) => {
+      const { p, cf } = priority(u);
+      return `  <url><loc>${SITE}${u}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${p.toFixed(1)}</priority></url>`;
+    }).join("\n") +
+    `\n</urlset>\n`;
+  fs.writeFileSync(path.join(BUILD_DIR, "sitemap.xml"), sitemapXml, "utf8");
+  console.log(`[ssg] ✓ sitemap.xml written (${uniqUrls.length} URLs)`);
+
   if (fail > 0) process.exit(1);
 })();
