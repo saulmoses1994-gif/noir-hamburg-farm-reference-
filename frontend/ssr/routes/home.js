@@ -78,6 +78,25 @@ async function renderHome(buildAssets, lang = "de") {
 </section>
 
 <section>
+<h2>${esc(lang === "en" ? "How simple your booking is — in 3 steps" : "So einfach ist Ihre Buchung — in 3 Schritten")}</h2>
+<p>${esc(lang === "en"
+  ? "No login, no forms with twenty fields, no waiting on a call centre — the process is deliberately kept simple and respects your time."
+  : "Kein Login, keine Formulare mit zwanzig Feldern, kein Warten auf Callcenter — der Ablauf ist bewusst schlicht gehalten und respektiert Ihre Zeit.")}</p>
+<ol>
+<li><strong>${esc(lang === "en" ? "Step 1 — Send your enquiry" : "Schritt 1 — Anfrage senden")}</strong><br/>${esc(lang === "en"
+  ? "Via our contact form, WhatsApp or Signal — describe the occasion, timing and your preferences. Seven days a week, no login."
+  : "Über unser Kontaktformular, per WhatsApp oder Signal — schildern Sie uns Anlass, Zeitrahmen und Ihre Vorlieben. Sieben Tage die Woche, ohne Login.")}</li>
+<li><strong>${esc(lang === "en" ? "Step 2 — Receive personal advice" : "Schritt 2 — Beratung erhalten")}</strong><br/>${esc(lang === "en"
+  ? "A dedicated contact reaches out shortly. We propose two to three suitable ladies and answer your questions — honestly, without sales pressure."
+  : "Innerhalb kurzer Zeit meldet sich Ihr persönlicher Ansprechpartner. Wir schlagen zwei bis drei passende Damen vor und beantworten Ihre Fragen — ehrlich und ohne Verkaufsdruck.")}</li>
+<li><strong>${esc(lang === "en" ? "Step 3 — Choose your companion" : "Schritt 3 — Begleitung auswählen")}</strong><br/>${esc(lang === "en"
+  ? "You make your choice at your own pace. We confirm the appointment in writing, coordinate place, time and every detail — the rest you leave to us."
+  : "Sie treffen Ihre Wahl in Ruhe. Wir bestätigen den Termin schriftlich, koordinieren Ort, Zeit und alle Details — den Rest überlassen Sie uns.")}</li>
+</ol>
+<p><a href="${navTo("/kontakt", lang)}"><strong>${esc(lang === "en" ? "Send your enquiry now →" : "Anfrage jetzt senden →")}</strong></a> · ${esc(lang === "en" ? "Discreet · Free of charge · No obligation" : "Diskret · Kostenfrei · Unverbindlich")}</p>
+</section>
+
+<section>
 <h2>${esc(lang === "en" ? "Why Noir Hamburg?" : "Warum Noir Hamburg?")}</h2>
 <p>${esc(lang === "en"
   ? "Six pillars that separate a random matchmaking service from a lasting relationship — and that explain why a significant part of our clientele has been returning to us for many years."

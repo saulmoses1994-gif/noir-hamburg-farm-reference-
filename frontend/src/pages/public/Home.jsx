@@ -16,7 +16,7 @@ const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${ke
 export default function Home() {
   const [models, setModels] = useState([]);
   const [posts, setPosts] = useState([]);
-  const { lang } = useI18n();
+  const { lang, to } = useI18n();
   const settings = useSettings();
 
   useEffect(() => {
@@ -248,6 +248,64 @@ export default function Home() {
               Ansprechpartners. Buchungen werden ausschließlich zwischen Ihnen und einem festen Betreuer
               koordiniert — auf Wunsch mit NDA.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Simple 3-step booking process — conversion trust builder */}
+      <section className="px-6 md:px-12 lg:px-16 py-24 border-t border-[#1A1414]/8" data-testid="home-booking-process">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-3xl">
+            <span className="overline text-[10px]">In 3 Schritten</span>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">So einfach ist Ihre Buchung</h2>
+            <p className="mt-6 text-[#3F3838] leading-relaxed">
+              Kein Login, keine Formulare mit zwanzig Feldern, kein Warten auf Callcenter — der Ablauf ist bewusst
+              schlicht gehalten und respektiert Ihre Zeit.
+            </p>
+          </div>
+
+          <ol className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 relative">
+            {/* connecting line, desktop only */}
+            <div className="hidden md:block absolute top-8 left-[16.66%] right-[16.66%] h-px bg-gradient-to-r from-[#8B1538]/40 via-[#8B1538]/60 to-[#8B1538]/40" aria-hidden="true" />
+
+            {[
+              {
+                num: "01",
+                title: "Anfrage senden",
+                body: "Über unser Kontaktformular, per WhatsApp oder Signal — schildern Sie uns Anlass, Zeitrahmen und Ihre Vorlieben. Sieben Tage die Woche, ohne Login.",
+                testid: "step-anfrage",
+              },
+              {
+                num: "02",
+                title: "Beratung erhalten",
+                body: "Innerhalb kurzer Zeit meldet sich Ihr persönlicher Ansprechpartner. Wir schlagen zwei bis drei passende Damen vor und beantworten Ihre Fragen — ehrlich und ohne Verkaufsdruck.",
+                testid: "step-beratung",
+              },
+              {
+                num: "03",
+                title: "Begleitung auswählen",
+                body: "Sie treffen Ihre Wahl in Ruhe. Wir bestätigen den Termin schriftlich, koordinieren Ort, Zeit und alle Details — den Rest überlassen Sie uns.",
+                testid: "step-auswahl",
+              },
+            ].map((step) => (
+              <div key={step.num} className="relative flex flex-col items-start" data-testid={step.testid}>
+                <div className="relative z-10 w-16 h-16 rounded-full bg-[#1A1414] text-white flex items-center justify-center font-heading text-xl border border-[#8B1538]/40">
+                  {step.num}
+                </div>
+                <h3 className="font-heading text-2xl mt-6 text-[#1A1414]">{step.title}</h3>
+                <p className="mt-3 text-sm text-[#3F3838] leading-relaxed">{step.body}</p>
+              </div>
+            ))}
+          </ol>
+
+          <div className="mt-14 flex flex-wrap gap-4 items-center">
+            <Link to={to("/kontakt")} className="btn-primary" data-testid="booking-process-cta-contact">
+              Anfrage jetzt senden <ArrowRight size={14} />
+            </Link>
+            <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="btn-whatsapp" data-testid="booking-process-cta-whatsapp">
+              <MessageCircle size={16} /> WhatsApp
+            </a>
+            <span className="text-xs text-[#6B5F5F] uppercase tracking-[0.15em]">Diskret · Kostenfrei · Unverbindlich</span>
           </div>
         </div>
       </section>
