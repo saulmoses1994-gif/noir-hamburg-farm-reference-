@@ -14,6 +14,14 @@ export function BlogList() {
   const { lang, t, to } = useI18n();
   const isEn = lang === "en";
 
+  // Support ?category=... deep-links from the homepage/footer for category
+  // pre-filtering — keeps the URL sharable and helps SEO topical clusters.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initial = params.get("category");
+    if (initial) setCat(initial);
+  }, []);
+
   useEffect(() => {
     const url = cat ? `/blog?category=${encodeURIComponent(cat)}` : "/blog";
     api.get(url).then((r) => setPosts(r.data)).catch(() => {});

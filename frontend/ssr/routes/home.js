@@ -143,8 +143,15 @@ async function renderHome(buildAssets, lang = "de") {
 <ul>${LOCATIONS.map((l) => `<li><a href="${navTo(`/escort/${l.slug}`, lang)}">Escort ${esc(l.name)}</a></li>`).join("")}</ul>
 </section>
 <section>
-<h2>${esc(t("sec.fromMagazine", lang))}</h2>
-${posts.map((p) => `<article><h3><a href="${navTo(`/blog/${p.slug}`, lang)}">${esc(p.title)}</a></h3><p>${esc(p.excerpt)}</p></article>`).join("")}
+<h2>${esc(lang === "en" ? "Featured articles" : "Ausgewählte Beiträge")}</h2>
+<p>${esc(lang === "en"
+  ? "Personal guides through Hamburg's finest addresses — curated by our team, with honest recommendations for hotels, restaurants and culture."
+  : "Persönliche Wegweiser durch Hamburgs feinste Adressen — kuratiert von unserem Team, mit ehrlichen Empfehlungen für Hotels, Restaurants und Kultur.")}</p>
+${posts.length ? `<article><h3><a href="${navTo(`/blog/${posts[0].slug}`, lang)}"><strong>${esc(lang === "en" ? "Feature · " : "Feature · ")}${esc(posts[0].category)}: ${esc(posts[0].title)}</strong></a></h3><p>${esc(posts[0].excerpt)}</p></article>` : ""}
+<ul>
+${posts.slice(1, 4).map((p) => `<li><a href="${navTo(`/blog/${p.slug}`, lang)}"><strong>${esc(p.category)}</strong>: ${esc(p.title)}</a></li>`).join("")}
+</ul>
+<p><strong>${esc(lang === "en" ? "By category:" : "Nach Kategorie:")}</strong> <a href="${navTo("/blog?category=Luxury+Hotels+Hamburg", lang)}">Luxury Hotels Hamburg</a> · <a href="${navTo("/blog?category=Fine+Dining+Hamburg", lang)}">Fine Dining Hamburg</a> · <a href="${navTo("/blog?category=Nightlife+Hamburg", lang)}">Nightlife Hamburg</a> · <a href="${navTo("/blog?category=Business+Travel+Hamburg", lang)}">Business Travel Hamburg</a> · <a href="${navTo("/blog?category=Hamburg+Lifestyle", lang)}">Hamburg Lifestyle</a> · <a href="${navTo("/blog?category=Escort+Guides", lang)}">Escort Guides</a></p>
 <p><a href="${navTo("/blog", lang)}">${esc(t("cta.allPosts", lang))}</a></p>
 </section>
 <section>

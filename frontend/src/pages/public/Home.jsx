@@ -21,7 +21,7 @@ export default function Home() {
 
   useEffect(() => {
     api.get("/models").then((r) => setModels(r.data.slice(0, 8))).catch(() => {});
-    api.get("/blog?limit=3").then((r) => setPosts(r.data)).catch(() => {});
+    api.get("/blog?limit=4").then((r) => setPosts(r.data)).catch(() => {});
   }, []);
 
   useSEO({
@@ -443,29 +443,101 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Blog */}
-      <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-blog">
-        <div className="flex items-end justify-between mb-12">
-          <SectionTitle overline="Magazin" title="Aktuelle Beiträge" />
-          <Link to="/blog" className="hidden md:inline-flex btn-ghost">
-            Alle Beiträge <ArrowRight size={14} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {posts.map((p) => (
-            <Link key={p.id} to={`/blog/${p.slug}`} className="group block bg-white border border-[#1A1414]/8 rounded-lg overflow-hidden hover:shadow-lg transition-shadow" data-testid={`blog-card-${p.slug}`}>
-              <div className="editorial-image h-[280px]">
-                <img src={p.cover_image} alt={p.title} loading="lazy" />
-              </div>
-              <div className="p-6">
-                <span className="overline">{p.category}</span>
-                <h3 className="font-heading text-xl mt-3 text-[#1A1414] group-hover:accent-text transition-colors leading-snug">
-                  {p.title}
-                </h3>
-                <p className="mt-3 text-sm text-[#6B5F5F] leading-relaxed line-clamp-2">{p.excerpt}</p>
-              </div>
+      {/* Featured Articles — magazine hero cards + secondary grid */}
+      <section className="px-6 md:px-12 lg:px-16 py-24 bg-[#FBF7F4]" data-testid="home-featured-articles">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
+            <div>
+              <span className="overline text-[10px]">Magazin</span>
+              <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">Ausgewählte Beiträge</h2>
+              <p className="mt-4 max-w-2xl text-[#3F3838] leading-relaxed">
+                Persönliche Wegweiser durch Hamburgs feinste Adressen — kuratiert von unserem Team,
+                mit ehrlichen Empfehlungen für Hotels, Restaurants und Kultur.
+              </p>
+            </div>
+            <Link to={to("/blog")} className="btn-ghost inline-flex" data-testid="featured-articles-all">
+              Alle Beiträge <ArrowRight size={14} />
             </Link>
-          ))}
+          </div>
+
+          {posts.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Hero article — first post, spans 7 columns on desktop */}
+              <Link
+                to={to(`/blog/${posts[0].slug}`)}
+                className="lg:col-span-7 group block bg-white border border-[#1A1414]/8 rounded-lg overflow-hidden hover:shadow-xl transition-all"
+                data-testid={`featured-hero-${posts[0].slug}`}
+              >
+                <div className="editorial-image aspect-[16/10] overflow-hidden">
+                  <img
+                    src={posts[0].cover_image}
+                    alt={posts[0].title}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
+                <div className="p-8">
+                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.15em]">
+                    <span className="accent-text font-mono">Feature</span>
+                    <span className="text-[#6B5F5F]">·</span>
+                    <span className="text-[#6B5F5F]">{posts[0].category}</span>
+                  </div>
+                  <h3 className="font-heading text-2xl lg:text-3xl mt-4 text-[#1A1414] group-hover:accent-text transition-colors leading-tight">
+                    {posts[0].title}
+                  </h3>
+                  <p className="mt-4 text-[#3F3838] leading-relaxed line-clamp-3">{posts[0].excerpt}</p>
+                  <span className="mt-6 inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] accent-text font-semibold">
+                    Weiterlesen <ArrowRight size={12} />
+                  </span>
+                </div>
+              </Link>
+
+              {/* Secondary column — next 3 posts */}
+              <div className="lg:col-span-5 flex flex-col gap-4">
+                {posts.slice(1, 4).map((p) => (
+                  <Link
+                    key={p.id}
+                    to={to(`/blog/${p.slug}`)}
+                    className="group flex gap-4 bg-white border border-[#1A1414]/8 rounded-lg overflow-hidden hover:shadow-lg transition-shadow p-3"
+                    data-testid={`featured-secondary-${p.slug}`}
+                  >
+                    <div className="editorial-image w-32 h-32 flex-shrink-0 rounded overflow-hidden">
+                      <img
+                        src={p.cover_image}
+                        alt={p.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <span className="overline text-[9px] text-[#6B5F5F]">{p.category}</span>
+                      <h4 className="font-heading text-base mt-1.5 text-[#1A1414] group-hover:accent-text transition-colors leading-snug line-clamp-2">
+                        {p.title}
+                      </h4>
+                      <span className="mt-2 text-xs accent-text uppercase tracking-[0.15em]">Weiterlesen →</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Categories row — internal linking spread across topical clusters */}
+          <div className="mt-16 pt-8 border-t border-[#1A1414]/8">
+            <span className="overline text-[10px] block mb-4">Nach Kategorie</span>
+            <div className="flex flex-wrap gap-2">
+              {["Luxury Hotels Hamburg","Fine Dining Hamburg","Nightlife Hamburg","Business Travel Hamburg","Hamburg Lifestyle","Privacy & Discretion","Escort Guides"].map((c) => (
+                <Link
+                  key={c}
+                  to={to(`/blog?category=${encodeURIComponent(c)}`)}
+                  className="text-xs font-mono uppercase tracking-[0.15em] py-2 px-3 border border-[#1A1414]/15 hover:border-[#8B1538] hover:text-[#8B1538]"
+                  data-testid={`featured-cat-${c.toLowerCase().replace(/\s+/g,'-')}`}
+                >
+                  {c}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
