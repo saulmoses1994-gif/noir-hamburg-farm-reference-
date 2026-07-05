@@ -160,13 +160,16 @@ def audit_group(name, urls):
                 errors.append(f"  [H1-EMPTY]     {p['url']}")
             seen_h1s[p["h1s"][0]].append(p["url"])
 
-        # 4. Canonical
+        # 4. Canonical — compare the URL path portion (the origin may
+        # legitimately differ when auditing preview but canonical points to
+        # production noir-hamburg.com — that is the correct SEO behaviour and
+        # must not be flagged as a mismatch).
         if not p["canonical"]:
             errors.append(f"  [CANONICAL-EMPTY]      {p['url']}")
         else:
-            # canonical should end with the same path
-            expected_path = p["url"].replace(BASE, "").rstrip("/") or "/"
-            actual_path = p["canonical"].replace(BASE, "").rstrip("/") or "/"
+            from urllib.parse import urlparse
+            expected_path = urlparse(p["url"]).path.rstrip("/") or "/"
+            actual_path = urlparse(p["canonical"]).path.rstrip("/") or "/"
             if expected_path != actual_path:
                 errors.append(f"  [CANONICAL-MISMATCH]   {p['url']} → canonical={p['canonical']}")
 

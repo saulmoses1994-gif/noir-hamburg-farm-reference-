@@ -25,8 +25,8 @@ export default function Home() {
   }, []);
 
   useSEO({
-    title: "Luxus Escort Hamburg – Premium Begleitung mit Stil | Noir Hamburg",
-    description: "Luxus Escort Hamburg — premium, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
+    title: "Luxus Escort Hamburg | Premium Escort Agentur Hamburg | Noir Hamburg",
+    description: "Luxus Escort Hamburg – Premium Agentur für diskrete, professionelle Begleitung. Handverlesene Damen für Dinner, Business & Events. Höchste Diskretion seit 2014.",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",

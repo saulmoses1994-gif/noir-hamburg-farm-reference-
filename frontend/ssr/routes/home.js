@@ -131,12 +131,12 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
 </main>`;
 
   const titleByLang = {
-    de: "Luxus Escort Hamburg – Premium Begleitung mit Stil | Noir Hamburg",
-    en: "Luxury Escort Hamburg – Premium Companionship with Style | Noir Hamburg",
+    de: "Luxus Escort Hamburg | Premium Escort Agentur Hamburg | Noir Hamburg",
+    en: "Luxury Escort Hamburg | Premium Escort Agency Hamburg | Noir Hamburg",
   };
   const descByLang = {
-    de: "Luxus Escort Hamburg — premium, diskrete Begleitagentur für Dinner, Business und Events. Handverlesene Models seit 2014, faire Tarife, Vermittlung in ganz Hamburg und Umland.",
-    en: "Luxury Escort Hamburg — premium, discreet companion agency for dinner, business and events. Hand-picked models since 2014, transparent rates, coverage across Hamburg and the surrounding region.",
+    de: "Luxus Escort Hamburg – Premium Agentur für diskrete, professionelle Begleitung. Handverlesene Damen für Dinner, Business & Events. Höchste Diskretion seit 2014.",
+    en: "Luxury Escort Hamburg – premium agency for discreet, professional companionship. Hand-picked ladies for dinner, business & events. The highest discretion since 2014.",
   };
 
   return renderShell({
