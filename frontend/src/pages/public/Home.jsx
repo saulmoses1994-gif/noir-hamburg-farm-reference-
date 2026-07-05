@@ -252,14 +252,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Warum Kunden uns vertrauen — five trust pillars */}
+      {/* Warum Noir Hamburg — six trust pillars (Diskretion, Privatsphäre,
+          Qualität, Persönlicher Service, Einfache Kontaktaufnahme,
+          Professionelle Standards) */}
       <section className="px-6 md:px-12 lg:px-16 py-24 border-t border-[#1A1414]/8 bg-[#FBF7F4]" data-testid="home-trust-pillars">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-3xl">
             <span className="overline text-[10px]">Vertrauen seit 2014</span>
-            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">Warum Kunden uns vertrauen</h2>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">Warum Noir Hamburg?</h2>
             <p className="mt-6 text-[#3F3838] leading-relaxed">
-              Fünf Grundpfeiler, die den Unterschied zwischen einer beliebigen Vermittlung und einer{" "}
+              Sechs Grundpfeiler, die den Unterschied zwischen einer beliebigen Vermittlung und einer{" "}
               <strong>gewachsenen Beziehung</strong> ausmachen — und die erklären, warum ein wesentlicher Teil
               unserer Kunden seit vielen Jahren immer wieder zu uns zurückkehrt.
             </p>
@@ -273,28 +275,34 @@ export default function Home() {
                 testid: "trust-diskretion",
               },
               {
-                overline: "02 · Datenschutz",
-                title: "Kompromissloser Datenschutz",
+                overline: "02 · Privatsphäre",
+                title: "Kompromisslose Privatsphäre",
                 body: "Kein Newsletter, kein Retargeting, keine Analytics-Tracker Dritter auf sensiblen Seiten. Ihre Kontaktdaten sind nur den zwei Mitarbeitern zugänglich, die Ihre Buchung persönlich betreuen.",
-                testid: "trust-datenschutz",
+                testid: "trust-privatsphaere",
               },
               {
                 overline: "03 · Qualität",
-                title: "Hanseatische Qualitätsstandards",
+                title: "Hanseatische Qualität",
                 body: "Jede Dame wird von uns persönlich kennengelernt und mindestens zwei Mal getroffen, bevor sie auf Noir Hamburg erscheint. Bildung, sprachliche Gewandtheit, gepflegtes Auftreten — nicht verhandelbar.",
                 testid: "trust-qualitaet",
               },
               {
-                overline: "04 · Verifiziert",
-                title: "Verifizierte Modelprofile",
-                body: "Alle Fotos sind aktuell, unretuschiert und stammen aus professionellen Shootings, die wir persönlich in Auftrag gegeben haben. Keine Katalogbilder, keine Stock-Fotos, keine Überraschungen.",
-                testid: "trust-verifiziert",
+                overline: "04 · Persönlich",
+                title: "Persönlicher Service",
+                body: "Sie sprechen mit einem echten Menschen — nicht mit einem Bot, nicht mit einem Callcenter. Ein fester Ansprechpartner koordiniert Ihre Buchung von der Anfrage bis zur Nachbereitung.",
+                testid: "trust-persoenlich",
               },
               {
-                overline: "05 · Persönlich",
-                title: "Persönlicher Service",
-                body: "Sie sprechen mit einem echten Menschen — nicht mit einem Bot, nicht mit einem Callcenter. Wir kennen unsere Damen persönlich und wählen für Sie die passende Begleitung nach Anlass, Sprache und Chemie aus.",
-                testid: "trust-persoenlich",
+                overline: "05 · Erreichbarkeit",
+                title: "Einfache Kontaktaufnahme",
+                body: "Kontaktformular, WhatsApp oder Signal — sieben Tage die Woche. Werktags antworten wir in der Regel innerhalb einer Stunde, an Wochenenden am selben Tag. Ohne Login, ohne Registrierung.",
+                testid: "trust-kontakt",
+              },
+              {
+                overline: "06 · Standards",
+                title: "Professionelle Standards",
+                body: "Pünktlichkeit als Selbstverständlichkeit, transparente Tarife ohne versteckte Zuschläge, klare Vereinbarungen im Vorgespräch. Seit 2014 dieselben Prinzipien — für Sie und für unsere Damen.",
+                testid: "trust-standards",
               },
             ].map((p) => (
               <div key={p.testid} data-testid={p.testid}>
