@@ -32,11 +32,11 @@ export default function ModelCard({ model }) {
             {model.name?.[0] || "N"}
           </div>
         )}
-        <div className="absolute bottom-3 left-3">
+        <div className="hidden md:block absolute bottom-3 left-3">
           <span className={badgeClass}>{availLabel}</span>
         </div>
         {model.featured && (
-          <div className="absolute bottom-3 right-3">
+          <div className="hidden md:block absolute bottom-3 right-3">
             <span className="bg-[#8B1538] text-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full">Featured</span>
           </div>
         )}
