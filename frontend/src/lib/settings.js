@@ -20,6 +20,7 @@ const brandToSettings = (b) => ({
   instagram_url: "",
   facebook_url: "",
   twitter_url: "",
+  homepage_hero_image: "",
 });
 
 const Ctx = createContext(brandToSettings(BRAND));

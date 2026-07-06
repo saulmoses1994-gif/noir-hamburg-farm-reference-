@@ -283,6 +283,9 @@ class SiteSettings(BaseModel):
     instagram_url: Optional[str] = ""
     facebook_url: Optional[str] = ""
     twitter_url: Optional[str] = ""
+    # Homepage hero image — falls back to the first featured model's cover
+    # image when empty. Editable from Admin → Einstellungen.
+    homepage_hero_image: Optional[str] = ""
 
 
 class ChangePasswordInput(BaseModel):

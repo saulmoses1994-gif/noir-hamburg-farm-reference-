@@ -23,6 +23,24 @@ export default function Home() {
     api.get("/blog?limit=4").then((r) => setPosts(r.data)).catch(() => {});
   }, []);
 
+  // Resolve the hero image with a graceful fallback chain:
+  //   1. Admin-configured `homepage_hero_image` in Settings
+  //   2. First featured model's cover image (models are sorted featured-first)
+  //   3. Last-resort Unsplash placeholder we ship with
+  const FALLBACK_HERO = "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80";
+  const heroImage =
+    settings.homepage_hero_image ||
+    models.find((m) => m.featured)?.cover_image ||
+    models[0]?.cover_image ||
+    FALLBACK_HERO;
+  // Responsive srcset only makes sense when the URL is an Unsplash CDN URL
+  // that supports the `w=` query parameter; for admin-uploaded custom images
+  // we serve the original URL at every viewport.
+  const isUnsplashHero = /images\.unsplash\.com/.test(heroImage);
+  const heroSrcSet = isUnsplashHero
+    ? `${heroImage.replace(/w=\d+/, "w=600").replace(/q=\d+/, "q=75")} 600w, ${heroImage.replace(/w=\d+/, "w=900").replace(/q=\d+/, "q=78")} 900w, ${heroImage.replace(/w=\d+/, "w=1200").replace(/q=\d+/, "q=80")} 1200w`
+    : undefined;
+
   useSEO({
     title: "Luxus Escort Hamburg | Premium Escort Agentur Hamburg | Noir Hamburg",
     description: "Luxus Escort Hamburg – Premium Agentur für diskrete, professionelle Begleitung. Handverlesene Damen für Dinner, Business & Events. Höchste Diskretion seit 2014.",
@@ -88,15 +106,15 @@ export default function Home() {
           >
             <div className="relative aspect-[4/5] overflow-hidden rounded-tl-[120px] rounded-br-[120px]">
               <img
-                src="https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80"
-                srcSet="https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=600&q=75 600w, https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=900&q=78 900w, https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80 1200w"
-                sizes="(max-width: 768px) 100vw, 42vw"
+                src={heroImage}
+                {...(heroSrcSet ? { srcSet: heroSrcSet, sizes: "(max-width: 768px) 100vw, 42vw" } : {})}
                 alt="Premium Escort Hamburg — Noir Hamburg Begleitagentur"
                 width="1200"
                 height="1500"
                 fetchpriority="high"
                 decoding="async"
                 className="w-full h-full object-cover"
+                data-testid="home-hero-image"
               />
             </div>
             <div className="absolute -bottom-6 -left-6 bg-white shadow-xl px-6 py-4 hidden md:flex items-center gap-3">

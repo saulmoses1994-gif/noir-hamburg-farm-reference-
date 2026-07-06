@@ -21,6 +21,17 @@ async function renderHome(buildAssets, lang = "de") {
     console.warn("home fetch fail:", e.message);
   }
 
+  // Resolve the hero image dynamically — admin Setting takes precedence,
+  // otherwise fall back to the first featured model's cover image, otherwise
+  // the stock Unsplash placeholder.
+  const settings = getSettings();
+  const FALLBACK_HERO_LG = "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80";
+  const FALLBACK_HERO_MD = "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=900&q=78";
+  const featuredCover = (models.find((m) => m.featured) || models[0] || {}).cover_image;
+  const heroImage = settings.homepage_hero_image || featuredCover || FALLBACK_HERO_LG;
+  const heroPreload = settings.homepage_hero_image ? heroImage
+    : (featuredCover || FALLBACK_HERO_MD);
+
   const body = `
 <main id="main" role="main" style="padding:2rem;">
 <section>
@@ -175,8 +186,8 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
     title: titleByLang[lang] || titleByLang.de,
     description: descByLang[lang] || descByLang.de,
     canonicalPath: "/",
-    ogImage: "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80",
-    preloadImage: "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=900&q=78",
+    ogImage: heroImage,
+    preloadImage: heroPreload,
     jsonLd: [
       {
         "@context": "https://schema.org",

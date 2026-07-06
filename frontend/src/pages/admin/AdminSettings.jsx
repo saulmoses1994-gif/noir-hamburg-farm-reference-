@@ -67,6 +67,30 @@ export default function AdminSettings() {
         </div>
 
         <div className="border-t border-[#1A1414]/8 pt-6">
+          <span className="overline text-[10px] block mb-3">Homepage-Hero-Bild</span>
+          <p className="text-xs text-[#6B5F5F] mb-3">
+            Das große Bild rechts neben der Überschrift auf der Startseite. Leer lassen, um automatisch das Titelbild des ersten Featured-Models zu verwenden. Empfohlen: 1200×1500&nbsp;px, Portrait, mind. 200&nbsp;KB.
+          </p>
+          <Field
+            label="Bild-URL"
+            value={form.homepage_hero_image || ""}
+            onChange={(v) => set("homepage_hero_image", v)}
+            placeholder="https://…jpg  (leer lassen → erstes Featured-Model)"
+            testId="settings-hero-image"
+          />
+          {form.homepage_hero_image && (
+            <div className="mt-4">
+              <img
+                src={form.homepage_hero_image}
+                alt="Hero preview"
+                className="max-w-xs rounded border border-[#1A1414]/15"
+                data-testid="settings-hero-preview"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-[#1A1414]/8 pt-6">
           <span className="overline text-[10px] block mb-3">Social (optional)</span>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Field label="Instagram URL" value={form.instagram_url} onChange={(v) => set("instagram_url", v)} placeholder="https://instagram.com/…" testId="settings-instagram" />
