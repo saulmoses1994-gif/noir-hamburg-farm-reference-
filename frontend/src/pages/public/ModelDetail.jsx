@@ -275,7 +275,7 @@ export default function ModelDetail() {
       {related.length > 0 && (
         <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-[#1A1414]/8">
           <h2 className="font-heading text-3xl mb-12">{isEn ? "More companions" : "Weitere Models"}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
             {related.map((m, i) => <ModelCard key={m.id} model={m} index={i} />)}
           </div>
         </section>
