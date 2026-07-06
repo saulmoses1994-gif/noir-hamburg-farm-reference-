@@ -30,6 +30,24 @@ export default function ModelDetail() {
   const [model, setModel] = useState(null);
   const [related, setRelated] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  // Close lightbox on Escape + prevent body scroll while open.
+  useEffect(() => {
+    if (!lightboxOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+      else if (e.key === "ArrowRight") setActiveImg((i) => (i + 1) % (model?.images?.length || 1));
+      else if (e.key === "ArrowLeft") setActiveImg((i) => (i - 1 + (model?.images?.length || 1)) % (model?.images?.length || 1));
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [lightboxOpen, model?.images?.length]);
   const { lang, t, to } = useI18n();
   const settings = useSettings();
 
@@ -101,9 +119,31 @@ export default function ModelDetail() {
           {/* Sticky portrait */}
           <div className="lg:col-span-7">
             <div className="lg:sticky lg:top-24 space-y-4">
-              <div className="editorial-image h-[80vh]">
-                <img src={gallery[activeImg]} alt={`${model.name} – Portrait`} loading="eager" fetchpriority="high" />
-              </div>
+              {/* Main photo — click to zoom to full resolution.
+                  We use object-contain + a dark backdrop so the entire portrait
+                  is visible without cropping (heads and legs preserved), while
+                  the letterboxing looks intentional and editorial. */}
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className="block w-full h-[80vh] bg-[#1A1414] overflow-hidden group relative cursor-zoom-in"
+                data-testid="gallery-zoom-btn"
+                aria-label={isEn ? `Enlarge photo of ${model.name}` : `Foto von ${model.name} vergrößern`}
+              >
+                <img
+                  src={gallery[activeImg]}
+                  alt={`${model.name} – Portrait`}
+                  loading="eager"
+                  fetchpriority="high"
+                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+                <span
+                  className="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-mono uppercase tracking-[0.15em] px-3 py-1.5 rounded backdrop-blur-sm pointer-events-none"
+                  aria-hidden="true"
+                >
+                  <span className="inline-block">⤢</span> {isEn ? "Enlarge" : "Vergrößern"}
+                </span>
+              </button>
               {gallery.length > 1 && (
                 <div className="grid grid-cols-4 gap-3">
                   {gallery.map((img, i) => (
@@ -345,6 +385,71 @@ export default function ModelDetail() {
           })()}
         </div>
       </section>
+
+      {/* Fullscreen lightbox — click any gallery photo to see it at native
+          resolution with no cropping. Keyboard: Esc to close, ←/→ to navigate. */}
+      {lightboxOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={isEn ? "Photo gallery" : "Foto-Galerie"}
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-fade-in-up"
+          style={{ animationDuration: "0.25s" }}
+          onClick={() => setLightboxOpen(false)}
+          data-testid="lightbox-overlay"
+        >
+          {/* Prev / Next arrows (only if >1 image) */}
+          {gallery.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImg((i) => (i - 1 + gallery.length) % gallery.length);
+                }}
+                className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl backdrop-blur-sm transition-colors"
+                aria-label={isEn ? "Previous photo" : "Vorheriges Foto"}
+                data-testid="lightbox-prev"
+              >‹</button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImg((i) => (i + 1) % gallery.length);
+                }}
+                className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl backdrop-blur-sm transition-colors"
+                aria-label={isEn ? "Next photo" : "Nächstes Foto"}
+                data-testid="lightbox-next"
+              >›</button>
+            </>
+          )}
+
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
+            className="absolute top-4 right-4 md:top-6 md:right-6 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl backdrop-blur-sm transition-colors"
+            aria-label={isEn ? "Close" : "Schließen"}
+            data-testid="lightbox-close"
+          >×</button>
+
+          {/* Counter */}
+          {gallery.length > 1 && (
+            <div className="absolute top-4 left-4 md:top-6 md:left-6 text-white/80 text-xs font-mono uppercase tracking-[0.2em] bg-white/10 px-3 py-1.5 rounded backdrop-blur-sm">
+              {activeImg + 1} / {gallery.length}
+            </div>
+          )}
+
+          {/* The image itself — click it to close */}
+          <img
+            src={gallery[activeImg]}
+            alt={`${model.name} – ${isEn ? "Full resolution" : "Volle Auflösung"}`}
+            className="max-w-[95vw] max-h-[95vh] object-contain select-none"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="lightbox-image"
+          />
+        </div>
+      )}
     </PublicLayout>
   );
 }

@@ -201,6 +201,10 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Portrait model shots have the face in the top third — keep it visible
+     when the image is cropped by the container. Falls back gracefully for
+     landscape shots (top edge is close enough to center). */
+  object-position: center top;
   display: block;
 }
 .editorial-image:hover img {
