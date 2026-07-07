@@ -91,6 +91,56 @@ export default function AdminSettings() {
         </div>
 
         <div className="border-t border-[#1A1414]/8 pt-6">
+          <span className="overline text-[10px] block mb-3">Escort-Hamburg-Seite — Hero-Bild</span>
+          <p className="text-xs text-[#6B5F5F] mb-3">
+            Das große Hintergrundbild auf der Seite <code>/escort-hamburg</code> (Hamburg-Skyline, hinter der „Escort Hamburg&ldquo;-Überschrift). Leer lassen, um das eingebaute Pexels-Standardbild zu verwenden. Empfohlen: <strong>2400×1000&nbsp;px Landscape-JPEG</strong>, mind. 300&nbsp;KB für Retina-Displays.
+          </p>
+          <Field
+            label="Bild-URL"
+            value={form.escort_hamburg_image || ""}
+            onChange={(v) => set("escort_hamburg_image", v)}
+            placeholder="https://…jpg  (leer lassen → Pexels-Standard)"
+            testId="settings-escort-hamburg-image"
+          />
+          {form.escort_hamburg_image && (
+            <div className="mt-4">
+              <img
+                src={form.escort_hamburg_image}
+                alt="Escort Hamburg hero preview"
+                className="max-w-md rounded border border-[#1A1414]/15"
+                style={{ aspectRatio: "2400/1000", objectFit: "cover" }}
+                data-testid="settings-escort-hamburg-preview"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-[#1A1414]/8 pt-6">
+          <span className="overline text-[10px] block mb-3">Über-uns-Seite — Editorial-Bild</span>
+          <p className="text-xs text-[#6B5F5F] mb-3">
+            Das große Portrait-Bild rechts neben dem Text auf der Seite <code>/ueber-uns</code>. Leer lassen, um das eingebaute Pexels-Standardbild zu verwenden. Empfohlen: <strong>1200×1800&nbsp;px Portrait-JPEG</strong>, mind. 200&nbsp;KB.
+          </p>
+          <Field
+            label="Bild-URL"
+            value={form.about_image || ""}
+            onChange={(v) => set("about_image", v)}
+            placeholder="https://…jpg  (leer lassen → Pexels-Standard)"
+            testId="settings-about-image"
+          />
+          {form.about_image && (
+            <div className="mt-4">
+              <img
+                src={form.about_image}
+                alt="About page preview"
+                className="max-w-[240px] rounded border border-[#1A1414]/15"
+                style={{ aspectRatio: "2/3", objectFit: "cover" }}
+                data-testid="settings-about-preview"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-[#1A1414]/8 pt-6">
           <span className="overline text-[10px] block mb-3">Social-Share-Bild (WhatsApp · Facebook · iMessage)</span>
           <p className="text-xs text-[#6B5F5F] mb-3">
             Das Bild, das beim Teilen des Links in WhatsApp, Facebook oder iMessage angezeigt wird. Ideal: <strong>1200×630&nbsp;px Landscape-JPEG</strong>. Leer&nbsp;lassen → verwendet das Homepage-Hero-Bild.

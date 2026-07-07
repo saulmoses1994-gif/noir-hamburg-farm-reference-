@@ -294,6 +294,14 @@ class SiteSettings(BaseModel):
     # detail hero. Keyed by service slug (e.g. "luxury-escort-hamburg"). Any
     # slug missing here falls back to the static default in site.js.
     service_images: Dict[str, str] = {}
+    # Hero image for the /escort-hamburg umbrella page (large banner behind
+    # the "Escort Hamburg" headline). Empty → falls back to the built-in
+    # Pexels Hamburg-by-night default.
+    escort_hamburg_image: Optional[str] = ""
+    # Editorial image on the /ueber-uns (About) page — the tall portrait to
+    # the right of the founding-story copy. Empty → falls back to the
+    # built-in Pexels default.
+    about_image: Optional[str] = ""
     # Social share image (og:image / twitter:image). Recommended dimensions:
     # 1200×630 landscape JPEG for optimal WhatsApp/Facebook/iMessage previews.
     # Empty → falls back to homepage_hero_image → featured model cover.
@@ -422,7 +430,11 @@ def _settings_defaults() -> dict:
 async def get_settings():
     """Public: returns the current site-wide settings (contact info, hours,
     social links). Auto-creates the singleton document with defaults on first
-    read so the site never breaks if the admin has not saved yet."""
+    read so the site never breaks if the admin has not saved yet.
+
+    We re-hydrate the stored document through `SiteSettings(...)` so newly
+    added Pydantic fields (e.g. `escort_hamburg_image`) fall back to their
+    declared defaults instead of being missing from legacy DB rows."""
     doc = await db.site_settings.find_one({"_key": _SETTINGS_KEY})
     if not doc:
         defaults = _settings_defaults()
@@ -430,7 +442,7 @@ async def get_settings():
         return defaults
     doc.pop("_id", None)
     doc.pop("_key", None)
-    return doc
+    return SiteSettings(**doc).model_dump()
 
 
 @api_router.put("/settings")

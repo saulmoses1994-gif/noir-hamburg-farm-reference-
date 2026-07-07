@@ -3,8 +3,13 @@ import PublicLayout from "@/components/layout/PublicLayout";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useSEO } from "@/lib/seo";
 import { ADVANTAGES } from "@/data/site";
+import { useSettings } from "@/lib/settings";
+
+const FALLBACK_ABOUT_IMAGE = "https://images.pexels.com/photos/19923619/pexels-photo-19923619.jpeg?auto=compress&cs=tinysrgb&w=1200";
 
 export default function About() {
+  const settings = useSettings();
+  const aboutImage = settings.about_image || FALLBACK_ABOUT_IMAGE;
   useSEO({
     title: "Über uns — Die Philosophie von Noir Hamburg",
     description: "Noir Hamburg ist eine kleine, kuratierte Premium-Begleitagentur in Hamburg. Lernen Sie unsere Werte, Standards und unser Verständnis von Diskretion kennen.",
@@ -37,7 +42,7 @@ export default function About() {
           </div>
           <aside className="lg:col-span-4 lg:col-start-9">
             <div className="editorial-image h-[60vh]">
-              <img src="https://images.pexels.com/photos/19923619/pexels-photo-19923619.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Hamburg Editorial" />
+              <img src={aboutImage} alt="Hamburg Editorial" data-testid="about-editorial-image" />
             </div>
           </aside>
         </div>

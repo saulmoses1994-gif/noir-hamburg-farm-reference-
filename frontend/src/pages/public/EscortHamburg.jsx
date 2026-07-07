@@ -6,11 +6,18 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { useSEO } from "@/lib/seo";
 import { SERVICES, LOCATIONS } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 
+const FALLBACK_HERO = "https://images.pexels.com/photos/31222489/pexels-photo-31222489.jpeg?auto=compress&cs=tinysrgb&w=2400";
 const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${key}En`] : o[key]);
 
 export default function EscortHamburg() {
   const { lang } = useI18n();
+  const settings = useSettings();
+  // Same resolution chain as Home: SSR-baked bootstrap → admin CMS setting →
+  // static Pexels default. Keeps hydration flash-free.
+  const ssrHero = typeof window !== "undefined" ? window.__NOIR_INITIAL__?.escortHamburgImage : "";
+  const heroImage = settings.escort_hamburg_image || ssrHero || FALLBACK_HERO;
   useSEO({
     title: lang === "en"
       ? "Escort Hamburg — Premium Companion Agency | Noir Hamburg"
@@ -24,7 +31,7 @@ export default function EscortHamburg() {
     <PublicLayout>
       <section className="relative h-[70vh] flex items-end" data-testid="escort-hamburg-page">
         <div className="absolute inset-0">
-          <img src="https://images.pexels.com/photos/31222489/pexels-photo-31222489.jpeg?auto=compress&cs=tinysrgb&w=2400" alt="Hamburg bei Nacht" className="w-full h-full object-cover" />
+          <img src={heroImage} alt="Hamburg bei Nacht" className="w-full h-full object-cover" data-testid="escort-hamburg-hero-image" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/50 to-[#1A1414]/25" />
         </div>
         <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-16 max-w-5xl text-white">

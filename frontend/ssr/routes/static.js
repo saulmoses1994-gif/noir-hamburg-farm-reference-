@@ -52,6 +52,9 @@ ${FAQS.map((f) => `<details open><summary><h2 style="display:inline">${esc(lang 
 }
 
 function renderAbout(buildAssets, lang = "de") {
+  const settings = getSettings();
+  const FALLBACK_ABOUT_IMAGE = "https://images.pexels.com/photos/19923619/pexels-photo-19923619.jpeg?auto=compress&cs=tinysrgb&w=1200";
+  const aboutImage = settings.about_image || FALLBACK_ABOUT_IMAGE;
   const titleByLang = {
     de: "Über uns — Die Philosophie von Noir Hamburg",
     en: "About — The Philosophy of Noir Hamburg",
@@ -130,6 +133,7 @@ ${bodyByLang[lang] || bodyByLang.de}
     title: titleByLang[lang] || titleByLang.de,
     description: descByLang[lang] || descByLang.de,
     canonicalPath: "/ueber-uns",
+    ogImage: aboutImage,
     jsonLd: [breadcrumbSchema([{ label: t("crumb.about", lang) }], lang)],
     bodyContent: body,
   });

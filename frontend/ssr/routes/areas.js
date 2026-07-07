@@ -133,6 +133,9 @@ ${areaFaqs.length ? `<h2>${esc(isEn ? `FAQ — Escort in ${l.name}` : `Häufige 
 }
 
 function renderEscortHamburg(buildAssets, lang = "de") {
+  const settings = getSettings();
+  const FALLBACK_HERO = "https://images.pexels.com/photos/31222489/pexels-photo-31222489.jpeg?auto=compress&cs=tinysrgb&w=2400";
+  const escortHamburgImage = settings.escort_hamburg_image || FALLBACK_HERO;
   const titleByLang = {
     de: "Escort Hamburg — Premium Begleitagentur | Noir Hamburg",
     en: "Escort Hamburg — Premium Companion Agency | Noir Hamburg",
@@ -163,6 +166,11 @@ ${renderBreadcrumbs([{ label: t("crumb.escortHamburg", lang) }], lang)}
     title: titleByLang[lang] || titleByLang.de,
     description: descByLang[lang] || descByLang.de,
     canonicalPath: "/escort-hamburg",
+    ogImage: escortHamburgImage,
+    preloadImage: escortHamburgImage,
+    // Bootstrap the resolved hero URL to the client so React's initial render
+    // matches SSG output — no image flash between hydration and API load.
+    bootstrapData: { escortHamburgImage },
     jsonLd: [breadcrumbSchema([{ label: t("crumb.escortHamburg", lang) }], lang)],
     bodyContent: body,
   });

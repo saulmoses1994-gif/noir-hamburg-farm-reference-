@@ -14,6 +14,14 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - **Admin**: Agency operator managing models, blog, contacts, settings, media
 
 ## Implemented (as of 2026-02)
+### CMS Photo Overrides — Escort Hamburg + Über uns pages (2026-02-07)
+- New `escort_hamburg_image` field on `SiteSettings` for `/escort-hamburg` hero (2400×1000 landscape).
+- New `about_image` field on `SiteSettings` for `/ueber-uns` editorial portrait (1200×1800 portrait).
+- Admin UI: two new sections in `/admin/settings` with URL fields + live preview thumbnails.
+- Public React pages (`EscortHamburg.jsx`, `About.jsx`) read via `useSettings()` with fallback chain: admin setting → SSR bootstrap (escort-hamburg only) → Pexels default.
+- SSR renderers (`renderEscortHamburg`, `renderAbout`) use the settings as `ogImage`/`preloadImage`. `renderEscortHamburg` also bootstraps via `window.__NOIR_INITIAL__` to prevent hydration flash.
+- `GET /api/settings` now hydrates through `SiteSettings(**doc).model_dump()` so newly-added Pydantic fields always fall back to defaults on legacy DB rows.
+
 ### Phase 1–4 SEO Overhaul (2026-02)
 - **Homepage**: H1 updated to `"Luxus Escort Hamburg – Premium Begleitung mit Stil"` (EN: Premium Companionship with Style). 10 dedicated H2 sections matching SEO taxonomy (Warum eine professionelle Agentur / Luxus Escort Service / Diskretion und Privatsphäre / VIP & Business / Warum Kunden vertrauen / Models / Business Dinner Events / Stadtteile / Aktuelles / FAQ). ~1,600 words DE + EN. LocalBusiness + FAQPage JSON-LD.
 - **Service pages (×8)**: Every service now 900–1,250 words with 4 extended editorial H2 sections + per-service FAQ (5 Q&A with FAQPage schema) + Related Services + Available Models + Serviced Areas blocks. Content lives in `src/data/serviceContent.js` (CommonJS, DE + EN parallel).

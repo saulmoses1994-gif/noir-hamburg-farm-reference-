@@ -28,6 +28,8 @@ let _cached = {
   homepage_hero_image: "",
   area_images: {},
   service_images: {},
+  escort_hamburg_image: "",
+  about_image: "",
   social_share_image: "",
 };
 
