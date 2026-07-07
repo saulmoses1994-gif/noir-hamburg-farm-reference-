@@ -15,6 +15,8 @@ const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${ke
 
 export function AreasList() {
   const { lang, t, to } = useI18n();
+  const settings = useSettings();
+  const areaImages = settings.area_images || {};
   useSEO({
     title: lang === "en"
       ? "Hamburg Areas — Premium Escort across the Metropolitan Region | Noir Hamburg"
