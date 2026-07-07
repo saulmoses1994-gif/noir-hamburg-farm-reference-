@@ -22,6 +22,7 @@ const brandToSettings = (b) => ({
   twitter_url: "",
   homepage_hero_image: "",
   area_images: {},
+  social_share_image: "",
 });
 
 const Ctx = createContext(brandToSettings(BRAND));

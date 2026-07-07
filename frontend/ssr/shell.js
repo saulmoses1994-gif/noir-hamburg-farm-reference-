@@ -209,11 +209,15 @@ function renderShell({
 <meta property="og:title" content="${escAttr(title)}" />
 <meta property="og:description" content="${escAttr(description)}" />
 <meta property="og:url" content="${escAttr(canonicalAbs)}" />
-${ogImage ? `<meta property="og:image" content="${escAttr(ogImage)}" />` : ""}
+${ogImage ? `<meta property="og:image" content="${escAttr(ogImage)}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="${escAttr(title)}" />` : ""}
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${escAttr(title)}" />
 <meta name="twitter:description" content="${escAttr(description)}" />
-${ogImage ? `<meta name="twitter:image" content="${escAttr(ogImage)}" />` : ""}
+${ogImage ? `<meta name="twitter:image" content="${escAttr(ogImage)}" />
+<meta name="twitter:image:alt" content="${escAttr(title)}" />` : ""}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://images.unsplash.com" />

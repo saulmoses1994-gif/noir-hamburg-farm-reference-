@@ -91,6 +91,33 @@ export default function AdminSettings() {
         </div>
 
         <div className="border-t border-[#1A1414]/8 pt-6">
+          <span className="overline text-[10px] block mb-3">Social-Share-Bild (WhatsApp · Facebook · iMessage)</span>
+          <p className="text-xs text-[#6B5F5F] mb-3">
+            Das Bild, das beim Teilen des Links in WhatsApp, Facebook oder iMessage angezeigt wird. Ideal: <strong>1200×630&nbsp;px Landscape-JPEG</strong>. Leer&nbsp;lassen → verwendet das Homepage-Hero-Bild.
+            <br />
+            <strong className="text-[#8B1538]">Wichtig:</strong> WhatsApp cached die Vorschau bis zu 30 Tage. Nach Änderung <a href="https://developers.facebook.com/tools/debug/" target="_blank" rel="noreferrer" className="underline">Facebook Sharing Debugger</a> öffnen, URL eingeben, „Scrape Again“ klicken — dann greift die neue Vorschau sofort.
+          </p>
+          <Field
+            label="Bild-URL"
+            value={form.social_share_image || ""}
+            onChange={(v) => set("social_share_image", v)}
+            placeholder="https://…jpg  (leer lassen → Hero-Bild)"
+            testId="settings-social-image"
+          />
+          {form.social_share_image && (
+            <div className="mt-4">
+              <img
+                src={form.social_share_image}
+                alt="Social share preview"
+                className="max-w-md rounded border border-[#1A1414]/15"
+                style={{ aspectRatio: "1200/630", objectFit: "cover" }}
+                data-testid="settings-social-preview"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-[#1A1414]/8 pt-6">
           <span className="overline text-[10px] block mb-3">Social (optional)</span>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Field label="Instagram URL" value={form.instagram_url} onChange={(v) => set("instagram_url", v)} placeholder="https://instagram.com/…" testId="settings-instagram" />
