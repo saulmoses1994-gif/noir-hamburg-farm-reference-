@@ -24,14 +24,18 @@ export default function Home() {
   }, []);
 
   // Resolve the hero image with a graceful fallback chain:
-  //   1. Admin-configured `homepage_hero_image` in Settings
-  //   2. First featured model's cover image (models are sorted featured-first)
-  //   3. Last-resort Unsplash placeholder we ship with
+  //   1. SSR-baked bootstrap (window.__NOIR_INITIAL__.heroImage) — same value
+  //      the SSG output committed to HTML, prevents a flash on hydration
+  //   2. Admin-configured `homepage_hero_image` in Settings
+  //   3. First featured model's cover image
+  //   4. Last-resort Unsplash placeholder we ship with
   const FALLBACK_HERO = "https://images.unsplash.com/photo-1533392151650-269f96231f65?auto=format&fit=crop&w=1200&q=80";
+  const ssrHero = typeof window !== "undefined" ? window.__NOIR_INITIAL__?.heroImage : "";
   const heroImage =
     settings.homepage_hero_image ||
     models.find((m) => m.featured)?.cover_image ||
     models[0]?.cover_image ||
+    ssrHero ||
     FALLBACK_HERO;
   // Responsive srcset only makes sense when the URL is an Unsplash CDN URL
   // that supports the `w=` query parameter; for admin-uploaded custom images

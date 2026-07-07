@@ -188,6 +188,9 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
     canonicalPath: "/",
     ogImage: heroImage,
     preloadImage: heroPreload,
+    // Bootstrap the resolved hero URL to the client so React's initial render
+    // matches what SSG produced — no image flash on load.
+    bootstrapData: { heroImage },
     jsonLd: [
       {
         "@context": "https://schema.org",

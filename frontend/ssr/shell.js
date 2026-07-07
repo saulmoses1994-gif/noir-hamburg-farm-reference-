@@ -169,6 +169,9 @@ function renderShell({
   reactScripts,
   preloadImage,  // optional URL — emitted as <link rel="preload" as="image">
                  // to prioritise fetching the LCP image.
+  bootstrapData, // optional plain object serialised into window.__NOIR_INITIAL__.
+                 // Home.jsx reads this as initial state to avoid the hero
+                 // flashing to the fallback image between hydration and API load.
 }) {
   const dePath = localizePath(canonicalPath || "/", "de");
   const enPath = localizePath(canonicalPath || "/", "en");
@@ -239,6 +242,7 @@ ${bodyContent}
 ${renderFooter(lang)}
 </div>
 <div id="root"></div>
+${bootstrapData ? `<script>window.__NOIR_INITIAL__=${JSON.stringify(bootstrapData).replace(/</g, "\\u003c")};</script>` : ""}
 ${reactScripts}
 <script>
 /* When React mounts and renders into #root, hide the SEO content to avoid a
