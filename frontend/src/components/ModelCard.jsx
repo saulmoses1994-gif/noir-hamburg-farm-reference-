@@ -5,11 +5,6 @@ export default function ModelCard({ model }) {
   const { lang, to } = useI18n();
   const isEn = lang === "en";
 
-  const availLabel = isEn
-    ? (model.available ? "Available today" : "Not available today")
-    : (model.available ? "Heute verfügbar" : "Heute nicht verfügbar");
-  const badgeClass = model.available ? "badge-available" : "badge-unavailable";
-
   const cityLabel = model.locations?.[0] || "Hamburg";
   const cityName = cityLabel.charAt(0).toUpperCase() + cityLabel.slice(1).replace(/-/g, " ");
 
@@ -30,14 +25,6 @@ export default function ModelCard({ model }) {
         ) : (
           <div className="w-full h-full bg-[#F2EAE4] flex items-center justify-center font-heading text-6xl text-[#8B1538]/40">
             {model.name?.[0] || "N"}
-          </div>
-        )}
-        <div className="hidden md:block absolute bottom-3 left-3">
-          <span className={badgeClass}>{availLabel}</span>
-        </div>
-        {model.featured && (
-          <div className="hidden md:block absolute bottom-3 right-3">
-            <span className="bg-[#8B1538] text-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full">Featured</span>
           </div>
         )}
       </div>
