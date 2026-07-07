@@ -286,6 +286,10 @@ class SiteSettings(BaseModel):
     # Homepage hero image — falls back to the first featured model's cover
     # image when empty. Editable from Admin → Einstellungen.
     homepage_hero_image: Optional[str] = ""
+    # Per-area cover-image overrides for the /areas page. Keyed by the
+    # location slug (e.g. "hafencity" → "https://…/hafencity-photo.jpg").
+    # Any slug missing here falls back to the static default in site.js.
+    area_images: Dict[str, str] = {}
 
 
 class ChangePasswordInput(BaseModel):

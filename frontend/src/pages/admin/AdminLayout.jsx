@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { Users, FileText, Inbox, LogOut, Home, Image, Settings, User } from "lucide-react";
+import { Users, FileText, Inbox, LogOut, Home, Image, Settings, User, MapPin } from "lucide-react";
 
 export default function AdminLayout() {
   const { user, logout, loading } = useAuth();
@@ -19,6 +19,7 @@ export default function AdminLayout() {
     { to: "/admin/models", label: "Models", icon: Users },
     { to: "/admin/blog", label: "Blog", icon: FileText },
     { to: "/admin/pages", label: "Pages", icon: FileText },
+    { to: "/admin/areas", label: "Stadtteile", icon: MapPin },
     { to: "/admin/contacts", label: "Anfragen", icon: Inbox },
     { to: "/admin/media", label: "Medien", icon: Image },
     { to: "/admin/settings", label: "Einstellungen", icon: Settings },

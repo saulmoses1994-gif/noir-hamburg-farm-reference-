@@ -26,6 +26,7 @@ let _cached = {
   facebook_url: "",
   twitter_url: "",
   homepage_hero_image: "",
+  area_images: {},
 };
 
 async function refresh() {

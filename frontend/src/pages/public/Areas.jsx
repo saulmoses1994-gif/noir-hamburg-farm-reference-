@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { LOCATIONS, SERVICES } from "@/data/site";
 import { AREA_CONTENT, GENERIC_AREA_FAQS } from "@/data/areaContent";
 import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/settings";
 
 const pick = (o, key, lang) => (lang === "en" && o[`${key}En`] != null ? o[`${key}En`] : o[key]);
 
@@ -50,7 +51,7 @@ export function AreasList() {
               data-testid={`area-card-${l.slug}`}
             >
               <div className="aspect-[4/3] overflow-hidden">
-                <img src={l.image} alt={l.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-1000" loading="lazy" />
+                <img src={areaImages[l.slug] || l.image} alt={l.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-1000" loading="lazy" />
               </div>
               <div className="p-8">
                 <h2 className="font-heading text-2xl">{l.title}</h2>
@@ -72,6 +73,9 @@ export function AreaDetail() {
   const area = LOCATIONS.find((l) => l.slug === slug);
   const [models, setModels] = useState([]);
   const { lang, t, to } = useI18n();
+  const settings = useSettings();
+  // Admin-uploaded override for this area's hero image, if any.
+  const areaImage = (settings.area_images && settings.area_images[slug]) || area?.image;
 
   useEffect(() => {
     if (slug) {
@@ -97,7 +101,7 @@ export function AreaDetail() {
     description: area ? (lang === "en"
       ? `${area.title}: ${intro} Discreet companionship in ${area.name} — exclusively arranged by Noir Hamburg.`
       : `${area.title}: ${intro} Diskrete Begleitung in ${area.name} – exklusiv vermittelt durch Noir Hamburg.`) : "",
-    image: area?.image,
+    image: areaImage,
     jsonLd: area ? [
       {
         "@context": "https://schema.org",
@@ -132,7 +136,7 @@ export function AreaDetail() {
     <PublicLayout>
       <section className="relative h-[60vh] flex items-end" data-testid="area-hero">
         <div className="absolute inset-0">
-          <img src={area.image} alt={area.title} className="w-full h-full object-cover" />
+          <img src={areaImage} alt={area.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
         </div>
         <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

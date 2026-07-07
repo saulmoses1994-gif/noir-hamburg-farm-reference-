@@ -13,6 +13,7 @@ const {
   englishComingSoonBanner,
   t,
 } = require("../shell");
+const { getSettings } = require("../settings");
 const { backendJSON } = require("../backend");
 
 function renderAreasList(buildAssets, lang = "de") {
@@ -52,6 +53,7 @@ ${LOCATIONS.map((l) => `
 async function renderAreaDetail(slug, buildAssets, lang = "de") {
   const l = LOCATIONS.find((x) => x.slug === slug);
   if (!l) return null;
+  const areaImg = (getSettings().area_images || {})[slug] || l.image;
   const nearby = LOCATIONS.filter((x) => x.slug !== l.slug).slice(0, 6);
   const intro = lang === "en" ? l.introEn : l.intro;
   const description = lang === "en" ? l.descriptionEn : l.description;
@@ -84,7 +86,7 @@ ${renderBreadcrumbs([{ label: t("crumb.areas", lang), to: "/areas" }, { label: l
 <article>
 <h1>${esc(l.title)}</h1>
 <p><em>${esc(intro)}</em></p>
-${l.image ? `<img src="${escAttr(l.image)}" alt="${escAttr(l.title)} — ${esc(isEn ? "Noir Hamburg premium escort" : "Noir Hamburg Premium Begleitung")}" width="800" loading="eager"/>` : ""}
+${areaImg ? `<img src="${escAttr(areaImg)}" alt="${escAttr(l.title)} — ${esc(isEn ? "Noir Hamburg premium escort" : "Noir Hamburg Premium Begleitung")}" width="800" loading="eager"/>` : ""}
 <p>${esc(description)}</p>
 ${bodyExtra.map((p) => `<p>${esc(p)}</p>`).join("")}
 ${(l.landmarks || []).length > 0 ? `<h2>${esc(t("sec.popularAddresses", lang))}</h2><ul>${l.landmarks.map((lm) => `<li>${esc(lm)}</li>`).join("")}</ul>` : ""}
@@ -124,7 +126,7 @@ ${areaFaqs.length ? `<h2>${esc(isEn ? `FAQ — Escort in ${l.name}` : `Häufige 
     title: titleByLang[lang] || titleByLang.de,
     description: descByLang[lang] || descByLang.de,
     canonicalPath: `/escort/${l.slug}`,
-    ogImage: l.image,
+    ogImage: areaImg,
     jsonLd,
     bodyContent: body,
   });
