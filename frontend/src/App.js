@@ -38,6 +38,7 @@ const AdminPageEdit = lazy(() => import("@/pages/admin/AdminPages").then((m) => 
 const AdminMedia = lazy(() => import("@/pages/admin/AdminMedia"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminAreas = lazy(() => import("@/pages/admin/AdminAreas"));
+const AdminServices = lazy(() => import("@/pages/admin/AdminServices"));
 const AdminAccount = lazy(() => import("@/pages/admin/AdminAccount"));
 
 function ScrollToTop() {
@@ -137,6 +138,7 @@ function App() {
                 <Route path="media" element={<AdminMedia />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="areas" element={<AdminAreas />} />
+                <Route path="services" element={<AdminServices />} />
                 <Route path="account" element={<AdminAccount />} />
               </Route>
 

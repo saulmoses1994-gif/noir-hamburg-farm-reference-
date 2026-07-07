@@ -27,6 +27,7 @@ let _cached = {
   twitter_url: "",
   homepage_hero_image: "",
   area_images: {},
+  service_images: {},
   social_share_image: "",
 };
 

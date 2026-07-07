@@ -15,6 +15,8 @@ const pick = (s, key, lang) => (lang === "en" && s[`${key}En`] != null ? s[`${ke
 
 export function ServicesList() {
   const { lang, t, to } = useI18n();
+  const settings = useSettings();
+  const serviceImages = settings.service_images || {};
   useSEO({
     title: lang === "en"
       ? "Escort Services Hamburg — Premium Companionship | Noir Hamburg"
@@ -52,7 +54,7 @@ export function ServicesList() {
               data-testid={`service-card-${s.slug}`}
             >
               <div className="aspect-[16/10] overflow-hidden">
-                <img src={s.image} alt={s.title} className="w-full h-full object-cover opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-1000" loading="lazy" />
+                <img src={serviceImages[s.slug] || s.image} alt={s.title} className="w-full h-full object-cover opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-1000" loading="lazy" />
               </div>
               <div className="p-8 lg:p-12">
                 <span className="overline accent-text">0{i + 1}</span>
@@ -76,6 +78,7 @@ export function ServiceDetail() {
   const service = SERVICES.find((s) => s.slug === slug);
   const { lang, t, to } = useI18n();
   const settings = useSettings();
+  const serviceImage = (settings.service_images && settings.service_images[slug]) || service?.image;
   const [models, setModels] = useState([]);
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export function ServiceDetail() {
   useSEO({
     title: service ? pick(service, "metaTitle", lang) : undefined,
     description: service ? pick(service, "metaDescription", lang) : undefined,
-    image: service?.image,
+    image: serviceImage,
     jsonLd: service ? [
       {
         "@context": "https://schema.org",
@@ -126,7 +129,7 @@ export function ServiceDetail() {
     <PublicLayout>
       <section className="relative h-[60vh] flex items-end" data-testid="service-hero">
         <div className="absolute inset-0">
-          <img src={service.image} alt={`${service.title} — Noir Hamburg Premium Escort Service`} className="w-full h-full object-cover" />
+          <img src={serviceImage} alt={`${service.title} — Noir Hamburg Premium Escort Service`} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
         </div>
         <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

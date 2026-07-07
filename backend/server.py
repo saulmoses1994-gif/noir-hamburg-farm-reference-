@@ -290,6 +290,10 @@ class SiteSettings(BaseModel):
     # location slug (e.g. "hafencity" → "https://…/hafencity-photo.jpg").
     # Any slug missing here falls back to the static default in site.js.
     area_images: Dict[str, str] = {}
+    # Per-service cover-image overrides for the /services page + /services/{slug}
+    # detail hero. Keyed by service slug (e.g. "luxury-escort-hamburg"). Any
+    # slug missing here falls back to the static default in site.js.
+    service_images: Dict[str, str] = {}
     # Social share image (og:image / twitter:image). Recommended dimensions:
     # 1200×630 landscape JPEG for optimal WhatsApp/Facebook/iMessage previews.
     # Empty → falls back to homepage_hero_image → featured model cover.

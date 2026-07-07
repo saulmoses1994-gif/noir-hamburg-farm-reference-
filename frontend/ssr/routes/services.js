@@ -16,6 +16,7 @@ const {
   breadcrumbSchema,
   t,
 } = require("../shell");
+const { getSettings } = require("../settings");
 const { backendJSON } = require("../backend");
 
 function renderServicesList(buildAssets, lang = "de") {
@@ -58,6 +59,7 @@ ${SERVICES.map((s) => `
 async function renderServiceDetail(slug, buildAssets, lang = "de") {
   const s = SERVICES.find((x) => x.slug === slug);
   if (!s) return null;
+  const svcImg = (getSettings().service_images || {})[slug] || s.image;
 
   const isEn = lang === "en";
   const tagline = isEn ? s.taglineEn : s.tagline;
@@ -113,7 +115,7 @@ ${renderBreadcrumbs([{ label: t("crumb.services", lang), to: "/services" }, { la
 <article>
 <h1>${esc(s.h1)}</h1>
 <p><em>${esc(tagline)}</em></p>
-${s.image ? `<img src="${escAttr(s.image)}" alt="${escAttr(s.title)} — ${esc(isEn ? "Noir Hamburg premium escort service" : "Noir Hamburg Premium Escort Service")}" width="800" loading="eager"/>` : ""}
+${svcImg ? `<img src="${escAttr(svcImg)}" alt="${escAttr(s.title)} — ${esc(isEn ? "Noir Hamburg premium escort service" : "Noir Hamburg Premium Escort Service")}" width="800" loading="eager"/>` : ""}
 <p>${esc(longCopy)}</p>
 ${sectionsHtml}
 <section>
@@ -158,7 +160,7 @@ ${areasHtml}
     title: metaTitle,
     description: metaDescription,
     canonicalPath: `/services/${s.slug}`,
-    ogImage: s.image,
+    ogImage: svcImg,
     jsonLd,
     bodyContent: body,
   });
