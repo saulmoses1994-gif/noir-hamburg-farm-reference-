@@ -1363,6 +1363,51 @@ async def startup():
         await _seed_initial_data()
     # Seed SEO content (service_content + area_content) if collections empty.
     await _seed_seo_content()
+    # Apply one-shot content migrations (forces specific docs to a known-good
+    # state on production, even if the collection was previously seeded with
+    # older content). Idempotent — each migration only ever applies once.
+    await _apply_content_migrations()
+
+
+async def _apply_content_migrations():
+    """Force-apply pending content migrations from
+    ``backend/seed_data/content_migrations/*.json``.
+
+    Each JSON file is a full ServiceContent (or AreaContent) document; the
+    file stem is the migration ID. On startup we upsert the doc keyed by
+    ``slug``, then record the migration ID in ``db.content_migrations`` so it
+    never runs again — even if the admin later edits the doc through the CMS.
+
+    This lets us ship targeted SEO corrections through code (git-tracked JSON)
+    without wiping other admin edits.
+    """
+    migrations_dir = ROOT_DIR / "seed_data" / "content_migrations"
+    if not migrations_dir.exists():
+        return
+    for path in sorted(migrations_dir.glob("*.json")):
+        migration_id = path.stem
+        try:
+            already = await db.content_migrations.find_one({"id": migration_id})
+            if already:
+                continue
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            slug = payload.get("slug")
+            if not slug:
+                logger.warning(f"[migration {migration_id}] missing slug — skipping")
+                continue
+            # Which collection? Service docs have "sections", area docs have
+            # "landmarks" / "body_extra". Sniff via key presence.
+            collection = db.service_content if "sections" in payload else db.area_content
+            payload.pop("_id", None)
+            await collection.update_one({"slug": slug}, {"$set": payload}, upsert=True)
+            await db.content_migrations.insert_one({
+                "id": migration_id,
+                "slug": slug,
+                "applied_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info(f"[migration] applied {migration_id} → {slug}")
+        except Exception as e:
+            logger.error(f"[migration {migration_id}] failed: {e}")
 
 
 async def _seed_seo_content():
