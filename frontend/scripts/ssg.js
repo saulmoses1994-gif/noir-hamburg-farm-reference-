@@ -79,14 +79,17 @@ function writeHtml(urlPath, html) {
   // Ensure the settings cache (used by every SSR renderer for og:image,
   // homepage_hero_image, etc.) has completed its first fetch BEFORE we start
   // rendering. Otherwise HTML gets baked with empty defaults + fallback URLs.
-  const { ensureSettingsLoaded } = require("../ssr/settings");
+  const { ensureSettingsLoaded, getSettings } = require("../ssr/settings");
   const [models, blogPosts, pages] = await Promise.all([
     backendJSON("/api/models").catch(() => []),
     backendJSON("/api/blog").catch(() => []),
     backendJSON("/api/pages").catch(() => []),
     ensureSettingsLoaded(),
   ]);
+  const _s = getSettings();
   console.log(`[ssg] fetched: ${models.length} models, ${blogPosts.length} blog posts, ${pages.length} CMS pages`);
+  console.log(`[ssg] settings: social_share_image=${_s.social_share_image || "(empty)"}`);
+  console.log(`[ssg] settings: homepage_hero_image=${_s.homepage_hero_image || "(empty)"}`);
 
   // Enumerate every SEO URL for both languages.
   const targets = [];

@@ -39,15 +39,15 @@ let _cached = {
 async function refresh() {
   try {
     _cached = await backendJSON("/api/settings", { cache: false });
+    return true;
   } catch (e) {
     // Swallow — keep the previous cached copy. Errors are recoverable.
+    return false;
   }
 }
 
-// Prime immediately, then refresh on an interval. `_initialLoad` resolves after
-// the first fetch completes so the SSG build can `await` it before rendering
-// — otherwise pages get baked with empty defaults (missing og:image, etc.).
-const _initialLoad = refresh();
+// Prime immediately, then refresh on an interval.
+refresh();
 setInterval(refresh, REFRESH_MS).unref();
 
 function getSettings() {
@@ -60,4 +60,19 @@ function getSettings() {
   };
 }
 
-module.exports = { getSettings, ensureSettingsLoaded: () => _initialLoad };
+/**
+ * Forces the settings cache to (re-)load NOW. Used by the SSG build so pages
+ * are guaranteed to render with real DB data, not empty defaults. Retries on
+ * failure since the backend may be still warming up when the build starts.
+ */
+async function ensureSettingsLoaded() {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const ok = await refresh();
+    if (ok) return _cached;
+    await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+  }
+  console.warn("[settings] failed to load after 5 retries — using defaults");
+  return _cached;
+}
+
+module.exports = { getSettings, ensureSettingsLoaded };
