@@ -86,7 +86,7 @@ export default function Header() {
             </Link>
             <a
               href={settings.whatsappUrl}
-              target="_blank" rel="noreferrer"
+              target="_blank" rel="noreferrer nofollow"
               className="btn-whatsapp whitespace-nowrap !px-4 !py-1.5 !text-xs 2xl:!px-5 2xl:!py-2"
               data-testid="header-whatsapp-btn"
             >
@@ -99,7 +99,7 @@ export default function Header() {
               <a
                 href={settings.recruitmentWhatsappUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noreferrer nofollow"
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-[#8B1538] text-[#8B1538] text-[11px] 2xl:text-xs font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors whitespace-nowrap"
                 data-testid="header-recruit-btn"
                 title={t("cta.recruit")}
@@ -112,7 +112,7 @@ export default function Header() {
             <a
               href={settings.recruitmentWhatsappUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noreferrer nofollow"
               className="xl:hidden inline-flex items-center gap-1.5 px-3 py-1 border border-[#8B1538] text-[#8B1538] text-[11px] font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors mr-1 whitespace-nowrap flex-shrink-0"
               data-testid="mobile-header-recruit-btn"
               aria-label={t("cta.recruit")}
@@ -190,7 +190,7 @@ export default function Header() {
                 <a
                   href={settings.recruitmentWhatsappUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noreferrer nofollow"
                   onClick={() => setOpen(false)}
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-[#8B1538] text-[#8B1538] rounded-full self-start text-sm font-semibold"
                   data-testid="mobile-recruit-btn"

@@ -197,10 +197,17 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
         "@type": "LocalBusiness",
         name: "Noir Hamburg",
         description: "Premium Escort Agency Hamburg",
-        address: { "@type": "PostalAddress", addressLocality: "Hamburg", addressCountry: "DE" },
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "Pinneberger Chaussee 50",
+          addressLocality: "Hamburg",
+          postalCode: "22523",
+          addressCountry: "DE",
+        },
         areaServed: "Hamburg",
         telephone: getSettings().phone,
         email: getSettings().email,
+        url: "https://noir-hamburg.com",
       },
       {
         "@context": "https://schema.org",

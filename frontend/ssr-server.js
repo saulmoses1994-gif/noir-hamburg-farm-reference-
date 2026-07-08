@@ -128,10 +128,38 @@ app.use((req, res, next) => {
   next();
 });
 
+// ---------- www → non-www 301 redirect ----------
+// Google treats `www.noir-hamburg.com` and `noir-hamburg.com` as separate hosts.
+// Serving identical content on both creates duplicate content + hreflang conflicts
+// (Semrush error #24). Force one canonical host by 301-redirecting all `www.`
+// requests to the bare-domain equivalent.
+app.use((req, res, next) => {
+  const host = req.headers.host || "";
+  if (host.startsWith("www.")) {
+    const canonical = host.slice(4);
+    return res.redirect(301, `https://${canonical}${req.originalUrl}`);
+  }
+  next();
+});
+
+// ---------- Content-Language HTTP header ----------
+// Semrush flagged hreflang conflicts because /en/* pages were served without a
+// matching Content-Language header. Set it here so the header always matches
+// the URL prefix (fixes error #24 for the English variants).
+app.use((req, res, next) => {
+  const isEn = req.path === "/en" || req.path.startsWith("/en/");
+  res.set("Content-Language", isEn ? "en" : "de");
+  next();
+});
+
 app.use("/static", express.static(path.join(BUILD_DIR, "static"), { maxAge: "1y", immutable: true }));
 app.get("/favicon.ico", (req, res) => res.sendFile(path.join(BUILD_DIR, "favicon.ico")));
 app.get("/manifest.json", (req, res) => res.sendFile(path.join(BUILD_DIR, "manifest.json")));
 app.get("/robots.txt", (req, res) => res.sendFile(path.join(BUILD_DIR, "robots.txt")));
+app.get("/llms.txt", (req, res) => {
+  res.set("Content-Type", "text/plain; charset=utf-8");
+  res.sendFile(path.join(BUILD_DIR, "llms.txt"));
+});
 
 app.get("/sitemap.xml", async (req, res) => {
   try {

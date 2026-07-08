@@ -136,7 +136,23 @@ ${areasHtml}
       "@type": "Service",
       name: s.title,
       description: metaDescription,
-      provider: { "@type": "LocalBusiness", name: "Noir Hamburg", areaServed: "Hamburg" },
+      provider: {
+        "@type": "LocalBusiness",
+        name: "Noir Hamburg",
+        areaServed: "Hamburg",
+        // Required address block for Google to render the LocalBusiness in
+        // rich results / Knowledge Panel (fixes Semrush structured-data errors).
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "Pinneberger Chaussee 50",
+          addressLocality: "Hamburg",
+          postalCode: "22523",
+          addressCountry: "DE",
+        },
+        telephone: "+49 177 9681205",
+        email: "support@noir-hamburg.com",
+        url: "https://noir-hamburg.com",
+      },
       areaServed: { "@type": "City", name: "Hamburg" },
       serviceType: s.shortLabel,
     },

@@ -930,7 +930,12 @@ async def sitemap(request: Request):
 @api_router.get("/robots.txt", response_class=PlainTextResponse)
 async def robots(request: Request):
     host = os.environ.get("SITE_URL", str(request.base_url).rstrip("/"))
-    return PlainTextResponse(f"User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: {host}/api/sitemap.xml\n")
+    # /api/files/ is explicitly allowed so Google can crawl uploaded model /
+    # service / area photos for Image Search. All other /api/ endpoints stay
+    # disallowed (auth, admin, JSON APIs — no SEO value).
+    return PlainTextResponse(
+        f"User-agent: *\nAllow: /\nAllow: /api/files/\nDisallow: /admin\nDisallow: /api/\n\nSitemap: {host}/api/sitemap.xml\n"
+    )
 
 
 @api_router.get("/health")

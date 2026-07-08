@@ -82,7 +82,7 @@ export default function Home() {
               </Link>
               <a
                 href={settings.whatsappUrl}
-                target="_blank" rel="noreferrer"
+                target="_blank" rel="noreferrer nofollow"
                 className="btn-whatsapp"
                 data-testid="hero-whatsapp-btn"
               >
@@ -308,7 +308,7 @@ export default function Home() {
             <Link to={to("/kontakt")} className="btn-primary" data-testid="booking-process-cta-contact">
               Anfrage jetzt senden <ArrowRight size={14} />
             </Link>
-            <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="btn-whatsapp" data-testid="booking-process-cta-whatsapp">
+            <a href={settings.whatsappUrl} target="_blank" rel="noreferrer nofollow" className="btn-whatsapp" data-testid="booking-process-cta-whatsapp">
               <MessageCircle size={16} /> WhatsApp
             </a>
             <span className="text-xs text-[#6B5F5F] uppercase tracking-[0.15em]">Diskret · Kostenfrei · Unverbindlich</span>
@@ -579,7 +579,7 @@ export default function Home() {
         </p>
         <div className="mt-10 flex justify-center gap-4 flex-wrap">
           <Link to="/kontakt" className="btn-primary" data-testid="cta-contact-btn">Kontakt aufnehmen</Link>
-          <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="btn-whatsapp">
+          <a href={settings.whatsappUrl} target="_blank" rel="noreferrer nofollow" className="btn-whatsapp">
             <MessageCircle size={16} /> WhatsApp
           </a>
         </div>
