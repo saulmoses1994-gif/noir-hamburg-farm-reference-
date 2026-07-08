@@ -53,12 +53,12 @@ export default function Header() {
           scrolled ? "bg-white shadow-md" : "bg-white border-b border-[#1A1414]/8"
         }`}
       >
-        <div className="px-6 md:px-12 lg:px-8 xl:px-16 py-4 flex items-center justify-between gap-4">
+        <div className="px-6 md:px-12 xl:px-14 2xl:px-16 py-4 flex items-center justify-between gap-4">
           <Link to={to("/")} className="font-heading text-2xl tracking-tight whitespace-nowrap" data-testid="brand-logo">
             <span className="text-[#1A1414] font-semibold">Noir</span>{" "}
             <span className="accent-text italic">Hamburg</span>
           </Link>
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+          <nav className="hidden 2xl:flex items-center gap-6">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
@@ -75,7 +75,7 @@ export default function Header() {
               </NavLink>
             ))}
           </nav>
-          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
+          <div className="hidden 2xl:flex items-center gap-2.5">
             <Link
               to={switchPath}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8B1538] text-[#8B1538] text-xs font-semibold tracking-widest uppercase rounded-full hover:bg-[#8B1538] hover:text-white transition-colors whitespace-nowrap"
@@ -113,7 +113,7 @@ export default function Header() {
               href={settings.recruitmentWhatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#8B1538] text-[#8B1538] text-[11px] font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors mr-1"
+              className="2xl:hidden inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#8B1538] text-[#8B1538] text-[11px] font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors mr-1"
               data-testid="mobile-header-recruit-btn"
               aria-label={t("cta.recruit")}
               title={t("cta.recruit")}
@@ -122,7 +122,7 @@ export default function Header() {
             </a>
           )}
           <button
-            className="lg:hidden text-[#1A1414]"
+            className="2xl:hidden text-[#1A1414]"
             onClick={() => setOpen(true)}
             aria-label={t("cta.menuOpen")}
             data-testid="mobile-menu-btn"
@@ -132,7 +132,7 @@ export default function Header() {
         </div>
 
         {open && (
-          <div className="fixed inset-0 bg-white z-50 px-6 py-6 lg:hidden overflow-y-auto" data-testid="mobile-menu">
+          <div className="fixed inset-0 bg-white z-50 px-6 py-6 2xl:hidden overflow-y-auto" data-testid="mobile-menu">
             <div className="flex justify-between items-center mb-12">
               <Link
                 to={to("/")}
