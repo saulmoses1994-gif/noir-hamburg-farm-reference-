@@ -53,7 +53,10 @@ export function AreasList() {
               data-testid={`area-card-${l.slug}`}
             >
               <div className="aspect-[4/3] overflow-hidden">
-                <img src={areaImages[l.slug] || l.image} alt={l.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-1000" loading="lazy" />
+                {/* Full opacity by default so mobile users (no hover state) see
+                    the full-color photo immediately. Desktop still gets the
+                    subtle zoom on hover for a premium editorial feel. */}
+                <img src={areaImages[l.slug] || l.image} alt={l.title} className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" loading="lazy" />
               </div>
               <div className="p-8">
                 <h2 className="font-heading text-2xl">{l.title}</h2>

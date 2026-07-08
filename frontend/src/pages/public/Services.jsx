@@ -54,7 +54,10 @@ export function ServicesList() {
               data-testid={`service-card-${s.slug}`}
             >
               <div className="aspect-[16/10] overflow-hidden">
-                <img src={serviceImages[s.slug] || s.image} alt={s.title} className="w-full h-full object-cover opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-1000" loading="lazy" />
+                {/* Full opacity by default so mobile users (no hover state) see
+                    the full-color photo immediately. Desktop still gets the
+                    subtle zoom on hover for a premium editorial feel. */}
+                <img src={serviceImages[s.slug] || s.image} alt={s.title} className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" loading="lazy" />
               </div>
               <div className="p-8 lg:p-12">
                 <span className="overline accent-text">0{i + 1}</span>
