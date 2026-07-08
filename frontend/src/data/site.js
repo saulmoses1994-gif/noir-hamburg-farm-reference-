@@ -31,37 +31,39 @@ const NAV = [
 const SERVICES = [
   {
     slug: "luxury-escort-hamburg",
-    title: "Luxury Escort Hamburg",
-    shortLabel: "Luxury",
-    h1: "Luxury Escort Hamburg",
-    tagline: "Begleitung auf höchstem Niveau",
-    taglineEn: "Companionship at the highest level",
+    title: "Luxus Escort Hamburg",
+    shortLabel: "Luxus",
+    h1: "Luxus Escort Hamburg – Exklusive Begleitung auf höchstem Niveau",
+    tagline: "Exklusive Begleitung auf höchstem Niveau",
+    taglineEn: "Exclusive companionship at the highest level",
     description:
-      "Unsere Luxury Escorts verkörpern jene seltene Mischung aus Eleganz, Bildung und natürlichem Charme, die im hanseatischen Premiumsegment erwartet wird.",
+      "Luxus bedeutet mehr als nur ein exklusives Erscheinungsbild. Bei Noir Hamburg steht Luxus für Persönlichkeit, Stil, Diskretion und eine Begleitung, die perfekt zu Ihren individuellen Vorstellungen passt.",
     descriptionEn:
-      "Our Luxury Escorts embody that rare blend of elegance, education and natural charm expected in Hamburg's premium segment.",
+      "Luxury is more than an exclusive appearance. At Noir Hamburg, luxury stands for personality, style, discretion and companionship that fits your individual expectations perfectly.",
     longCopy:
-      "Im exklusiven Luxussegment ist eine Begleitung mehr als ein Service – sie ist eine Erweiterung Ihrer Persönlichkeit. Unsere Luxury Escorts in Hamburg sind sorgfältig ausgewählte Persönlichkeiten mit akademischem Hintergrund, multilingualer Eloquenz und einer instinktiven Souveränität, mit der sie sich auf jedem Parkett bewegen – von der Galaeröffnung in der Elbphilharmonie bis zum diskreten Dinner im Vier Jahreszeiten.",
+      "Luxus bedeutet mehr als nur ein exklusives Erscheinungsbild. Bei Noir Hamburg steht Luxus für Persönlichkeit, Stil, Diskretion und eine Begleitung, die perfekt zu Ihren individuellen Vorstellungen passt. Unser Luxus Escort Service in Hamburg richtet sich an Kunden, die Wert auf Qualität, Eleganz und einen professionellen Ablauf legen. Ob ein besonderes Dinner, eine gesellschaftliche Veranstaltung, eine Geschäftsreise oder ein privater Anlass — Noir Hamburg bietet eine stilvolle Begleitung für besondere Momente.",
     longCopyEn:
-      "In the exclusive luxury segment, companionship is more than a service — it is an extension of your personality. Our Luxury Escorts in Hamburg are carefully chosen individuals with academic backgrounds, multilingual eloquence and an instinctive poise that carries effortlessly across every setting — from a gala opening at the Elbphilharmonie to a discreet dinner at the Vier Jahreszeiten.",
+      "Luxury is more than an exclusive appearance. At Noir Hamburg it stands for personality, style, discretion and companionship perfectly matched to your individual expectations. Our luxury escort service in Hamburg is for clients who value quality, elegance and a professional experience — whether a private dinner, a social event, a business trip or a private occasion.",
     keypoints: [
-      "Akademisch gebildete Persönlichkeiten",
-      "Mehrsprachige Konversation auf hohem Niveau",
-      "Garderobe von gehobener Eleganz",
-      "Erfahrung in internationalen Kreisen",
+      "Diskrete Organisation",
+      "Persönliche Betreuung",
+      "Stilvolle Begleitung",
+      "Zuverlässigkeit",
+      "Individuelle Auswahl",
     ],
     keypointsEn: [
-      "Academically educated personalities",
-      "Multilingual conversation at the highest level",
-      "Wardrobe of refined elegance",
-      "Experience moving in international circles",
+      "Discreet organisation",
+      "Personal support",
+      "Stylish companionship",
+      "Reliability",
+      "Individual selection",
     ],
     image:
       "https://images.unsplash.com/photo-1542533450-52ccfdc39aba?auto=format&fit=crop&w=1200&q=78",
-    metaTitle: "Luxury Escort Hamburg | Premium Begleitung | Noir Hamburg",
-    metaTitleEn: "Luxury Escort Hamburg | Premium Companionship | Noir Hamburg",
+    metaTitle: "Luxus Escort Hamburg | Exklusive Premium Begleitung | Noir Hamburg",
+    metaTitleEn: "Luxury Escort Hamburg | Exclusive Premium Companionship | Noir Hamburg",
     metaDescription:
-      "Luxury Escort Hamburg – exklusive Begleitung auf höchstem Niveau für anspruchsvolle Herren. Akademisch, mehrsprachig, diskret.",
+      "Erleben Sie Luxus Escort Hamburg mit Noir Hamburg. Exklusive Begleitung, stilvolle Models und diskreter Premium Service für anspruchsvolle Kunden in Hamburg.",
     metaDescriptionEn:
       "Luxury Escort Hamburg — exclusive premium companionship for discerning gentlemen. Academic, multilingual, discreet.",
   },

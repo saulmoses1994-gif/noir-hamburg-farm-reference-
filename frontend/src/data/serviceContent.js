@@ -12,60 +12,83 @@ const SERVICE_CONTENT = {
   "luxury-escort-hamburg": {
     sections: [
       {
-        h2: "Was einen Luxus Escort in Hamburg auszeichnet",
-        h2En: "What defines a Luxury Escort in Hamburg",
+        h2: "Was macht einen Luxus Escort Service besonders?",
+        h2En: "What makes a luxury escort service special?",
         body: [
-          "Eine wahre Luxus-Begleitung in Hamburg beginnt lange vor dem eigentlichen Abend. Sie beginnt bei der Auswahl der Damen: Wir arbeiten ausschließlich mit Frauen, die wir persönlich kennengelernt und über mehrere Monate begleitet haben. Nur so lässt sich garantieren, dass Ihre Begleitung nicht nur äußerlich gepflegt, sondern in Bildung, Konversation und Auftreten der hanseatischen Erwartungshaltung tatsächlich gewachsen ist.",
-          "Der Unterschied zeigt sich im Detail: eine korrekt gewählte Robe zur richtigen Anlassform, ein ruhiger, dosierter Umgang mit Wein und Menüfolge, die Fähigkeit, in gepflegter Konversation auf Aktienmärkte, Kunstauktionen oder klassische Musik einzugehen — ohne sich anzubiedern. Eine Luxus-Begleitung von Noir Hamburg wirkt nie inszeniert, weil sie es nicht ist.",
+          "Ein hochwertiger Escort Service entsteht durch die Kombination aus Ausstrahlung, Persönlichkeit und Professionalität. Unsere Philosophie ist Qualität statt Quantität. Jede Anfrage wird individuell betrachtet, damit die Begleitung zum Anlass, zur Atmosphäre und zu den persönlichen Erwartungen passt.",
+          "Ein Luxus Escort Erlebnis bedeutet: diskrete Organisation, persönliche Betreuung, stilvolle Begleitung, Zuverlässigkeit und eine individuelle Auswahl.",
         ],
         bodyEn: [
-          "A true luxury companion in Hamburg is defined long before the evening itself — starting with our selection process. We work exclusively with women we have personally met and observed over several months. Only in this way can we guarantee that your companion is not merely well-groomed on the outside, but genuinely educated, articulate and equal to the Hanseatic standard.",
-          "The difference lies in the detail: a correctly chosen dress for the exact occasion, a calm and measured handling of wine and menu progression, the ability to engage in refined conversation on financial markets, art auctions or classical music — without ever being ingratiating. A luxury companion from Noir Hamburg never appears rehearsed, because she is not.",
+          "A premium escort service emerges from the combination of presence, personality and professionalism. Our philosophy is quality over quantity. Every enquiry is treated individually so the companion truly fits the occasion, the atmosphere and your personal expectations.",
+          "A luxury escort experience means: discreet organisation, personal attention, stylish companionship, reliability and an individual selection.",
         ],
       },
       {
-        h2: "Für welche Anlässe eignet sich Luxury Escort Hamburg",
-        h2En: "Occasions suited to Luxury Escort Hamburg",
+        h2: "Exklusive Escort Models in Hamburg",
+        h2En: "Exclusive escort models in Hamburg",
         body: [
-          "Unsere Luxury Escorts begleiten Sie zu Anlässen, bei denen Diskretion, Etikette und stilvolle Präsenz vorausgesetzt werden: Galaeröffnungen in der Elbphilharmonie, Dinner in Sterne-Restaurants an der Elbchaussee, private Empfänge in Villen im Nienstedtener Marktweg, Kunstvernissagen in HafenCity und Hotel-Aufenthalte im Fairmont Vier Jahreszeiten oder im Fontenay.",
-          "Ebenso vermitteln wir für längere Zeitfenster – ein Wochenende auf Sylt, eine Woche in Cortina, ein privates Charter mit Yacht ab Wedel. Für jeden Anlass wählen wir die passende Persönlichkeit aus. Sprachen, Interessen und Kleidungsstil werden vor der Buchung mit Ihnen abgestimmt, damit Ihre Begleitung nicht nur elegant, sondern zu Ihnen passt.",
+          "Unsere Models werden sorgfältig ausgewählt und präsentieren unterschiedliche Persönlichkeiten, Stile und Charaktere. Eine hochwertige Begleitung basiert nicht nur auf Aussehen — Charme, Kommunikation und ein angenehmes Auftreten sind genauso wichtig.",
+          "Noir Hamburg möchte Kunden eine Auswahl ermöglichen, die zu ihrem persönlichen Geschmack und Anlass passt. Entdecken Sie unsere Premium Escort Models Hamburg auf der Modelübersicht.",
         ],
         bodyEn: [
-          "Our Luxury Escorts accompany you to occasions where discretion, etiquette and stylish presence are simply expected: gala openings at the Elbphilharmonie, Michelin-starred dinners along the Elbchaussee, private receptions in villas around Nienstedten, art openings in HafenCity, and hotel stays at the Fairmont Vier Jahreszeiten or The Fontenay.",
-          "We equally arrange longer engagements — a weekend in Sylt, a week in Cortina, a private yacht charter from Wedel. For every occasion we select the right personality: languages, interests and dress code are discussed with you before booking, so your companion is not merely elegant but genuinely suited to you.",
+          "Our models are carefully selected and present different personalities, styles and characters. A high-quality companionship is not based on appearance alone — charm, communication and a pleasant demeanour are equally important.",
+          "Noir Hamburg offers a selection that matches your personal taste and occasion. Discover our Premium Escort Models Hamburg on the models page.",
         ],
       },
       {
-        h2: "Wie eine Buchung bei uns abläuft",
-        h2En: "How a booking with us works",
+        h2: "Luxus Escort für Business, Reisen und besondere Anlässe",
+        h2En: "Luxury escort for business, travel and special occasions",
         body: [
-          "Eine Anfrage erreicht uns über das Kontaktformular, per WhatsApp oder telefonisch. Bereits im ersten Gespräch legen wir Wert auf ein ruhiges, ehrliches Vorgespräch – ohne Verkaufsdruck. Sie schildern uns Anlass, Zeitrahmen und Präferenzen; wir schlagen zwei bis drei passende Damen vor, aus denen Sie in Ruhe wählen.",
-          "Nach Bestätigung erhalten Sie einen festen Ansprechpartner, der die gesamte Buchung persönlich koordiniert. Anzahlung, sofern gewünscht, erfolgt per Überweisung oder Bargeld vor Ort. Erstbuchungen unterliegen einer kurzen, diskreten Verifizierung — zum Schutz beider Seiten. Der Ablauf ist über zehn Jahre hinweg optimiert und gerade deshalb reibungslos.",
+          "Hamburg ist eine internationale Stadt mit Geschäftsreisenden, exklusiven Events, gehobenen Restaurants und luxuriösen Hotels. Unser Premium Escort Service eignet sich für Geschäftsreisen, Dinner-Begleitung, Events, private Treffen und gesellschaftliche Anlässe.",
+          "Der Fokus liegt immer auf einer natürlichen und eleganten Begleitung — passend zum Anlass, zur Umgebung und zu Ihrem persönlichen Stil.",
         ],
         bodyEn: [
-          "Enquiries reach us via the contact form, WhatsApp or by phone. From the very first conversation we place value on a calm, honest exchange — without any sales pressure. You describe the occasion, timing and preferences; we propose two or three suitable ladies from which you choose at your own pace.",
-          "Once confirmed, you receive a single dedicated contact who coordinates the entire booking personally. Deposits, if required, are handled by transfer or in cash on site. First-time bookings involve a short, discreet verification — for the protection of both sides. The process has been refined over ten years and precisely for that reason runs smoothly.",
+          "Hamburg is an international city with business travellers, exclusive events, fine restaurants and luxury hotels. Our premium escort service is suited to business trips, dinner companionship, events, private meetings and social occasions.",
+          "The focus is always on natural, elegant companionship — matched to the occasion, the setting and your personal style.",
         ],
       },
       {
-        h2: "Warum Noir Hamburg für Luxus Escort",
-        h2En: "Why choose Noir Hamburg for Luxury Escort",
+        h2: "Diskretion und Privatsphäre",
+        h2En: "Discretion and privacy",
         body: [
-          "Noir Hamburg ist keine Vermittlungsplattform, sondern eine kuratierte Agentur. Das bedeutet: keine anonymen Kataloge, keine automatisierten Buchungen, keine Massenware. Jede unserer Damen ist uns persönlich bekannt, jede Buchung wird von einem festen Mitarbeiter begleitet, jede Anfrage wird in echter Zeit von einem Menschen bearbeitet – nicht von einem Bot.",
-          "Unser Ansatz stammt aus der hanseatischen Tradition, in der Vertrauen wichtiger ist als Reichweite. Deshalb kommen die meisten unserer Kunden über Empfehlung – von Anwälten, Ärzten, Unternehmern, die uns seit Jahren begleiten. Wenn Sie einmal erfahren haben, wie eine wirklich professionell koordinierte Buchung abläuft, verstehen Sie, warum sich Auswahl über Preis stellt.",
+          "Diskretion ist ein zentraler Bestandteil eines Premium Escort Services. Von der ersten Anfrage bis zur Organisation achten wir auf einen respektvollen und professionellen Umgang.",
+          "Kunden können ihre Wünsche persönlich mitteilen, damit eine passende Begleitung empfohlen werden kann. Erfahren Sie mehr über unser Diskretionsversprechen.",
         ],
         bodyEn: [
-          "Noir Hamburg is not a matchmaking platform but a curated agency. This means: no anonymous catalogues, no automated bookings, no mass production. Every one of our ladies is personally known to us, every booking is handled by a dedicated staff member, every enquiry is answered by a real person in real time — not by a bot.",
-          "Our approach draws on the Hanseatic tradition, where trust matters more than reach. That is why most of our clients come to us by recommendation — from lawyers, doctors and entrepreneurs who have accompanied us for years. Once you have experienced a truly professionally coordinated booking, you understand why selection outweighs price.",
+          "Discretion is a central pillar of our premium escort service. From the first enquiry to the organisation itself, we take care to maintain a respectful, professional approach.",
+          "Clients can share their preferences personally so that a fitting companion can be recommended. Read more about our discretion promise.",
+        ],
+      },
+      {
+        h2: "Luxus Escort Hamburg und Umgebung",
+        h2En: "Luxury escort Hamburg and surroundings",
+        body: [
+          "Noir Hamburg konzentriert sich vollständig auf Hamburg und die umliegende Region. Unsere lokale Spezialisierung ermöglicht einen persönlichen Service in Hamburg Innenstadt, HafenCity, St. Pauli, Eppendorf, Winterhude, Altona, Blankenese, Norderstedt, Pinneberg und Lüneburg.",
+          "Diese lokale Konzentration ist bewusst gewählt: nur so garantieren wir kurze Reaktionszeiten, echte Ortskenntnis und einen persönlichen Ablauf statt anonymer Massenvermittlung.",
+        ],
+        bodyEn: [
+          "Noir Hamburg focuses entirely on Hamburg and the surrounding region. Our local specialisation makes a personal service possible in Hamburg city centre, HafenCity, St. Pauli, Eppendorf, Winterhude, Altona, Blankenese, Norderstedt, Pinneberg and Lüneburg.",
+          "This local focus is deliberate — it is the only way to guarantee fast response times, real local knowledge and a personal experience rather than anonymous mass matchmaking.",
+        ],
+      },
+      {
+        h2: "Warum Noir Hamburg?",
+        h2En: "Why Noir Hamburg?",
+        body: [
+          "Premium Fokus. Individuelle Beratung. Diskreter Ablauf. Persönlicher Service. Lokale Hamburg Spezialisierung. Qualität vor Quantität.",
+          "Diese sechs Grundsätze prägen jede einzelne Buchung. Wer Wert auf ein wirklich professionelles Erlebnis legt, findet bei Noir Hamburg einen zuverlässigen Ansprechpartner für Luxus Escort in Hamburg.",
+        ],
+        bodyEn: [
+          "Premium focus. Individual consultation. Discreet handling. Personal service. Local Hamburg specialisation. Quality over quantity.",
+          "These six principles shape every single booking. If you value a truly professional experience, Noir Hamburg is a reliable partner for luxury escort in Hamburg.",
         ],
       },
     ],
     faqs: [
-      { q: "Was kostet ein Luxury Escort in Hamburg?", qEn: "How much does a Luxury Escort in Hamburg cost?", a: "Die Tarife unserer Luxus-Damen bewegen sich im gehobenen Segment und werden pro Model transparent auf ihrem Profil ausgewiesen — inklusive Stunden-, Nacht- und Wochenendrahmen. Alle Preise verstehen sich brutto, ohne versteckte Zuschläge.", aEn: "The rates of our luxury companions are in the upper segment and are transparently listed on each model's profile — including hourly, overnight and weekend frames. All prices are gross with no hidden surcharges." },
-      { q: "Wie diskret ist die Buchung wirklich?", qEn: "How discreet is the booking really?", a: "Absolut. Wir arbeiten mit verschlüsselter Kommunikation, minimaler Datenspeicherung und auf Wunsch mit schriftlichen NDAs. Nach der Buchung werden alle unnötigen Informationen entfernt.", aEn: "Absolute. We work with encrypted communication, minimal data storage and — on request — written NDAs. After the booking, all unnecessary information is removed." },
-      { q: "Wie weit im Voraus muss ich buchen?", qEn: "How far in advance should I book?", a: "Wir empfehlen 48 Stunden für optimale Auswahl. Kurzfristige Buchungen am selben Tag sind je nach Verfügbarkeit möglich — bitte per WhatsApp anfragen.", aEn: "We recommend 48 hours for optimal selection. Same-day short-notice bookings are possible subject to availability — please enquire via WhatsApp." },
-      { q: "Kann ich eine bestimmte Sprache oder Interessen wählen?", qEn: "Can I request a specific language or interests?", a: "Ja. Alle unsere Damen sprechen Deutsch und Englisch; viele zusätzlich Französisch, Italienisch, Spanisch oder Russisch. Interessen wie Klassik, Kunst, Segeln oder Wirtschaft nennen Sie im Vorgespräch, wir wählen entsprechend.", aEn: "Yes. All our ladies speak German and English; many additionally French, Italian, Spanish or Russian. Interests such as classical music, art, sailing or business are discussed in the initial call — we select accordingly." },
-      { q: "Ist eine Verifizierung erforderlich?", qEn: "Is verification required?", a: "Nur bei Erstbuchungen und in einem diskreten Rahmen — beispielsweise über einen kurzen Rückruf zur Bestätigung. Das schützt sowohl Sie als auch unsere Damen.", aEn: "Only for first-time bookings and in a discreet format — for example, a short callback for confirmation. This protects both you and our ladies." },
+      { q: "Was bedeutet Luxus Escort Hamburg?", qEn: "What does luxury escort Hamburg mean?", a: "Luxus Escort beschreibt eine hochwertige Form der Begleitung, bei der Stil, Persönlichkeit, Diskretion und ein professioneller Service im Mittelpunkt stehen.", aEn: "Luxury escort describes a high-quality form of companionship focused on style, personality, discretion and professional service." },
+      { q: "Kann ich eine Begleitung für ein Dinner oder Event buchen?", qEn: "Can I book a companion for a dinner or event?", a: "Ja. Viele Kunden suchen eine stilvolle Begleitung für besondere Anlässe, Geschäftsreisen oder gesellschaftliche Veranstaltungen.", aEn: "Yes. Many clients seek a stylish companion for special occasions, business trips or social events." },
+      { q: "Ist der Service nur in Hamburg verfügbar?", qEn: "Is the service only available in Hamburg?", a: "Noir Hamburg konzentriert sich auf Hamburg und ausgewählte umliegende Regionen.", aEn: "Noir Hamburg focuses on Hamburg and selected surrounding regions." },
+      { q: "Wie finde ich das passende Model?", qEn: "How do I find the right model?", a: "Durch eine persönliche Anfrage können individuelle Vorstellungen berücksichtigt werden, um eine passende Begleitung zu finden.", aEn: "Through a personal enquiry your individual expectations can be taken into account to find a fitting companion." },
     ],
   },
 
