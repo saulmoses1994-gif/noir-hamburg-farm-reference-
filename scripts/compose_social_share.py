@@ -7,8 +7,8 @@ brand mark. Output is optimised progressive JPEG at ≤200 KB.
 import os
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-SRC = "/tmp/source_portrait.jpg"
-OUT = "/tmp/noir_social_share_v2.jpg"
+SRC = "/tmp/source_new.webp"
+OUT = "/tmp/noir_social_share_v3.jpg"
 
 TARGET_W, TARGET_H = 1200, 630
 # Right-anchored panel where the subject lives; leaves a rich negative-space
