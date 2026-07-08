@@ -22,6 +22,7 @@ const BlogDetail = lazy(() => import("@/pages/public/Blog").then((m) => ({ defau
 const FAQ = lazy(() => import("@/pages/public/FAQ"));
 const About = lazy(() => import("@/pages/public/About"));
 const Contact = lazy(() => import("@/pages/public/Contact"));
+const Impressum = lazy(() => import("@/pages/public/Impressum"));
 const PageDetail = lazy(() => import("@/pages/public/PageDetail"));
 const NotFound = lazy(() => import("@/pages/public/NotFound"));
 
@@ -101,6 +102,7 @@ function App() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/ueber-uns" element={<About />} />
               <Route path="/kontakt" element={<Contact />} />
+              <Route path="/impressum" element={<Impressum />} />
               {/* CMS-managed landing pages */}
               <Route path="/p/:slug" element={<PageDetail />} />
 
@@ -119,6 +121,7 @@ function App() {
               <Route path="/en/faq" element={<FAQ />} />
               <Route path="/en/about" element={<About />} />
               <Route path="/en/contact" element={<Contact />} />
+              <Route path="/en/imprint" element={<Impressum />} />
               <Route path="/en/p/:slug" element={<PageDetail />} />
 
               {/* Admin */}

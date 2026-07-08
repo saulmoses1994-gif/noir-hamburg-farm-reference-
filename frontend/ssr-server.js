@@ -47,7 +47,7 @@ const { renderModels, renderModelDetail } = require("./ssr/routes/models");
 const { renderServicesList, renderServiceDetail } = require("./ssr/routes/services");
 const { renderAreasList, renderAreaDetail, renderEscortHamburg } = require("./ssr/routes/areas");
 const { renderBlogList, renderBlogDetail, renderPageDetail } = require("./ssr/routes/blog");
-const { renderFAQ, renderAbout, renderContact } = require("./ssr/routes/static");
+const { renderFAQ, renderAbout, renderContact, renderImpressum } = require("./ssr/routes/static");
 
 const TEMPLATE = fs.readFileSync(path.join(BUILD_DIR, "index.html"), "utf8");
 
@@ -176,6 +176,7 @@ app.get("/p/:slug", safe((req) => renderPageDetail(req.params.slug, BUILD_ASSETS
 app.get("/faq", safe(() => renderFAQ(BUILD_ASSETS, "de")));
 app.get("/ueber-uns", safe(() => renderAbout(BUILD_ASSETS, "de")));
 app.get("/kontakt", safe(() => renderContact(BUILD_ASSETS, "de")));
+app.get("/impressum", safe(() => renderImpressum(BUILD_ASSETS, "de")));
 
 // EN (/en/*) mirror routes — same data, English UI chrome, en-specific
 // canonical + hreflang. Long-form body copy stays in DE with a "coming soon"
@@ -195,6 +196,7 @@ app.get("/en/p/:slug", safe((req) => renderPageDetail(req.params.slug, BUILD_ASS
 app.get("/en/faq", safe(() => renderFAQ(BUILD_ASSETS, "en")));
 app.get("/en/about", safe(() => renderAbout(BUILD_ASSETS, "en")));
 app.get("/en/contact", safe(() => renderContact(BUILD_ASSETS, "en")));
+app.get("/en/imprint", safe(() => renderImpressum(BUILD_ASSETS, "en")));
 
 // Admin + anything else → SPA shell (React handles routing client-side).
 app.get("*", (req, res) => send(res, TEMPLATE));

@@ -201,6 +201,7 @@ const STRINGS = {
 const SLUG_MAP = {
   about: { de: "/ueber-uns", en: "/about" },
   contact: { de: "/kontakt", en: "/contact" },
+  imprint: { de: "/impressum", en: "/imprint" },
 };
 
 const t = (key, lang, vars) => {

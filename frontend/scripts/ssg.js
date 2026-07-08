@@ -30,7 +30,7 @@ const { renderModels, renderModelDetail } = require("../ssr/routes/models");
 const { renderServicesList, renderServiceDetail } = require("../ssr/routes/services");
 const { renderAreasList, renderAreaDetail, renderEscortHamburg } = require("../ssr/routes/areas");
 const { renderBlogList, renderBlogDetail, renderPageDetail } = require("../ssr/routes/blog");
-const { renderFAQ, renderAbout, renderContact } = require("../ssr/routes/static");
+const { renderFAQ, renderAbout, renderContact, renderImpressum } = require("../ssr/routes/static");
 const { backendJSON } = require("../ssr/backend");
 const { SERVICES, LOCATIONS } = require("../src/data/site");
 
@@ -95,6 +95,11 @@ function writeHtml(urlPath, html) {
     targets.push({ url: p("/blog"),           render: () => renderBlogList(BUILD_ASSETS, lang) });
     targets.push({ url: p("/faq"),            render: () => renderFAQ(BUILD_ASSETS, lang) });
     targets.push({ url: p("/kontakt"),        render: () => renderContact(BUILD_ASSETS, lang) });
+    // /impressum (de) and /en/imprint (en) — legal § 5 TMG page
+    targets.push({
+      url: lang === "en" ? "/en/imprint" : "/impressum",
+      render: () => renderImpressum(BUILD_ASSETS, lang),
+    });
     // /ueber-uns and /en/about
     targets.push({
       url: lang === "en" ? "/en/about" : "/ueber-uns",
