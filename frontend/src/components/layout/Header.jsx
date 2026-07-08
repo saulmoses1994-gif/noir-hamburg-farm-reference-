@@ -113,7 +113,7 @@ export default function Header() {
               href={settings.recruitmentWhatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="2xl:hidden inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#8B1538] text-[#8B1538] text-[11px] font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors mr-1"
+              className="2xl:hidden inline-flex items-center gap-1.5 px-3 py-1 border border-[#8B1538] text-[#8B1538] text-[11px] font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors mr-1 whitespace-nowrap flex-shrink-0"
               data-testid="mobile-header-recruit-btn"
               aria-label={t("cta.recruit")}
               title={t("cta.recruit")}
