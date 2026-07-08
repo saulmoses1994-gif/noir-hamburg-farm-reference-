@@ -23,6 +23,7 @@ const FAQ = lazy(() => import("@/pages/public/FAQ"));
 const About = lazy(() => import("@/pages/public/About"));
 const Contact = lazy(() => import("@/pages/public/Contact"));
 const Impressum = lazy(() => import("@/pages/public/Impressum"));
+const Diskretion = lazy(() => import("@/pages/public/Diskretion"));
 const PageDetail = lazy(() => import("@/pages/public/PageDetail"));
 const NotFound = lazy(() => import("@/pages/public/NotFound"));
 
@@ -104,6 +105,9 @@ function App() {
               <Route path="/kontakt" element={<Contact />} />
               <Route path="/impressum" element={<Impressum />} />
               {/* CMS-managed landing pages */}
+              {/* Hardcoded /p/diskretion — CMS-editable via SiteSettings.
+                  MUST be declared before the catch-all /p/:slug so it wins. */}
+              <Route path="/p/diskretion" element={<Diskretion />} />
               <Route path="/p/:slug" element={<PageDetail />} />
 
               {/* Public — EN mirror (UI chrome translated; long-form copy
@@ -122,6 +126,7 @@ function App() {
               <Route path="/en/about" element={<About />} />
               <Route path="/en/contact" element={<Contact />} />
               <Route path="/en/imprint" element={<Impressum />} />
+              <Route path="/en/p/diskretion" element={<Diskretion />} />
               <Route path="/en/p/:slug" element={<PageDetail />} />
 
               {/* Admin */}

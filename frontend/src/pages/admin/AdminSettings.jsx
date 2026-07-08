@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { IMPRESSUM_DEFAULT_HTML } from "@/data/impressumDefault";
+import { DISKRETION_DEFAULT_HTML } from "@/data/diskretionDefault";
 
 /**
  * Site-wide settings — phone, email, WhatsApp, opening hours (DE+EN),
@@ -208,6 +209,49 @@ export default function AdminSettings() {
                 className="impressum-body text-[14px] text-[#1A1414]/90 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: form.impressum_content }}
                 data-testid="settings-impressum-preview"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-[#1A1414]/8 pt-6">
+          <span className="overline text-[10px] block mb-3">Diskretion-Seite (/p/diskretion)</span>
+          <p className="text-xs text-[#6B5F5F] mb-3">
+            Der Inhalt der Diskretion-Seite (verlinkt aus dem Footer). HTML-Klassen: <code>&lt;p class="lead"&gt;</code> für den Eröffnungssatz mit burgunder Randlinie, <code>&lt;p class="tagline"&gt;</code> für den abschließenden burgunder Slogan. Leer lassen → Standardversion.
+          </p>
+          <textarea
+            value={form.diskretion_content || ""}
+            onChange={(e) => set("diskretion_content", e.target.value)}
+            rows={14}
+            placeholder="Leer lassen für Standardtext, oder eigenen HTML-Text einfügen…"
+            className="w-full text-sm font-mono border border-[#1A1414]/15 rounded px-3 py-2 focus:outline-none focus:border-[#8B1538] leading-relaxed"
+            data-testid="settings-diskretion-content"
+          />
+          <div className="flex gap-3 mt-2">
+            <button
+              type="button"
+              onClick={() => set("diskretion_content", DISKRETION_DEFAULT_HTML)}
+              className="text-xs text-[#8B1538] hover:underline"
+              data-testid="settings-diskretion-load-default"
+            >
+              Standard-Vorlage laden
+            </button>
+            <button
+              type="button"
+              onClick={() => set("diskretion_content", "")}
+              className="text-xs text-[#6B5F5F] hover:underline"
+              data-testid="settings-diskretion-clear"
+            >
+              Feld leeren (Standard verwenden)
+            </button>
+          </div>
+          {form.diskretion_content && (
+            <div className="mt-4 p-4 border border-[#1A1414]/15 rounded bg-[#FAFAF9]">
+              <div className="text-[10px] uppercase tracking-widest text-[#6B5F5F] mb-3">Vorschau</div>
+              <div
+                className="diskretion-body text-[15px] text-[#1A1414]/90 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: form.diskretion_content }}
+                data-testid="settings-diskretion-preview"
               />
             </div>
           )}

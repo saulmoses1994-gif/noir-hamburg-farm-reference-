@@ -28,6 +28,7 @@ const brandToSettings = (b) => ({
   social_share_image: "",
   impressum_content: "",
   recruitment_whatsapp_number: "",
+  diskretion_content: "",
 });
 
 const Ctx = createContext(brandToSettings(BRAND));

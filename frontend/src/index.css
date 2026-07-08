@@ -338,6 +338,28 @@ html, body {
 }
 .impressum-body a:hover { text-decoration-color: rgba(139, 21, 56, 1); }
 
+/* Diskretion — editorial privacy promise page. Larger, airier typography
+   than Impressum since this is a marketing-flavoured trust page. */
+.diskretion-body p {
+  margin-bottom: 1.5rem;
+}
+.diskretion-body p.lead {
+  font-size: 1.125rem;
+  color: #1A1414;
+  font-weight: 400;
+  line-height: 1.65;
+  border-left: 2px solid #8B1538;
+  padding-left: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.diskretion-body p.tagline {
+  margin-top: 2.5rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: #8B1538;
+}
+.diskretion-body p.tagline em { font-style: italic; }
+
 /* Soft section background */
 .soft-section {
   background: var(--color-surface);

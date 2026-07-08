@@ -33,6 +33,7 @@ let _cached = {
   social_share_image: "",
   impressum_content: "",
   recruitment_whatsapp_number: "",
+  diskretion_content: "",
 };
 
 async function refresh() {

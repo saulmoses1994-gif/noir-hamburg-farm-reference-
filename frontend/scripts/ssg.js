@@ -30,7 +30,7 @@ const { renderModels, renderModelDetail } = require("../ssr/routes/models");
 const { renderServicesList, renderServiceDetail } = require("../ssr/routes/services");
 const { renderAreasList, renderAreaDetail, renderEscortHamburg } = require("../ssr/routes/areas");
 const { renderBlogList, renderBlogDetail, renderPageDetail } = require("../ssr/routes/blog");
-const { renderFAQ, renderAbout, renderContact, renderImpressum } = require("../ssr/routes/static");
+const { renderFAQ, renderAbout, renderContact, renderImpressum, renderDiskretion } = require("../ssr/routes/static");
 const { backendJSON } = require("../ssr/backend");
 const { SERVICES, LOCATIONS } = require("../src/data/site");
 
@@ -100,6 +100,11 @@ function writeHtml(urlPath, html) {
       url: lang === "en" ? "/en/imprint" : "/impressum",
       render: () => renderImpressum(BUILD_ASSETS, lang),
     });
+    // /p/diskretion (de) and /en/p/diskretion (en) — privacy promise
+    targets.push({
+      url: lang === "en" ? "/en/p/diskretion" : "/p/diskretion",
+      render: () => renderDiskretion(BUILD_ASSETS, lang),
+    });
     // /ueber-uns and /en/about
     targets.push({
       url: lang === "en" ? "/en/about" : "/ueber-uns",
@@ -118,6 +123,9 @@ function writeHtml(urlPath, html) {
       targets.push({ url: p(`/blog/${b.slug}`),    render: () => renderBlogDetail(b.slug, BUILD_ASSETS, lang) });
     }
     for (const pg of pages) {
+      // Skip "diskretion" — hardcoded page above overrides any CMS entry
+      // with this slug (kept for legacy data cleanup).
+      if (pg.slug === "diskretion") continue;
       targets.push({ url: p(`/p/${pg.slug}`),      render: () => renderPageDetail(pg.slug, BUILD_ASSETS, lang) });
     }
   }

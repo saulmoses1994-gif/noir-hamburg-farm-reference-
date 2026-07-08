@@ -170,6 +170,7 @@ ${renderBreadcrumbs([{ label: t("crumb.contact", lang) }], lang)}
 }
 
 const { IMPRESSUM_DEFAULT_HTML } = require("../../src/data/impressumDefault");
+const { DISKRETION_DEFAULT_HTML } = require("../../src/data/diskretionDefault");
 
 function renderImpressum(buildAssets, lang = "de") {
   const settings = getSettings();
@@ -201,4 +202,26 @@ ${bodyHtml}
   });
 }
 
-module.exports = { renderFAQ, renderAbout, renderContact, renderImpressum };
+module.exports = { renderFAQ, renderAbout, renderContact, renderImpressum, renderDiskretion };
+
+function renderDiskretion(buildAssets, lang = "de") {
+  const settings = getSettings();
+  const bodyHtml = (settings.diskretion_content && settings.diskretion_content.trim()) || DISKRETION_DEFAULT_HTML;
+  const crumbLabel = "Diskretion";
+  const body = `
+<main id="main" style="padding:2rem;">
+${renderBreadcrumbs([{ label: crumbLabel }], lang)}
+<h1>Diskretion &amp; Privatsphäre</h1>
+${bodyHtml}
+</main>`;
+  return renderShell({
+    ...buildAssets,
+    lang,
+    title: "Diskretion & Privatsphäre – Noir Hamburg",
+    description:
+      "Absolute Diskretion, geschützte Privatsphäre und professionelle Kommunikation — das Versprechen von Noir Hamburg an jeden Kunden. Vertraulich, respektvoll, zuverlässig.",
+    canonicalPath: lang === "en" ? "/en/p/diskretion" : "/p/diskretion",
+    jsonLd: [breadcrumbSchema([{ label: crumbLabel }], lang)],
+    bodyContent: body,
+  });
+}

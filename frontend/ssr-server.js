@@ -47,7 +47,7 @@ const { renderModels, renderModelDetail } = require("./ssr/routes/models");
 const { renderServicesList, renderServiceDetail } = require("./ssr/routes/services");
 const { renderAreasList, renderAreaDetail, renderEscortHamburg } = require("./ssr/routes/areas");
 const { renderBlogList, renderBlogDetail, renderPageDetail } = require("./ssr/routes/blog");
-const { renderFAQ, renderAbout, renderContact, renderImpressum } = require("./ssr/routes/static");
+const { renderFAQ, renderAbout, renderContact, renderImpressum, renderDiskretion } = require("./ssr/routes/static");
 
 const TEMPLATE = fs.readFileSync(path.join(BUILD_DIR, "index.html"), "utf8");
 
@@ -172,6 +172,9 @@ app.get("/escort/:slug", safe((req) => renderAreaDetail(req.params.slug, BUILD_A
 app.get("/escort-hamburg", safe(() => renderEscortHamburg(BUILD_ASSETS, "de")));
 app.get("/blog", safe(() => renderBlogList(BUILD_ASSETS, "de")));
 app.get("/blog/:slug", safe((req) => renderBlogDetail(req.params.slug, BUILD_ASSETS, "de")));
+// Specific /p/diskretion before the catch-all /p/:slug — Express matches
+// first-declared wins.
+app.get("/p/diskretion", safe(() => renderDiskretion(BUILD_ASSETS, "de")));
 app.get("/p/:slug", safe((req) => renderPageDetail(req.params.slug, BUILD_ASSETS, "de")));
 app.get("/faq", safe(() => renderFAQ(BUILD_ASSETS, "de")));
 app.get("/ueber-uns", safe(() => renderAbout(BUILD_ASSETS, "de")));
@@ -192,6 +195,7 @@ app.get("/en/escort/:slug", safe((req) => renderAreaDetail(req.params.slug, BUIL
 app.get("/en/escort-hamburg", safe(() => renderEscortHamburg(BUILD_ASSETS, "en")));
 app.get("/en/blog", safe(() => renderBlogList(BUILD_ASSETS, "en")));
 app.get("/en/blog/:slug", safe((req) => renderBlogDetail(req.params.slug, BUILD_ASSETS, "en")));
+app.get("/en/p/diskretion", safe(() => renderDiskretion(BUILD_ASSETS, "en")));
 app.get("/en/p/:slug", safe((req) => renderPageDetail(req.params.slug, BUILD_ASSETS, "en")));
 app.get("/en/faq", safe(() => renderFAQ(BUILD_ASSETS, "en")));
 app.get("/en/about", safe(() => renderAbout(BUILD_ASSETS, "en")));

@@ -316,6 +316,10 @@ class SiteSettings(BaseModel):
     # Admin edits this via /admin/settings so legal updates never require a code
     # deploy — only a fresh SSG build to bake into production HTML.
     impressum_content: Optional[str] = ""
+    # Editable Diskretion (privacy promise) body content — HTML string rendered
+    # at /p/diskretion. Empty → falls back to the bundled default so the page
+    # always displays even before any admin edit.
+    diskretion_content: Optional[str] = ""
 
 
 class ChangePasswordInput(BaseModel):
@@ -464,6 +468,8 @@ async def update_settings(payload: SiteSettings, _: dict = Depends(require_admin
     data = payload.model_dump()
     if data.get("impressum_content"):
         data["impressum_content"] = sanitize_html(data["impressum_content"])
+    if data.get("diskretion_content"):
+        data["diskretion_content"] = sanitize_html(data["diskretion_content"])
     await db.site_settings.update_one(
         {"_key": _SETTINGS_KEY},
         {"$set": data},
