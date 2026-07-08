@@ -76,10 +76,15 @@ function writeHtml(urlPath, html) {
 (async () => {
   const t0 = Date.now();
   console.log("[ssg] fetching backend data...");
+  // Ensure the settings cache (used by every SSR renderer for og:image,
+  // homepage_hero_image, etc.) has completed its first fetch BEFORE we start
+  // rendering. Otherwise HTML gets baked with empty defaults + fallback URLs.
+  const { ensureSettingsLoaded } = require("../ssr/settings");
   const [models, blogPosts, pages] = await Promise.all([
     backendJSON("/api/models").catch(() => []),
     backendJSON("/api/blog").catch(() => []),
     backendJSON("/api/pages").catch(() => []),
+    ensureSettingsLoaded(),
   ]);
   console.log(`[ssg] fetched: ${models.length} models, ${blogPosts.length} blog posts, ${pages.length} CMS pages`);
 

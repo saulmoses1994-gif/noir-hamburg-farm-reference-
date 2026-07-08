@@ -44,8 +44,10 @@ async function refresh() {
   }
 }
 
-// Prime immediately, then refresh on an interval.
-refresh();
+// Prime immediately, then refresh on an interval. `_initialLoad` resolves after
+// the first fetch completes so the SSG build can `await` it before rendering
+// — otherwise pages get baked with empty defaults (missing og:image, etc.).
+const _initialLoad = refresh();
 setInterval(refresh, REFRESH_MS).unref();
 
 function getSettings() {
@@ -58,4 +60,4 @@ function getSettings() {
   };
 }
 
-module.exports = { getSettings };
+module.exports = { getSettings, ensureSettingsLoaded: () => _initialLoad };
