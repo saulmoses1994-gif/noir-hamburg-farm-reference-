@@ -108,6 +108,19 @@ export default function Header() {
               </a>
             )}
           </div>
+          {settings.recruitmentWhatsappUrl && (
+            <a
+              href={settings.recruitmentWhatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#8B1538] text-[#8B1538] text-[11px] font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors mr-1"
+              data-testid="mobile-header-recruit-btn"
+              aria-label={t("cta.recruit")}
+              title={t("cta.recruit")}
+            >
+              <Briefcase size={12} /> {t("cta.recruit")}
+            </a>
+          )}
           <button
             className="lg:hidden text-[#1A1414]"
             onClick={() => setOpen(true)}
