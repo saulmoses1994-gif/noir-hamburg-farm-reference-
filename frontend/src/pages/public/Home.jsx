@@ -47,7 +47,7 @@ export default function Home() {
 
   useSEO({
     title: "Luxus Escort Hamburg | Premium Escort Agentur Hamburg | Noir Hamburg",
-    description: "Luxus Escort Hamburg – Premium Agentur für diskrete, professionelle Begleitung. Handverlesene Damen für Dinner, Business & Events. Höchste Diskretion seit 2014.",
+    description: "Luxus Escort Hamburg – Premium Agentur für diskrete, professionelle Begleitung. Handverlesene Damen für Dinner, Business & Events. Höchste Diskretion seit 2025.",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -67,7 +67,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#F4E4E4] text-[#8B1538] text-xs font-semibold uppercase tracking-wider rounded-full mb-6 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
-              <Sparkles size={12} /> Premium · Hamburg seit 2014
+              <Sparkles size={12} /> Premium · Hamburg seit 2025
             </div>
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-[#1A1414] animate-fade-in-up" style={{ animationDelay: "100ms" }}>
               Luxus Escort Hamburg<br />
@@ -160,7 +160,7 @@ export default function Home() {
               sondern auf gewachsene Erfahrung und ein Team, das die Stadt versteht.
             </p>
             <p>
-              Seit 2014 begleitet <strong>Noir Hamburg</strong> Herren und Damen von Rang zu privaten Dinner-Verabredungen,
+              Seit 2025 begleitet <strong>Noir Hamburg</strong> Herren und Damen von Rang zu privaten Dinner-Verabredungen,
               geschäftlichen Empfängen an der Elbphilharmonie, exklusiven Kunstvernissagen in der HafenCity und
               diskreten Wochenenden zwischen Blankenese und Winterhude. Unsere Vermittlung ist persönlich,
               handverlesen und diskret — nie automatisiert.
@@ -322,7 +322,7 @@ export default function Home() {
       <section className="px-6 md:px-12 lg:px-16 py-24 border-t border-[#1A1414]/8 bg-[#FBF7F4]" data-testid="home-trust-pillars">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-3xl">
-            <span className="overline text-[10px]">Vertrauen seit 2014</span>
+            <span className="overline text-[10px]">Vertrauen seit 2025</span>
             <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">Warum Noir Hamburg?</h2>
             <p className="mt-6 text-[#3F3838] leading-relaxed">
               Sechs Grundpfeiler, die den Unterschied zwischen einer beliebigen Vermittlung und einer{" "}
@@ -365,7 +365,7 @@ export default function Home() {
               {
                 overline: "06 · Standards",
                 title: "Professionelle Standards",
-                body: "Pünktlichkeit als Selbstverständlichkeit, transparente Tarife ohne versteckte Zuschläge, klare Vereinbarungen im Vorgespräch. Seit 2014 dieselben Prinzipien — für Sie und für unsere Damen.",
+                body: "Pünktlichkeit als Selbstverständlichkeit, transparente Tarife ohne versteckte Zuschläge, klare Vereinbarungen im Vorgespräch. Seit 2025 dieselben Prinzipien — für Sie und für unsere Damen.",
                 testid: "trust-standards",
               },
             ].map((p) => (

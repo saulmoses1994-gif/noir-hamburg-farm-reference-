@@ -61,7 +61,7 @@ const STRINGS = {
     "crumb.escortHamburg": "Escort Hamburg",
 
     // hero/home
-    "home.eyebrow": "Premium · Hamburg seit 2014",
+    "home.eyebrow": "Premium · Hamburg seit 2025",
     "home.h1.welcome": "Luxus Escort Hamburg",
     "home.h1.brand": "Premium Begleitung mit Stil",
     "home.lead":
@@ -152,7 +152,7 @@ const STRINGS = {
     "crumb.contact": "Contact",
     "crumb.escortHamburg": "Escort Hamburg",
 
-    "home.eyebrow": "Premium · Hamburg since 2014",
+    "home.eyebrow": "Premium · Hamburg since 2025",
     "home.h1.welcome": "Luxury Escort Hamburg",
     "home.h1.brand": "Premium Companionship with Style",
     "home.lead":

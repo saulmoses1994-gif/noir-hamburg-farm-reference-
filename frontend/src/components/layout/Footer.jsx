@@ -27,8 +27,8 @@ export default function Footer() {
   const settings = useSettings();
 
   const taglineByLang = {
-    de: "Ihre vertrauenswürdige Premium-Begleitagentur in Hamburg und Umland. Ehrlich, diskret und mit Herz für Service seit 2014.",
-    en: "Your trusted premium companion agency in Hamburg and the surrounding region. Honest, discreet, and devoted to service since 2014.",
+    de: "Ihre vertrauenswürdige Premium-Begleitagentur in Hamburg und Umland. Ehrlich, diskret und mit Herz für Service seit 2025.",
+    en: "Your trusted premium companion agency in Hamburg and the surrounding region. Honest, discreet, and devoted to service since 2025.",
   };
   const rightsByLang = { de: "Alle Rechte vorbehalten.", en: "All rights reserved." };
   const tagBadgeByLang = { de: "Hamburg · 18+ · Diskret", en: "Hamburg · 18+ · Discreet" };

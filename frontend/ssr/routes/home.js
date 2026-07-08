@@ -47,8 +47,8 @@ async function renderHome(buildAssets, lang = "de") {
   ? "Hamburg is one of Europe's most demanding cities — hanseatic, cosmopolitan, with an exceptionally high standard in culture, gastronomy and business. Anyone choosing an escort agency here should not rely on random matchmaking, but on established experience and a team that understands the city."
   : "Hamburg ist eine der anspruchsvollsten Städte Europas — hanseatisch, weltoffen, mit einem außergewöhnlich hohen Standard in Kultur, Gastronomie und Business. Wer sich hier für eine Escort Agentur entscheidet, sollte nicht auf zufällige Vermittlung setzen, sondern auf gewachsene Erfahrung und ein Team, das die Stadt versteht.")}</p>
 <p>${esc(lang === "en"
-  ? "Since 2014, Noir Hamburg has accompanied gentlemen and ladies of rank to private dinner engagements, business receptions at the Elbphilharmonie, exclusive art openings in HafenCity and discreet weekends between Blankenese and Winterhude. Our matchmaking is personal, hand-picked and discreet — never automated."
-  : "Seit 2014 begleitet Noir Hamburg Herren und Damen von Rang zu privaten Dinner-Verabredungen, geschäftlichen Empfängen an der Elbphilharmonie, exklusiven Kunstvernissagen in der HafenCity und diskreten Wochenenden zwischen Blankenese und Winterhude. Unsere Vermittlung ist persönlich, handverlesen und diskret — nie automatisiert.")}</p>
+  ? "Since 2025, Noir Hamburg has accompanied gentlemen and ladies of rank to private dinner engagements, business receptions at the Elbphilharmonie, exclusive art openings in HafenCity and discreet weekends between Blankenese and Winterhude. Our matchmaking is personal, hand-picked and discreet — never automated."
+  : "Seit 2025 begleitet Noir Hamburg Herren und Damen von Rang zu privaten Dinner-Verabredungen, geschäftlichen Empfängen an der Elbphilharmonie, exklusiven Kunstvernissagen in der HafenCity und diskreten Wochenenden zwischen Blankenese und Winterhude. Unsere Vermittlung ist persönlich, handverlesen und diskret — nie automatisiert.")}</p>
 </section>
 
 <section>
@@ -135,8 +135,8 @@ async function renderHome(buildAssets, lang = "de") {
   : "Kontaktformular, WhatsApp oder Signal — sieben Tage die Woche. Werktags antworten wir in der Regel innerhalb einer Stunde, an Wochenenden am selben Tag. Ohne Login, ohne Registrierung.")}</dd>
 <dt><strong>${esc(lang === "en" ? "6. Professional standards" : "6. Professionelle Standards")}</strong></dt>
 <dd>${esc(lang === "en"
-  ? "Punctuality as a given, transparent rates without hidden surcharges, clear agreements in the initial call. The same principles since 2014 — for you and for our ladies."
-  : "Pünktlichkeit als Selbstverständlichkeit, transparente Tarife ohne versteckte Zuschläge, klare Vereinbarungen im Vorgespräch. Seit 2014 dieselben Prinzipien — für Sie und für unsere Damen.")}</dd>
+  ? "Punctuality as a given, transparent rates without hidden surcharges, clear agreements in the initial call. The same principles since 2025 — for you and for our ladies."
+  : "Pünktlichkeit als Selbstverständlichkeit, transparente Tarife ohne versteckte Zuschläge, klare Vereinbarungen im Vorgespräch. Seit 2025 dieselben Prinzipien — für Sie und für unsere Damen.")}</dd>
 </dl>
 </section>
 
@@ -176,8 +176,8 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
     en: "Luxury Escort Hamburg | Premium Escort Agency Hamburg | Noir Hamburg",
   };
   const descByLang = {
-    de: "Luxus Escort Hamburg – Premium Agentur für diskrete, professionelle Begleitung. Handverlesene Damen für Dinner, Business & Events. Höchste Diskretion seit 2014.",
-    en: "Luxury Escort Hamburg – premium agency for discreet, professional companionship. Hand-picked ladies for dinner, business & events. The highest discretion since 2014.",
+    de: "Luxus Escort Hamburg – Premium Agentur für diskrete, professionelle Begleitung. Handverlesene Damen für Dinner, Business & Events. Höchste Diskretion seit 2025.",
+    en: "Luxury Escort Hamburg – premium agency for discreet, professional companionship. Hand-picked ladies for dinner, business & events. The highest discretion since 2025.",
   };
 
   return renderShell({

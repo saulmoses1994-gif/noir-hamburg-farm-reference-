@@ -127,7 +127,7 @@ def main() -> None:
     y += 200
     draw.text(
         (x_left, y),
-        "Diskretion seit 2014",
+        "Diskretion seit 2025",
         font=tagline_font,
         fill=(200, 190, 190),
     )

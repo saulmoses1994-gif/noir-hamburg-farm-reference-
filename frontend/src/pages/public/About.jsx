@@ -34,7 +34,7 @@ export default function About() {
               Noir Hamburg ist keine Agentur im klassischen Sinne. Wir sind eine kleine, kuratierte Plattform für Menschen, die einen feinen ästhetischen Anspruch, intellektuelle Neugier und ein klares Verständnis von Diskretion teilen – auf beiden Seiten der Begegnung.
             </p>
             <p>
-              Gegründet 2014 in Hamburg, haben wir uns über die Jahre einen Namen als verlässlicher Vermittler für anspruchsvolle Klienten erarbeitet, die ihre Privatsphäre ebenso schätzen wie die Qualität ihrer Begegnungen.
+              Gegründet 2025 in Hamburg, haben wir uns über die Jahre einen Namen als verlässlicher Vermittler für anspruchsvolle Klienten erarbeitet, die ihre Privatsphäre ebenso schätzen wie die Qualität ihrer Begegnungen.
             </p>
             <p>
               Unsere Models sind keine zufällig gewählten Profile. Jede Persönlichkeit wird in einem persönlichen Gespräch aufgenommen und genießt unser uneingeschränktes Vertrauen. Wir arbeiten ausnahmslos mit Menschen zusammen, die ihre Tätigkeit selbstbestimmt und mit Stolz ausüben.
@@ -57,7 +57,7 @@ export default function About() {
           <div>
             <span className="overline text-[10px]">Unsere Geschichte</span>
             <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
-              Eine hanseatische Institution seit 2014
+              Eine hanseatische Institution seit 2025
             </h2>
             <div className="mt-6 space-y-5 text-[#3F3838] leading-relaxed">
               <p>

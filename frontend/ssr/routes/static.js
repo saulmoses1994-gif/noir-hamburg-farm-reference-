@@ -66,10 +66,10 @@ function renderAbout(buildAssets, lang = "de") {
   const bodyByLang = {
     de: `
 <p>Noir Hamburg ist eine kleine, kuratierte Plattform für Menschen, die einen feinen ästhetischen Anspruch, intellektuelle Neugier und ein klares Verständnis von Diskretion teilen — auf beiden Seiten der Begegnung.</p>
-<p>Gegründet 2014 in Hamburg, haben wir uns über die Jahre einen Namen als verlässlicher Vermittler für anspruchsvolle Klienten erarbeitet, die ihre Privatsphäre ebenso schätzen wie die Qualität ihrer Begegnungen.</p>
+<p>Gegründet 2025 in Hamburg, haben wir uns über die Jahre einen Namen als verlässlicher Vermittler für anspruchsvolle Klienten erarbeitet, die ihre Privatsphäre ebenso schätzen wie die Qualität ihrer Begegnungen.</p>
 <p>Unsere Models sind keine zufällig gewählten Profile. Jede Persönlichkeit wird in einem persönlichen Gespräch aufgenommen und genießt unser uneingeschränktes Vertrauen. Wir arbeiten ausnahmslos mit Menschen zusammen, die ihre Tätigkeit selbstbestimmt und mit Stolz ausüben.</p>
 
-<h2>Eine hanseatische Institution seit 2014</h2>
+<h2>Eine hanseatische Institution seit 2025</h2>
 <p>Noir Hamburg entstand aus einer einfachen Beobachtung: In einer Stadt mit dem kulturellen und wirtschaftlichen Rang Hamburgs fehlte eine Begleitagentur mit hanseatischen Standards. Zu viele Vermittlungen waren anonym, industriell, austauschbar. Zu wenig Beratung, zu wenig Persönlichkeit, zu viel Kompromiss bei der Auswahl. Wir gründeten unsere Agentur, um genau das Gegenteil zu tun.</p>
 <p>In den ersten Jahren begleiteten wir zwei bis drei Damen — alle persönliche Bekannte, alle mit der stillen Souveränität, die diese Arbeit erst zu einer Kunst macht. Über die Zeit ist unser Kreis auf vierzehn Damen und ein festes Netzwerk internationaler Kolleginnen gewachsen. Was sich nicht geändert hat: dass wir jede Dame persönlich kennen und ihr uneingeschränkt vertrauen.</p>
 
@@ -93,10 +93,10 @@ function renderAbout(buildAssets, lang = "de") {
 <ul><li><strong>Sorgfältige Auswahl</strong> — jede Dame persönlich kennengelernt und mindestens zwei Mal getroffen</li><li><strong>Verbindliche Diskretion</strong> — verschlüsselte Kommunikation, minimale Datenspeicherung, NDA auf Wunsch</li><li><strong>Persönliche Betreuung</strong> — echte Menschen, keine Callcenter, keine Bots</li><li><strong>Verlässliche Pünktlichkeit</strong> — bestätigte Termine werden eingehalten, Ausnahmen sind Ausnahmen</li></ul>`,
     en: `
 <p>Noir Hamburg is a small, curated platform for people who share a fine aesthetic sensibility, intellectual curiosity and a clear understanding of discretion — on both sides of the encounter.</p>
-<p>Founded in Hamburg in 2014, we have built a reputation over the years as a reliable agency for discerning clients who value their privacy as much as the quality of their encounters.</p>
+<p>Founded in Hamburg in 2025, we have built a reputation over the years as a reliable agency for discerning clients who value their privacy as much as the quality of their encounters.</p>
 <p>Our models are not randomly chosen profiles. Every personality is welcomed into our circle through a personal conversation and enjoys our unconditional trust. We work exclusively with people who pursue their profession self-determined and with pride.</p>
 
-<h2>A Hanseatic institution since 2014</h2>
+<h2>A Hanseatic institution since 2025</h2>
 <p>Noir Hamburg was born from a simple observation: in a city with the cultural and economic rank of Hamburg, a companion agency with hanseatic standards was missing. Too many services were anonymous, industrial, interchangeable. Too little consultation, too little personality, too much compromise in the selection. We founded our agency to do exactly the opposite.</p>
 <p>In the first years we represented two or three ladies — all personal acquaintances, all with the quiet self-assurance that turns this work into an art. Over time our circle has grown to fourteen ladies and a firm network of international colleagues. What has not changed: that we know every lady personally and trust her unconditionally.</p>
 

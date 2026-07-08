@@ -271,7 +271,7 @@ ARTICLES = [
         "related_locations": ["hamburg", "harvestehude"],
         "cover_image": COVER,
         "content": """
-<p>In einer Zeit, in der jede Kartenzahlung, jeder Chat und jeder Kalendereintrag digitale Spuren hinterlässt, ist Diskretion zu einer echten Ingenieurleistung geworden. Wir haben uns seit 2014 sehr detailliert damit beschäftigt — hier eine ehrliche Übersicht, wie wir Ihre Privatsphäre schützen.</p>
+<p>In einer Zeit, in der jede Kartenzahlung, jeder Chat und jeder Kalendereintrag digitale Spuren hinterlässt, ist Diskretion zu einer echten Ingenieurleistung geworden. Wir haben uns seit 2025 sehr detailliert damit beschäftigt — hier eine ehrliche Übersicht, wie wir Ihre Privatsphäre schützen.</p>
 
 <h2>Verschlüsselung als Standard</h2>
 <p>Alle Kommunikation über unser Kontaktformular läuft über TLS 1.3. Für Bestandskunden bieten wir Signal-Verschlüsselung an; auf Wunsch auch PGP-Mail. Wir speichern keine Chat-Historien länger als notwendig — nach dem Termin werden Konversationen restlos entfernt.</p>

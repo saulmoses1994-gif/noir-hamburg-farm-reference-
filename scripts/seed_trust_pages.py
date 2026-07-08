@@ -21,7 +21,7 @@ PAGES = [
         "slug": "diskretion",
         "title": "Diskretion und Datenschutz | Noir Hamburg",
         "h1": "Unser Diskretions-Versprechen",
-        "intro": "Diskretion ist bei uns kein Marketing-Begriff, sondern die Grundlage unserer Arbeit seit 2014.",
+        "intro": "Diskretion ist bei uns kein Marketing-Begriff, sondern die Grundlage unserer Arbeit seit 2025.",
         "meta_title": "Diskretion & Datenschutz — Noir Hamburg Premium Escort",
         "meta_description": "Wie Noir Hamburg Diskretion garantiert: verschlüsselte Kommunikation, minimale Datenspeicherung, NDA auf Wunsch. Ihr Diskretions-Versprechen als Premium Escort Agentur in Hamburg.",
         "related_services": ["luxury-escort-hamburg", "vip-escort-hamburg", "business-escort-hamburg"],
@@ -53,7 +53,7 @@ PAGES = [
         "h1": "Unsere professionellen Standards",
         "intro": "Vom ersten Kontakt bis zur Verabschiedung — was Sie bei Noir Hamburg erwarten dürfen.",
         "meta_title": "Professionelle Standards — Noir Hamburg Escort Agentur",
-        "meta_description": "Wie Noir Hamburg seit 2014 professionelle Standards in der Hamburger Escort-Branche setzt: sorgfältige Auswahl, faire Tarife, ehrliche Beratung, verlässliche Erreichbarkeit.",
+        "meta_description": "Wie Noir Hamburg seit 2025 professionelle Standards in der Hamburger Escort-Branche setzt: sorgfältige Auswahl, faire Tarife, ehrliche Beratung, verlässliche Erreichbarkeit.",
         "related_services": ["luxury-escort-hamburg", "business-escort-hamburg", "dinner-companion-hamburg"],
         "related_locations": ["hamburg", "harvestehude"],
         "content": """
@@ -74,7 +74,7 @@ PAGES = [
 <h2>Zuverlässigkeit</h2>
 <p>Ein bestätigter Termin ist bei uns ein bestätigter Termin. Sollte in absoluten Ausnahmefällen — Krankheit, familiärer Notfall — eine Dame kurzfristig ausfallen, informieren wir Sie umgehend und schlagen einen gleichwertigen Ersatz vor. In zehn Jahren ist das weniger als ein Dutzend Mal passiert.</p>
 
-<p><em>Professionalität ist nicht, was wir versprechen. Es ist das, was wir seit 2014 tun.</em></p>
+<p><em>Professionalität ist nicht, was wir versprechen. Es ist das, was wir seit 2025 tun.</em></p>
         """.strip(),
     },
     {
