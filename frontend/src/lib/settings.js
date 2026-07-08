@@ -26,6 +26,7 @@ const brandToSettings = (b) => ({
   escort_hamburg_image: "",
   about_image: "",
   social_share_image: "",
+  impressum_content: "",
 });
 
 const Ctx = createContext(brandToSettings(BRAND));

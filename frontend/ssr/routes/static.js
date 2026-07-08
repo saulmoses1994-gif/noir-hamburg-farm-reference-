@@ -169,7 +169,11 @@ ${renderBreadcrumbs([{ label: t("crumb.contact", lang) }], lang)}
   });
 }
 
+const { IMPRESSUM_DEFAULT_HTML } = require("../../src/data/impressumDefault");
+
 function renderImpressum(buildAssets, lang = "de") {
+  const settings = getSettings();
+  const bodyHtml = (settings.impressum_content && settings.impressum_content.trim()) || IMPRESSUM_DEFAULT_HTML;
   const titleByLang = {
     de: "Impressum | Noir Hamburg",
     en: "Imprint | Noir Hamburg",
@@ -179,42 +183,12 @@ function renderImpressum(buildAssets, lang = "de") {
     en: "Legal imprint of Noir Hamburg per § 5 TMG — company address, contact, image credits and youth-protection officer.",
   };
   const crumbLabel = lang === "en" ? "Imprint" : "Impressum";
-  const legalHeadingsDe = {
-    tmg: "Angaben gemäß § 5 TMG",
-    contact: "Kontakt",
-    images: "Bildrechte",
-    jsb: "Jugendschutzbeauftragter",
-  };
-  const legalHeadingsEn = {
-    tmg: "Information per § 5 TMG",
-    contact: "Contact",
-    images: "Image credits",
-    jsb: "Youth-protection officer",
-  };
-  const H = lang === "en" ? legalHeadingsEn : legalHeadingsDe;
 
   const body = `
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: crumbLabel }], lang)}
 <h1>${lang === "en" ? "Imprint" : "Impressum"}</h1>
-<h2>${esc(H.tmg)}</h2>
-<address>
-<strong>Noir Hamburg</strong><br/>
-Pinneberger Chaussee 50<br/>
-22523 Hamburg
-</address>
-<h2>${esc(H.contact)}</h2>
-<p>E-Mail: <a href="mailto:support@noir-hamburg.com">support@noir-hamburg.com</a></p>
-<h2>${esc(H.images)}</h2>
-<p>© Noir Hamburg und unter Lizenz von Pixabay / Unsplash / Shutterstock.com</p>
-<h2>${esc(H.jsb)}</h2>
-<address>
-<strong>Jochen Jüngst, LL.M.</strong><br/>
-Tel.: <a href="tel:+494087408606">+49 40 874 086 06</a><br/>
-Fax: 040 – 874 087 00<br/>
-E-Mail: <a href="mailto:info@juengst-legal.de">info@juengst-legal.de</a><br/>
-Web: <a href="https://www.juengst-legal.de" rel="noopener noreferrer">www.juengst-legal.de</a>
-</address>
+${bodyHtml}
 </main>`;
   return renderShell({
     ...buildAssets,

@@ -31,6 +31,7 @@ let _cached = {
   escort_hamburg_image: "",
   about_image: "",
   social_share_image: "",
+  impressum_content: "",
 };
 
 async function refresh() {

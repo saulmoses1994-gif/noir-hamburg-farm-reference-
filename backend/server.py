@@ -53,7 +53,7 @@ SAFE_TAGS = [
     "a", "img",
     "figure", "figcaption",
     "table", "thead", "tbody", "tr", "th", "td",
-    "span", "div",
+    "span", "div", "address",
 ]
 SAFE_ATTRS = {
     "*": ["class", "id"],
@@ -306,6 +306,12 @@ class SiteSettings(BaseModel):
     # 1200×630 landscape JPEG for optimal WhatsApp/Facebook/iMessage previews.
     # Empty → falls back to homepage_hero_image → featured model cover.
     social_share_image: Optional[str] = ""
+    # Editable Impressum (legal § 5 TMG page) body content — HTML string
+    # rendered on /impressum. Empty → falls back to the built-in default
+    # (Noir Hamburg address, contact, image credits, youth-protection officer).
+    # Admin edits this via /admin/settings so legal updates never require a code
+    # deploy — only a fresh SSG build to bake into production HTML.
+    impressum_content: Optional[str] = ""
 
 
 class ChangePasswordInput(BaseModel):
@@ -448,8 +454,12 @@ async def get_settings():
 @api_router.put("/settings")
 async def update_settings(payload: SiteSettings, _: dict = Depends(require_admin)):
     """Admin-only: overwrite the singleton settings document. All fields
-    required (Pydantic model validation ensures shape)."""
+    required (Pydantic model validation ensures shape). Rich-text HTML fields
+    (currently: `impressum_content`) run through the shared XSS-safe bleach
+    sanitizer so admin cannot inject <script>/onclick/etc."""
     data = payload.model_dump()
+    if data.get("impressum_content"):
+        data["impressum_content"] = sanitize_html(data["impressum_content"])
     await db.site_settings.update_one(
         {"_key": _SETTINGS_KEY},
         {"$set": data},

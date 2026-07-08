@@ -309,6 +309,35 @@ html, body {
   font-weight: 500;
 }
 
+/* Impressum (legal § 5 TMG) — admin-authored HTML rendered via
+   dangerouslySetInnerHTML. Match the site's editorial hierarchy: burgundy
+   overline headings + hanseatic-elegant body copy. */
+.impressum-body h2 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #8B1538;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+.impressum-body h2:first-child { margin-top: 0; }
+.impressum-body p,
+.impressum-body address {
+  font-style: normal;
+  margin-bottom: 1.25rem;
+  line-height: 1.7;
+}
+.impressum-body address strong { color: #1A1414; font-weight: 500; }
+.impressum-body a {
+  color: #1A1414;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(139, 21, 56, 0.4);
+  transition: text-decoration-color 0.2s;
+}
+.impressum-body a:hover { text-decoration-color: rgba(139, 21, 56, 1); }
+
 /* Soft section background */
 .soft-section {
   background: var(--color-surface);
