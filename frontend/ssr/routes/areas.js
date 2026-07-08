@@ -2,7 +2,7 @@
  * Areas list (/areas), Area detail (/escort/:slug), /escort-hamburg umbrella.
  */
 const { SERVICES, LOCATIONS } = require("../../src/data/site");
-const { AREA_CONTENT, GENERIC_AREA_FAQS } = require("../../src/data/areaContent");
+const { GENERIC_AREA_FAQS } = require("../../src/data/areaContent");
 const {
   esc,
   escAttr,
@@ -14,6 +14,7 @@ const {
   t,
 } = require("../shell");
 const { getSettings } = require("../settings");
+const { getAreaContent, getAllAreaContent } = require("../content");
 const { backendJSON } = require("../backend");
 
 function renderAreasList(buildAssets, lang = "de") {
@@ -29,15 +30,17 @@ function renderAreasList(buildAssets, lang = "de") {
     de: "Wir begleiten Sie in der gesamten Metropolregion Hamburg.",
     en: "We accompany you throughout the entire Hamburg metropolitan region.",
   };
+  const isEn = lang === "en";
+  const areas = getAllAreaContent();
 
   const body = `
 <main id="main" style="padding:2rem;">
 ${renderBreadcrumbs([{ label: t("crumb.areas", lang) }], lang)}
 <h1>Hamburg Areas</h1>
 <p>${esc(leadByLang[lang])}</p>
-${LOCATIONS.map((l) => `
+${areas.map((l) => `
 <article><h2><a href="${navTo(`/escort/${l.slug}`, lang)}">${esc(l.title)}</a></h2>
-<p>${esc(lang === "en" ? l.introEn : l.intro)}</p></article>`).join("")}
+<p>${esc(isEn ? (l.intro_en || l.intro) : l.intro)}</p></article>`).join("")}
 </main>`;
   return renderShell({
     ...buildAssets,
@@ -51,33 +54,41 @@ ${LOCATIONS.map((l) => `
 }
 
 async function renderAreaDetail(slug, buildAssets, lang = "de") {
-  const l = LOCATIONS.find((x) => x.slug === slug);
+  const l = getAreaContent(slug);
   if (!l) return null;
   const areaImg = (getSettings().area_images || {})[slug] || l.image;
-  const nearby = LOCATIONS.filter((x) => x.slug !== l.slug).slice(0, 6);
-  const intro = lang === "en" ? l.introEn : l.intro;
-  const description = lang === "en" ? l.descriptionEn : l.description;
+  const allAreas = getAllAreaContent();
+  const nearby = allAreas.filter((x) => x.slug !== l.slug).slice(0, 6);
   const isEn = lang === "en";
-  const extra = AREA_CONTENT[slug] || { bodyExtra: [], bodyExtraEn: [] };
-  const bodyExtra = isEn ? (extra.bodyExtraEn || []) : (extra.bodyExtra || []);
+  const intro = isEn ? (l.intro_en || l.intro) : l.intro;
+  const description = isEn ? (l.description_en || l.description) : l.description;
+  const bodyExtra = isEn ? (l.body_extra_en && l.body_extra_en.length ? l.body_extra_en : l.body_extra) : l.body_extra;
+  const altText = isEn ? (l.image_alt_en || l.image_alt) : l.image_alt;
+  const defaultAlt = isEn ? "Noir Hamburg premium escort" : "Noir Hamburg Premium Begleitung";
 
   // Fetch a few featured models — internal-linking block.
   let models = [];
   try { models = (await backendJSON("/api/models")).slice(0, 4); } catch (e) { /* noop */ }
 
-  // Compose per-area FAQ from generic templates + area-specific extras.
-  const areaFaqs = (extra.faqs || GENERIC_AREA_FAQS).map((f) => ({
-    q: (isEn ? f.qEn : f.q).replace(/\{name\}/g, l.name),
-    a: (isEn ? f.aEn : f.a).replace(/\{name\}/g, l.name),
+  // Compose per-area FAQ: use custom faqs if defined, otherwise generic
+  // templates with {name} interpolation.
+  const rawFaqs = (l.faqs && l.faqs.length) ? l.faqs : GENERIC_AREA_FAQS.map((f) => ({
+    q: f.q, q_en: f.qEn, a: f.a, a_en: f.aEn,
+  }));
+  const areaFaqs = rawFaqs.map((f) => ({
+    q: (isEn ? (f.q_en || f.q) : f.q).replace(/\{name\}/g, l.name),
+    a: (isEn ? (f.a_en || f.a) : f.a).replace(/\{name\}/g, l.name),
   }));
 
+  const metaTitle = isEn ? (l.meta_title_en || l.meta_title) : (l.meta_title || l.meta_title_en);
+  const metaDesc = isEn ? (l.meta_description_en || l.meta_description) : (l.meta_description || l.meta_description_en);
   const titleByLang = {
     de: `${l.title} — Premium Begleitung in ${l.name} | Noir Hamburg`,
     en: `${l.title} — Premium Companionship in ${l.name} | Noir Hamburg`,
   };
   const descByLang = {
     de: `${l.title}: ${l.intro} Diskrete Begleitung in ${l.name} – exklusiv vermittelt durch Noir Hamburg.`,
-    en: `${l.title}: ${l.introEn} Discreet companionship in ${l.name} — exclusively arranged by Noir Hamburg.`,
+    en: `${l.title}: ${l.intro_en} Discreet companionship in ${l.name} — exclusively arranged by Noir Hamburg.`,
   };
 
   const body = `
@@ -86,9 +97,9 @@ ${renderBreadcrumbs([{ label: t("crumb.areas", lang), to: "/areas" }, { label: l
 <article>
 <h1>${esc(l.title)}</h1>
 <p><em>${esc(intro)}</em></p>
-${areaImg ? `<img src="${escAttr(areaImg)}" alt="${escAttr(l.title)} — ${esc(isEn ? "Noir Hamburg premium escort" : "Noir Hamburg Premium Begleitung")}" width="800" loading="eager"/>` : ""}
+${areaImg ? `<img src="${escAttr(areaImg)}" alt="${escAttr(altText || `${l.title} — ${defaultAlt}`)}" width="800" loading="eager"/>` : ""}
 <p>${esc(description)}</p>
-${bodyExtra.map((p) => `<p>${esc(p)}</p>`).join("")}
+${(bodyExtra || []).map((p) => `<p>${esc(p)}</p>`).join("")}
 ${(l.landmarks || []).length > 0 ? `<h2>${esc(t("sec.popularAddresses", lang))}</h2><ul>${l.landmarks.map((lm) => `<li>${esc(lm)}</li>`).join("")}</ul>` : ""}
 <h2>${esc(t("sec.popularServices", lang))}</h2>
 <ul>${SERVICES.slice(0, 5).map((s) => `<li><a href="${navTo(`/services/${s.slug}`, lang)}"><strong>${esc(s.title)}</strong> — ${esc(isEn ? s.descriptionEn : s.description)}</a></li>`).join("")}</ul>
@@ -123,8 +134,8 @@ ${areaFaqs.length ? `<h2>${esc(isEn ? `FAQ — Escort in ${l.name}` : `Häufige 
   return renderShell({
     ...buildAssets,
     lang,
-    title: titleByLang[lang] || titleByLang.de,
-    description: descByLang[lang] || descByLang.de,
+    title: metaTitle || titleByLang[lang] || titleByLang.de,
+    description: metaDesc || descByLang[lang] || descByLang.de,
     canonicalPath: `/escort/${l.slug}`,
     ogImage: areaImg,
     jsonLd,

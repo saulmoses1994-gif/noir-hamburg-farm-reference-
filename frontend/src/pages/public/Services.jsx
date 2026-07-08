@@ -12,6 +12,8 @@ import { api } from "@/lib/api";
 
 // Pick the EN field if lang=en and *En variant exists, otherwise the DE field.
 const pick = (s, key, lang) => (lang === "en" && s[`${key}En`] != null ? s[`${key}En`] : s[key]);
+// Pick from a CMS-shaped payload (snake_case keys, *_en variants).
+const pickCms = (s, key, lang) => (lang === "en" && s[`${key}_en`] ? s[`${key}_en`] : s[key]);
 
 export function ServicesList() {
   const { lang, t, to } = useI18n();
@@ -78,18 +80,62 @@ export function ServicesList() {
 
 export function ServiceDetail() {
   const { slug } = useParams();
-  const service = SERVICES.find((s) => s.slug === slug);
+  const baseService = SERVICES.find((s) => s.slug === slug);
   const { lang, t, to } = useI18n();
   const settings = useSettings();
-  const serviceImage = (settings.service_images && settings.service_images[slug]) || service?.image;
   const [models, setModels] = useState([]);
+  // CMS content — starts as null and populates from /api/service-content/:slug
+  // on mount. Merged with the bundled SERVICES/SERVICE_CONTENT fallbacks so
+  // the page never shows a blank flash even during a slow API response.
+  const [cms, setCms] = useState(null);
 
   useEffect(() => {
     api.get("/models").then((r) => setModels(r.data.slice(0, 4))).catch(() => {});
-  }, []);
+    if (slug) {
+      api.get(`/service-content/${slug}`)
+        .then((r) => setCms(r.data))
+        .catch(() => setCms(null));
+    }
+  }, [slug]);
 
-  const extra = service ? (SERVICE_CONTENT[service.slug] || { sections: [], faqs: [] }) : { sections: [], faqs: [] };
-  const relatedSlugs = service ? (RELATED_SERVICES[service.slug] || []) : [];
+  // Effective values: prefer live CMS payload, fall back to bundled data.
+  const bundled = baseService || {};
+  const bundledExt = baseService ? (SERVICE_CONTENT[baseService.slug] || { sections: [], faqs: [] }) : { sections: [], faqs: [] };
+
+  const service = cms ? {
+    slug: cms.slug,
+    title: cms.title,
+    shortLabel: cms.short_label,
+    h1: cms.h1,
+    tagline: cms.tagline,
+    taglineEn: cms.tagline_en,
+    description: cms.description,
+    descriptionEn: cms.description_en,
+    longCopy: cms.long_copy,
+    longCopyEn: cms.long_copy_en,
+    keypoints: cms.keypoints,
+    keypointsEn: cms.keypoints_en,
+    image: cms.image || bundled.image,
+    imageAlt: cms.image_alt,
+    imageAltEn: cms.image_alt_en,
+    metaTitle: cms.meta_title,
+    metaTitleEn: cms.meta_title_en,
+    metaDescription: cms.meta_description,
+    metaDescriptionEn: cms.meta_description_en,
+  } : bundled;
+
+  const serviceImage = (settings.service_images && settings.service_images[slug]) || service?.image;
+  const altText = pick({ imageAlt: service?.imageAlt || "", imageAltEn: service?.imageAltEn || "" }, "imageAlt", lang);
+
+  // Editorial sections + FAQs — CMS format has snake_case; bundle has camelCase.
+  // Normalise to a single shape.
+  const sections = cms ? (cms.sections || []).map((sec) => ({
+    h2: sec.h2, h2En: sec.h2_en, body: sec.body || [], bodyEn: sec.body_en || [],
+  })) : bundledExt.sections;
+  const faqs = cms ? (cms.faqs || []).map((f) => ({
+    q: f.q, qEn: f.q_en, a: f.a, aEn: f.a_en,
+  })) : bundledExt.faqs;
+  const relatedSlugs = cms ? (cms.related_services || []) : (baseService ? (RELATED_SERVICES[baseService.slug] || []) : []);
   const relatedServices = relatedSlugs.map((sl) => SERVICES.find((x) => x.slug === sl)).filter(Boolean);
 
   useSEO({
@@ -110,10 +156,10 @@ export function ServiceDetail() {
         { label: t("crumb.services"), to: "/services" },
         { label: service.title },
       ]),
-      ...(extra.faqs.length ? [{
+      ...(faqs.length ? [{
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        "mainEntity": extra.faqs.map((f) => ({
+        "mainEntity": faqs.map((f) => ({
           "@type": "Question",
           "name": lang === "en" ? f.qEn : f.q,
           "acceptedAnswer": { "@type": "Answer", "text": lang === "en" ? f.aEn : f.a },
@@ -122,17 +168,18 @@ export function ServiceDetail() {
     ] : null,
   });
 
-  if (!service) {
+  if (!service || !service.slug) {
     return <PublicLayout><div className="px-6 py-32 text-center text-[#6B5F5F]">{lang === "en" ? "Service not found." : "Service nicht gefunden."}</div></PublicLayout>;
   }
 
   const tagline = pick(service, "tagline", lang);
+  const heroAlt = altText || `${service.title} — Noir Hamburg Premium Escort Service`;
 
   return (
     <PublicLayout>
       <section className="relative h-[60vh] flex items-end" data-testid="service-hero">
         <div className="absolute inset-0">
-          <img src={serviceImage} alt={`${service.title} — Noir Hamburg Premium Escort Service`} className="w-full h-full object-cover" />
+          <img src={serviceImage} alt={heroAlt} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
         </div>
         <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">
@@ -150,7 +197,7 @@ export function ServiceDetail() {
             <p className="text-base lg:text-lg font-light text-[#3F3838] leading-relaxed">{pick(service, "longCopy", lang)}</p>
 
             {/* Extended editorial sections */}
-            {extra.sections.map((sec, i) => (
+            {sections.map((sec, i) => (
               <div key={i} className="mt-14" data-testid={`service-section-${i}`}>
                 <h2 className="font-heading text-2xl lg:text-3xl text-[#1A1414] mb-5">{lang === "en" ? sec.h2En : sec.h2}</h2>
                 <div className="space-y-4 text-[#3F3838] leading-relaxed">
@@ -172,14 +219,14 @@ export function ServiceDetail() {
             </div>
 
             {/* Per-service FAQ */}
-            {extra.faqs.length > 0 && (
+            {faqs.length > 0 && (
               <div className="mt-16" data-testid="service-faq">
                 <span className="overline">{lang === "en" ? "Questions" : "Fragen"}</span>
                 <h2 className="font-heading text-2xl lg:text-3xl text-[#1A1414] mt-3 mb-6">
                   {lang === "en" ? `FAQ — ${service.title}` : `Häufige Fragen zu ${service.title}`}
                 </h2>
                 <div className="space-y-3">
-                  {extra.faqs.map((f, i) => (
+                  {faqs.map((f, i) => (
                     <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`service-faq-${i}`}>
                       <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
                         <span className="font-heading text-lg text-[#1A1414]">{lang === "en" ? f.qEn : f.q}</span>

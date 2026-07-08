@@ -98,7 +98,7 @@ class TestSSRServices:
         r = _get("/services/luxury-escort-hamburg")
         assert r.status_code == 200
         _assert_no_js_placeholder(r.text)
-        _assert_seo_basics(r.text, "Luxury", "Luxury Escort Hamburg")
+        _assert_seo_basics(r.text, "Luxus", "Luxus Escort Hamburg")
         assert '"@type": "Service"' in r.text or '"@type":"Service"' in r.text
 
     def test_service_vip(self):

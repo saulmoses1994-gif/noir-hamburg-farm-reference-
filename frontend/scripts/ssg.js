@@ -76,18 +76,24 @@ function writeHtml(urlPath, html) {
 (async () => {
   const t0 = Date.now();
   console.log("[ssg] fetching backend data...");
-  // Ensure the settings cache (used by every SSR renderer for og:image,
-  // homepage_hero_image, etc.) has completed its first fetch BEFORE we start
-  // rendering. Otherwise HTML gets baked with empty defaults + fallback URLs.
+  // Ensure the settings + SEO content caches (used by every SSR renderer for
+  // og:image, homepage_hero_image, service_content, area_content, etc.) have
+  // completed their first fetch BEFORE we start rendering. Otherwise HTML
+  // gets baked with empty defaults + fallback URLs.
   const { ensureSettingsLoaded, getSettings } = require("../ssr/settings");
+  const { ensureContentLoaded, getAllServiceContent, getAllAreaContent } = require("../ssr/content");
   const [models, blogPosts, pages] = await Promise.all([
     backendJSON("/api/models").catch(() => []),
     backendJSON("/api/blog").catch(() => []),
     backendJSON("/api/pages").catch(() => []),
     ensureSettingsLoaded(),
+    ensureContentLoaded(),
   ]);
   const _s = getSettings();
+  const svcAll = getAllServiceContent();
+  const areaAll = getAllAreaContent();
   console.log(`[ssg] fetched: ${models.length} models, ${blogPosts.length} blog posts, ${pages.length} CMS pages`);
+  console.log(`[ssg] SEO content: ${svcAll.length} services, ${areaAll.length} areas`);
   console.log(`[ssg] settings: social_share_image=${_s.social_share_image || "(empty)"}`);
   console.log(`[ssg] settings: homepage_hero_image=${_s.homepage_hero_image || "(empty)"}`);
 
@@ -118,10 +124,10 @@ function writeHtml(urlPath, html) {
       url: lang === "en" ? "/en/about" : "/ueber-uns",
       render: () => renderAbout(BUILD_ASSETS, lang),
     });
-    for (const s of SERVICES) {
+    for (const s of svcAll) {
       targets.push({ url: p(`/services/${s.slug}`), render: () => renderServiceDetail(s.slug, BUILD_ASSETS, lang) });
     }
-    for (const l of LOCATIONS) {
+    for (const l of areaAll) {
       targets.push({ url: p(`/escort/${l.slug}`),  render: () => renderAreaDetail(l.slug, BUILD_ASSETS, lang) });
     }
     for (const m of models) {

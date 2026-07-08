@@ -75,37 +75,71 @@ export function AreasList() {
 
 export function AreaDetail() {
   const { slug } = useParams();
-  const area = LOCATIONS.find((l) => l.slug === slug);
+  const baseArea = LOCATIONS.find((l) => l.slug === slug);
   const [models, setModels] = useState([]);
+  const [cms, setCms] = useState(null);
   const { lang, t, to } = useI18n();
   const settings = useSettings();
-  // Admin-uploaded override for this area's hero image, if any.
-  const areaImage = (settings.area_images && settings.area_images[slug]) || area?.image;
 
   useEffect(() => {
     if (slug) {
       api.get(`/models?location=${slug}`).then((r) => setModels(r.data.slice(0, 6))).catch(() => {});
+      api.get(`/area-content/${slug}`).then((r) => setCms(r.data)).catch(() => setCms(null));
     }
   }, [slug]);
 
+  // Merge: CMS payload (snake_case) overrides bundled defaults (camelCase).
+  const bundledExt = baseArea ? (AREA_CONTENT[baseArea.slug] || { bodyExtra: [], bodyExtraEn: [] }) : { bodyExtra: [], bodyExtraEn: [] };
+  const area = cms ? {
+    slug: cms.slug,
+    name: cms.name,
+    title: cms.title,
+    intro: cms.intro,
+    introEn: cms.intro_en,
+    description: cms.description,
+    descriptionEn: cms.description_en,
+    image: cms.image || baseArea?.image,
+    imageAlt: cms.image_alt,
+    imageAltEn: cms.image_alt_en,
+    landmarks: cms.landmarks || baseArea?.landmarks || [],
+    metaTitle: cms.meta_title,
+    metaTitleEn: cms.meta_title_en,
+    metaDescription: cms.meta_description,
+    metaDescriptionEn: cms.meta_description_en,
+  } : baseArea;
+
+  const areaImage = (settings.area_images && settings.area_images[slug]) || area?.image;
+  const altText = area ? pick({ imageAlt: area.imageAlt || "", imageAltEn: area.imageAltEn || "" }, "imageAlt", lang) : "";
+
   const intro = area ? pick(area, "intro", lang) : "";
   const description = area ? pick(area, "description", lang) : "";
-  const extra = area ? (AREA_CONTENT[area.slug] || { bodyExtra: [], bodyExtraEn: [] }) : { bodyExtra: [], bodyExtraEn: [] };
-  const bodyExtra = lang === "en" ? (extra.bodyExtraEn || []) : (extra.bodyExtra || []);
+  const bodyExtra = cms
+    ? ((lang === "en" ? (cms.body_extra_en && cms.body_extra_en.length ? cms.body_extra_en : cms.body_extra) : cms.body_extra) || [])
+    : (lang === "en" ? (bundledExt.bodyExtraEn || []) : (bundledExt.bodyExtra || []));
+
+  const rawFaqs = cms
+    ? (cms.faqs && cms.faqs.length ? cms.faqs.map((f) => ({ q: f.q, qEn: f.q_en, a: f.a, aEn: f.a_en })) : GENERIC_AREA_FAQS)
+    : (bundledExt.faqs || GENERIC_AREA_FAQS);
   const areaFaqs = area
-    ? (extra.faqs || GENERIC_AREA_FAQS).map((f) => ({
+    ? rawFaqs.map((f) => ({
         q: (lang === "en" ? f.qEn : f.q).replace(/\{name\}/g, area.name),
         a: (lang === "en" ? f.aEn : f.a).replace(/\{name\}/g, area.name),
       }))
     : [];
 
   useSEO({
-    title: area ? (lang === "en"
-      ? `${area.title} — Premium Companionship in ${area.name} | Noir Hamburg`
-      : `${area.title} — Premium Begleitung in ${area.name} | Noir Hamburg`) : "",
-    description: area ? (lang === "en"
-      ? `${area.title}: ${intro} Discreet companionship in ${area.name} — exclusively arranged by Noir Hamburg.`
-      : `${area.title}: ${intro} Diskrete Begleitung in ${area.name} – exklusiv vermittelt durch Noir Hamburg.`) : "",
+    title: area ? (
+      pick(area, "metaTitle", lang) ||
+      (lang === "en"
+        ? `${area.title} — Premium Companionship in ${area.name} | Noir Hamburg`
+        : `${area.title} — Premium Begleitung in ${area.name} | Noir Hamburg`)
+    ) : "",
+    description: area ? (
+      pick(area, "metaDescription", lang) ||
+      (lang === "en"
+        ? `${area.title}: ${intro} Discreet companionship in ${area.name} — exclusively arranged by Noir Hamburg.`
+        : `${area.title}: ${intro} Diskrete Begleitung in ${area.name} – exklusiv vermittelt durch Noir Hamburg.`)
+    ) : "",
     image: areaImage,
     jsonLd: area ? [
       {
@@ -141,7 +175,7 @@ export function AreaDetail() {
     <PublicLayout>
       <section className="relative h-[60vh] flex items-end" data-testid="area-hero">
         <div className="absolute inset-0">
-          <img src={areaImage} alt={area.title} className="w-full h-full object-cover" />
+          <img src={areaImage} alt={altText || area.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
         </div>
         <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

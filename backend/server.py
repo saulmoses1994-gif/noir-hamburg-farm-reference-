@@ -8,12 +8,16 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 import os
+import io
+import json
 import uuid
+import asyncio
 import logging
 import re
 import bcrypt
 import bleach
 import jwt
+import resend
 import requests
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Annotated, Dict, Any
@@ -24,6 +28,8 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr, ConfigDict, BeforeValidator
 from bson import ObjectId
+from PIL import Image
+import pillow_avif  # noqa: F401 — registers AVIF codec with Pillow
 
 
 # ---------- App Setup ----------
@@ -195,6 +201,83 @@ def slugify(text: str) -> str:
     text = re.sub(r"[ß]", "ss", text)
     text = re.sub(r"[^a-z0-9]+", "-", text)
     return text.strip("-")
+
+
+# ---------- Resend Email (lead notifications) ----------
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "support@noir-hamburg.com").strip()
+NOTIFICATION_RECIPIENT = os.environ.get("NOTIFICATION_RECIPIENT", "support@noir-hamburg.com").strip()
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+
+
+def _format_lead_html(doc: dict) -> str:
+    """Editorial HTML email — table-based layout for maximum email-client
+    compatibility, inline CSS only. Empty fields are hidden so the email
+    stays clean even for short enquiries."""
+    def row(label: str, value: str) -> str:
+        if not value:
+            return ""
+        return (f'<tr><td style="padding:8px 12px;font-family:Arial,sans-serif;font-size:13px;'
+                f'color:#6B5F5F;width:180px;vertical-align:top;">{label}</td>'
+                f'<td style="padding:8px 12px;font-family:Arial,sans-serif;font-size:14px;'
+                f'color:#1A1414;vertical-align:top;">{bleach.clean(str(value), tags=[], strip=True)}</td></tr>')
+
+    created = doc.get("created_at", "")
+    when = created.replace("T", " ").split(".")[0] + " UTC" if created else ""
+    msg_html = bleach.clean(doc.get("message", ""), tags=[], strip=True).replace("\n", "<br>")
+
+    return f"""<!doctype html>
+<html><body style="margin:0;padding:24px;background:#FBF7F4;font-family:Arial,sans-serif;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #eee;">
+  <tr><td style="padding:24px 28px;background:#1A1414;color:#ffffff;">
+    <div style="font-family:Georgia,serif;font-size:22px;letter-spacing:0.5px;">Noir Hamburg — Neue Anfrage</div>
+    <div style="font-size:12px;color:#E5A5B5;letter-spacing:2px;text-transform:uppercase;margin-top:6px;">New Lead Notification</div>
+  </td></tr>
+  <tr><td style="padding:24px 28px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      {row("Name", doc.get("name", ""))}
+      {row("E-Mail", doc.get("email", ""))}
+      {row("Telefon", doc.get("phone", ""))}
+      {row("Model", doc.get("model_slug", ""))}
+      {row("Service", doc.get("service", ""))}
+      {row("Location", doc.get("location", ""))}
+      {row("Datum", doc.get("date", ""))}
+      {row("Quelle", doc.get("source_page", ""))}
+      {row("Eingegangen", when)}
+    </table>
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid #eee;">
+      <div style="font-family:Arial,sans-serif;font-size:12px;color:#6B5F5F;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Nachricht</div>
+      <div style="font-family:Georgia,serif;font-size:15px;line-height:1.6;color:#1A1414;">{msg_html}</div>
+    </div>
+  </td></tr>
+  <tr><td style="padding:16px 28px;background:#FBF7F4;font-family:Arial,sans-serif;font-size:11px;color:#6B5F5F;">
+    Diese Benachrichtigung wurde automatisch generiert. Antworten Sie direkt an den Kunden über <b>{bleach.clean(doc.get('email',''), tags=[], strip=True)}</b>.
+  </td></tr>
+</table></body></html>"""
+
+
+async def send_lead_notification(doc: dict) -> Optional[str]:
+    """Fire-and-forget Resend notification. Never blocks contact submission —
+    logs & swallows all failures so a Resend outage cannot break the form."""
+    if not RESEND_API_KEY:
+        logger.info("Resend disabled (no RESEND_API_KEY) — skipping notification")
+        return None
+    try:
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [NOTIFICATION_RECIPIENT],
+            "reply_to": doc.get("email"),
+            "subject": f"Neue Anfrage von {doc.get('name', 'Unbekannt')} — Noir Hamburg",
+            "html": _format_lead_html(doc),
+        }
+        email = await asyncio.to_thread(resend.Emails.send, params)
+        eid = email.get("id") if isinstance(email, dict) else None
+        logger.info(f"Lead notification sent via Resend (id={eid})")
+        return eid
+    except Exception as e:
+        logger.error(f"Resend notification failed: {e}")
+        return None
 
 
 # ---------- Pydantic Schemas ----------
@@ -382,8 +465,117 @@ class ContactCreate(BaseModel):
     service: Optional[str] = ""
     date: Optional[str] = ""
     location: Optional[str] = ""
+    # Optional referring URL — filled client-side from `window.location.pathname`
+    # so admins can see which page the lead came from in the notification email.
+    source_page: Optional[str] = ""
     # Honeypot field — real users leave it empty; bots fill all visible fields.
     company: Optional[str] = ""
+
+
+class MediaUpdate(BaseModel):
+    """Editable metadata on an uploaded file — pure SEO / accessibility fields.
+    Filename and content_type stay immutable to avoid breaking historical
+    links; changing the "display" filename only affects how future downloads
+    are labelled in the browser."""
+    alt_text: Optional[str] = ""
+    alt_text_en: Optional[str] = ""
+    title: Optional[str] = ""
+    description: Optional[str] = ""
+    display_filename: Optional[str] = ""
+
+
+class ServiceContentModel(BaseModel):
+    """SEO/editorial payload for a single service. Kept slug-immutable —
+    the 8 service slugs are structural (nav, routes, sitemap) and admin can
+    only edit content around them, not the URL itself."""
+    slug: str
+    title: str
+    short_label: Optional[str] = ""
+    h1: str
+    tagline: Optional[str] = ""
+    tagline_en: Optional[str] = ""
+    description: Optional[str] = ""
+    description_en: Optional[str] = ""
+    long_copy: Optional[str] = ""
+    long_copy_en: Optional[str] = ""
+    keypoints: List[str] = []
+    keypoints_en: List[str] = []
+    image: Optional[str] = ""
+    image_alt: Optional[str] = ""
+    image_alt_en: Optional[str] = ""
+    meta_title: Optional[str] = ""
+    meta_title_en: Optional[str] = ""
+    meta_description: Optional[str] = ""
+    meta_description_en: Optional[str] = ""
+    sections: List[Dict[str, Any]] = []  # [{h2, h2_en, body[], body_en[]}]
+    faqs: List[Dict[str, Any]] = []      # [{q, q_en, a, a_en}]
+    related_services: List[str] = []
+
+
+class ServiceContentUpdate(BaseModel):
+    """PUT payload — same shape as ServiceContentModel minus slug."""
+    title: str
+    short_label: Optional[str] = ""
+    h1: str
+    tagline: Optional[str] = ""
+    tagline_en: Optional[str] = ""
+    description: Optional[str] = ""
+    description_en: Optional[str] = ""
+    long_copy: Optional[str] = ""
+    long_copy_en: Optional[str] = ""
+    keypoints: List[str] = []
+    keypoints_en: List[str] = []
+    image: Optional[str] = ""
+    image_alt: Optional[str] = ""
+    image_alt_en: Optional[str] = ""
+    meta_title: Optional[str] = ""
+    meta_title_en: Optional[str] = ""
+    meta_description: Optional[str] = ""
+    meta_description_en: Optional[str] = ""
+    sections: List[Dict[str, Any]] = []
+    faqs: List[Dict[str, Any]] = []
+    related_services: List[str] = []
+
+
+class AreaContentModel(BaseModel):
+    slug: str
+    name: str
+    title: str
+    intro: Optional[str] = ""
+    intro_en: Optional[str] = ""
+    description: Optional[str] = ""
+    description_en: Optional[str] = ""
+    image: Optional[str] = ""
+    image_alt: Optional[str] = ""
+    image_alt_en: Optional[str] = ""
+    landmarks: List[str] = []
+    body_extra: List[str] = []
+    body_extra_en: List[str] = []
+    meta_title: Optional[str] = ""
+    meta_title_en: Optional[str] = ""
+    meta_description: Optional[str] = ""
+    meta_description_en: Optional[str] = ""
+    faqs: List[Dict[str, Any]] = []
+
+
+class AreaContentUpdate(BaseModel):
+    name: str
+    title: str
+    intro: Optional[str] = ""
+    intro_en: Optional[str] = ""
+    description: Optional[str] = ""
+    description_en: Optional[str] = ""
+    image: Optional[str] = ""
+    image_alt: Optional[str] = ""
+    image_alt_en: Optional[str] = ""
+    landmarks: List[str] = []
+    body_extra: List[str] = []
+    body_extra_en: List[str] = []
+    meta_title: Optional[str] = ""
+    meta_title_en: Optional[str] = ""
+    meta_description: Optional[str] = ""
+    meta_description_en: Optional[str] = ""
+    faqs: List[Dict[str, Any]] = []
 
 
 # ---------- Auth Endpoints ----------
@@ -481,18 +673,28 @@ async def update_settings(payload: SiteSettings, _: dict = Depends(require_admin
 # ---------- Media Library ----------
 @api_router.get("/media")
 async def list_media(_: dict = Depends(require_admin), limit: int = 500):
-    """Admin-only: paginated list of uploaded files (metadata only)."""
+    """Admin-only: paginated list of uploaded files with SEO metadata."""
     cursor = db.files.find({"is_deleted": {"$ne": True}}).sort("created_at", -1).limit(limit)
     items = []
     async for doc in cursor:
         items.append({
             "id": doc.get("id"),
             "storage_path": doc.get("storage_path"),
+            "webp_path": doc.get("webp_path"),
+            "avif_path": doc.get("avif_path"),
             "original_filename": doc.get("original_filename"),
+            "display_filename": doc.get("display_filename") or doc.get("original_filename"),
             "content_type": doc.get("content_type"),
             "size": doc.get("size"),
+            "original_size": doc.get("original_size"),
+            "alt_text": doc.get("alt_text", ""),
+            "alt_text_en": doc.get("alt_text_en", ""),
+            "title": doc.get("title", ""),
+            "description": doc.get("description", ""),
             "created_at": doc.get("created_at"),
             "url": f"/api/files/{doc.get('storage_path')}",
+            "webp_url": f"/api/files/{doc.get('webp_path')}" if doc.get("webp_path") else None,
+            "avif_url": f"/api/files/{doc.get('avif_path')}" if doc.get("avif_path") else None,
         })
     return items
 
@@ -506,6 +708,64 @@ async def delete_media(file_id: str, _: dict = Depends(require_admin)):
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="File not found")
     return {"ok": True}
+
+
+# ---------- SEO Content CMS: Services + Areas ----------
+def _clean_content_doc(doc: dict) -> dict:
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/service-content")
+async def list_service_content():
+    """Public: return all 8 service content docs. Consumed by public
+    pages, SSR and the SSG build script."""
+    docs = await db.service_content.find({}).to_list(50)
+    return [_clean_content_doc(d) for d in docs]
+
+
+@api_router.get("/service-content/{slug}")
+async def get_service_content(slug: str):
+    doc = await db.service_content.find_one({"slug": slug})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Service content not found")
+    return _clean_content_doc(doc)
+
+
+@api_router.put("/service-content/{slug}")
+async def update_service_content(slug: str, payload: ServiceContentUpdate, _: dict = Depends(require_admin)):
+    """Admin-only: update SEO/editorial content for a single service.
+    Slug is structural and NOT editable — only the payload fields change."""
+    update = payload.model_dump()
+    await db.service_content.update_one(
+        {"slug": slug}, {"$set": update, "$setOnInsert": {"slug": slug}}, upsert=True
+    )
+    doc = await db.service_content.find_one({"slug": slug})
+    return _clean_content_doc(doc)
+
+
+@api_router.get("/area-content")
+async def list_area_content():
+    docs = await db.area_content.find({}).to_list(100)
+    return [_clean_content_doc(d) for d in docs]
+
+
+@api_router.get("/area-content/{slug}")
+async def get_area_content(slug: str):
+    doc = await db.area_content.find_one({"slug": slug})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Area content not found")
+    return _clean_content_doc(doc)
+
+
+@api_router.put("/area-content/{slug}")
+async def update_area_content(slug: str, payload: AreaContentUpdate, _: dict = Depends(require_admin)):
+    update = payload.model_dump()
+    await db.area_content.update_one(
+        {"slug": slug}, {"$set": update, "$setOnInsert": {"slug": slug}}, upsert=True
+    )
+    doc = await db.area_content.find_one({"slug": slug})
+    return _clean_content_doc(doc)
 
 
 # ---------- Sitemap status (admin dashboard widget) ----------
@@ -699,6 +959,8 @@ async def submit_contact(payload: ContactCreate):
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     doc["status"] = "new"
     await db.contacts.insert_one(doc)
+    # Fire off Resend notification — never blocks the client, failures logged.
+    await send_lead_notification(doc)
     return {"ok": True, "id": doc["id"]}
 
 
@@ -794,6 +1056,72 @@ async def delete_page(slug: str, _: dict = Depends(require_admin)):
 
 # ---------- File Upload ----------
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_IMAGE_LONG_EDGE = 2400  # px — larger images get downscaled proportionally
+
+
+def _optimize_image(raw: bytes, content_type: str) -> Dict[str, Any]:
+    """Downscale + generate WebP + AVIF variants alongside a compressed
+    original. Returns dict of `{variant: bytes}` (keys: original, webp, avif).
+
+    - Original: re-encoded JPEG @ 82 quality (or PNG kept lossless if PNG)
+    - WebP: quality 78, method 6 (best compression / speed compromise)
+    - AVIF: quality 60, speed 6 (~35–45% smaller than WebP for photos)
+
+    GIFs pass through untouched (animated). If Pillow can't decode, we return
+    the raw bytes as the sole variant so the upload never hard-fails.
+    """
+    variants: Dict[str, Any] = {"original": (raw, content_type)}
+    if content_type == "image/gif":
+        return variants
+    try:
+        img = Image.open(io.BytesIO(raw))
+        img.load()
+        # Downscale huge uploads — protects storage cost + LCP.
+        w, h = img.size
+        long_edge = max(w, h)
+        if long_edge > MAX_IMAGE_LONG_EDGE:
+            scale = MAX_IMAGE_LONG_EDGE / long_edge
+            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+
+        # Preserve transparency for PNG; convert JPEG-like modes to RGB.
+        is_png = content_type == "image/png"
+        rgb_img = img if img.mode in ("RGB", "RGBA") else img.convert("RGB")
+
+        # Recompressed original
+        buf = io.BytesIO()
+        if is_png:
+            (img if img.mode in ("RGB", "RGBA", "P", "L") else img.convert("RGBA")).save(
+                buf, format="PNG", optimize=True
+            )
+            variants["original"] = (buf.getvalue(), "image/png")
+        else:
+            (rgb_img if rgb_img.mode == "RGB" else rgb_img.convert("RGB")).save(
+                buf, format="JPEG", quality=82, optimize=True, progressive=True
+            )
+            variants["original"] = (buf.getvalue(), "image/jpeg")
+
+        # WebP
+        try:
+            buf_webp = io.BytesIO()
+            (rgb_img if not is_png else img).save(
+                buf_webp, format="WEBP", quality=78, method=6
+            )
+            variants["webp"] = (buf_webp.getvalue(), "image/webp")
+        except Exception as e:
+            logger.warning(f"WebP encode failed: {e}")
+
+        # AVIF (via pillow-avif-plugin)
+        try:
+            buf_avif = io.BytesIO()
+            (rgb_img if not is_png else img).save(
+                buf_avif, format="AVIF", quality=60, speed=6
+            )
+            variants["avif"] = (buf_avif.getvalue(), "image/avif")
+        except Exception as e:
+            logger.warning(f"AVIF encode failed: {e}")
+    except Exception as e:
+        logger.warning(f"Image optimization skipped ({e}) — keeping raw upload")
+    return variants
 
 
 @api_router.post("/upload")
@@ -808,23 +1136,78 @@ async def upload_image(request: Request, file: UploadFile = File(...), _: dict =
             raise HTTPException(status_code=403, detail="Cross-origin upload blocked")
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status_code=400, detail="Nur Bilddateien erlaubt (JPEG, PNG, WEBP, GIF)")
-    ext = (file.filename or "img").split(".")[-1].lower() if "." in (file.filename or "") else "jpg"
-    object_path = f"{APP_NAME}/uploads/{uuid.uuid4()}.{ext}"
     data = await file.read()
     if len(data) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Datei zu groß (max 10MB)")
-    result = put_object(object_path, data, file.content_type)
+
+    variants = _optimize_image(data, file.content_type)
+    orig_bytes, orig_ct = variants["original"]
+    base_uuid = uuid.uuid4()
+    ext_map = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif"}
+    ext = ext_map.get(orig_ct, "jpg")
+
+    original_path = f"{APP_NAME}/uploads/{base_uuid}.{ext}"
+    result = put_object(original_path, orig_bytes, orig_ct)
     final_path = result["path"]
+    file_url = f"/api/files/{final_path}"
+
+    webp_path: Optional[str] = None
+    avif_path: Optional[str] = None
+    if "webp" in variants:
+        wb, wct = variants["webp"]
+        wp = f"{APP_NAME}/uploads/{base_uuid}.webp"
+        try:
+            r = put_object(wp, wb, wct)
+            webp_path = r["path"]
+        except Exception as e:
+            logger.warning(f"WebP upload failed: {e}")
+    if "avif" in variants:
+        ab, act = variants["avif"]
+        ap = f"{APP_NAME}/uploads/{base_uuid}.avif"
+        try:
+            r = put_object(ap, ab, act)
+            avif_path = r["path"]
+        except Exception as e:
+            logger.warning(f"AVIF upload failed: {e}")
+
+    file_id = str(uuid.uuid4())
     await db.files.insert_one({
-        "id": str(uuid.uuid4()),
+        "id": file_id,
         "storage_path": final_path,
+        "webp_path": webp_path,
+        "avif_path": avif_path,
         "original_filename": file.filename,
-        "content_type": file.content_type,
-        "size": result.get("size", len(data)),
+        "display_filename": file.filename,
+        "content_type": orig_ct,
+        "size": result.get("size", len(orig_bytes)),
+        "original_size": len(data),
+        "alt_text": "",
+        "alt_text_en": "",
+        "title": "",
+        "description": "",
         "is_deleted": False,
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
-    return {"path": final_path, "url": f"/api/files/{final_path}"}
+    return {
+        "id": file_id,
+        "path": final_path,
+        "url": file_url,
+        "webp_url": f"/api/files/{webp_path}" if webp_path else None,
+        "avif_url": f"/api/files/{avif_path}" if avif_path else None,
+    }
+
+
+@api_router.put("/media/{file_id}")
+async def update_media(file_id: str, payload: MediaUpdate, _: dict = Depends(require_admin)):
+    """Edit SEO metadata (alt/title/description/display filename) on an
+    existing upload. Never touches the binary — safe to call any time."""
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    result = await db.files.update_one({"id": file_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="File not found")
+    doc = await db.files.find_one({"id": file_id})
+    doc.pop("_id", None)
+    return doc
 
 
 @api_router.get("/files/{path:path}")
@@ -952,6 +1335,8 @@ async def startup():
         await db.blog.create_index("slug", unique=True)
         await db.pages.create_index("slug", unique=True)
         await db.contacts.create_index("created_at")
+        await db.service_content.create_index("slug", unique=True)
+        await db.area_content.create_index("slug", unique=True)
     except Exception as e:
         logger.warning(f"Index creation: {e}")
     # Seed admin
@@ -976,6 +1361,32 @@ async def startup():
     count = await db.models.count_documents({})
     if count == 0:
         await _seed_initial_data()
+    # Seed SEO content (service_content + area_content) if collections empty.
+    await _seed_seo_content()
+
+
+async def _seed_seo_content():
+    """One-time seed of SERVICE_CONTENT + AREA_CONTENT from bundled JSON files
+    (generated once from src/data/*.js). After first seed, admin can edit
+    everything through the CMS without touching code."""
+    seed_dir = ROOT_DIR / "seed_data"
+    try:
+        if await db.service_content.count_documents({}) == 0:
+            fp = seed_dir / "service_content.json"
+            if fp.exists():
+                data = json.loads(fp.read_text(encoding="utf-8"))
+                if data:
+                    await db.service_content.insert_many(data)
+                    logger.info(f"Seeded {len(data)} service_content docs")
+        if await db.area_content.count_documents({}) == 0:
+            fp = seed_dir / "area_content.json"
+            if fp.exists():
+                data = json.loads(fp.read_text(encoding="utf-8"))
+                if data:
+                    await db.area_content.insert_many(data)
+                    logger.info(f"Seeded {len(data)} area_content docs")
+    except Exception as e:
+        logger.warning(f"SEO content seed error: {e}")
 
 
 async def _seed_initial_data():

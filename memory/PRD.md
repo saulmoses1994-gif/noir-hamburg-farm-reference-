@@ -14,6 +14,38 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - **Admin**: Agency operator managing models, blog, contacts, settings, media
 
 ## Implemented (as of 2026-02)
+### SEO CMS + Media Optimization + Resend Notifications (2026-02-08)
+**Phase 1 — Resend Email Notifications (backend wired, awaits API key)**
+- `resend>=2.0.0` installed. `RESEND_API_KEY`, `SENDER_EMAIL`, `NOTIFICATION_RECIPIENT` added to `backend/.env` (key currently blank).
+- `submit_contact` now sends a table-based HTML email to the notification recipient with: name, email, phone, model, service, location, date, source page, timestamp, message. Non-blocking (`asyncio.to_thread`); Resend failures are logged & swallowed so the form never breaks.
+- `ContactCreate` gained `source_page` field so admin can see which URL the lead came from.
+- Ready to activate: user must paste `re_...` into `RESEND_API_KEY` after Resend domain verification.
+
+**Phase 2 — Media Library upgrade**
+- `Pillow` + `pillow-avif-plugin` installed. `/api/upload` now automatically:
+  - Downscales images >2400px long edge (protects storage/LCP).
+  - Recompresses JPEG @ q82 progressive / keeps PNG lossless.
+  - Generates `image.webp` (q78, method 6) and `image.avif` (q60, speed 6) variants stored alongside the original.
+- `db.files` schema extended with `webp_path`, `avif_path`, `alt_text`, `alt_text_en`, `title`, `description`, `display_filename`, `original_size`.
+- New `PUT /api/media/{file_id}` for editing SEO metadata post-upload.
+- `AdminMedia.jsx` rebuilt: inline edit panel per tile (ALT DE/EN, title, description, display filename), WEBP/AVIF badges, "kein ALT" indicator.
+
+**Phase 3 — SEO Content CMS Migration**
+- New Mongo collections: `service_content` (8 docs), `area_content` (18 docs). Seeded once at startup from `backend/seed_data/{service,area}_content.json` (generated from `src/data/*.js`).
+- New endpoints (public GET, admin PUT):
+  - `GET/PUT /api/service-content` + `/api/service-content/{slug}`
+  - `GET/PUT /api/area-content` + `/api/area-content/{slug}`
+- Admin panels rebuilt:
+  - `AdminServices.jsx` — collapsible card per service; edits H1, tagline, meta title/desc (DE+EN), long copy, keypoints, image + ALT (DE+EN), unlimited H2 sections (add/remove), unlimited FAQs, related services.
+  - `AdminAreas.jsx` — collapsible card per area; same shape adapted (intro/description/bodyExtra/landmarks/FAQs/image ALT).
+- Public consumption:
+  - `ssr/content.js` — in-memory cache that mirrors settings.js; refreshes every 60s, ships with bundled defaults as fallback.
+  - `ssr/routes/services.js` + `ssr/routes/areas.js` rewritten to consume from the CMS cache; falls back to `data/site.js`/`serviceContent.js`/`areaContent.js` if API down.
+  - React `ServiceDetail` + `AreaDetail` fetch `/api/service-content/{slug}` / `/api/area-content/{slug}` on mount and merge over bundled defaults.
+  - Admin edit → save → refresh public page → live update, no code deploy.
+  - SSG rebuild bakes new content into static HTML for search bots.
+- **Design unchanged**: zero Tailwind class changes on public pages, header/nav/hero/typography identical.
+
 ### Luxury Escort Hamburg SEO content rewrite (2026-02-08)
 - Full replacement of H1, meta title, meta description, tagline in `site.js` for `luxury-escort-hamburg`.
 - 6 new editorial H2 sections + 4 FAQs in `serviceContent.js` (DE + EN).
