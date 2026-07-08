@@ -14,6 +14,13 @@ Build a premium luxury escort agency website for Hamburg metropolitan area. SEO-
 - **Admin**: Agency operator managing models, blog, contacts, settings, media
 
 ## Implemented (as of 2026-02)
+### Luxury Escort Hamburg SEO content rewrite (2026-02-08)
+- Full replacement of H1, meta title, meta description, tagline in `site.js` for `luxury-escort-hamburg`.
+- 6 new editorial H2 sections + 4 FAQs in `serviceContent.js` (DE + EN).
+- Rebuilt SSG (`yarn build`) so both the pre-rendered HTML AND the hydrated React bundle serve the new content.
+- Verified: h1/h2/description/FAQPage JSON-LD all render on `/services/luxury-escort-hamburg`; layout unchanged.
+- Backend regression: 115/115 pytest passing.
+
 ### CMS Photo Overrides — Escort Hamburg + Über uns pages (2026-02-07)
 - New `escort_hamburg_image` field on `SiteSettings` for `/escort-hamburg` hero (2400×1000 landscape).
 - New `about_image` field on `SiteSettings` for `/ueber-uns` editorial portrait (1200×1800 portrait).
