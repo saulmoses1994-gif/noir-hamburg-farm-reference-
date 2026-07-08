@@ -49,13 +49,55 @@ const { renderAreasList, renderAreaDetail, renderEscortHamburg } = require("./ss
 const { renderBlogList, renderBlogDetail, renderPageDetail } = require("./ssr/routes/blog");
 const { renderFAQ, renderAbout, renderContact, renderImpressum, renderDiskretion } = require("./ssr/routes/static");
 
-const TEMPLATE = fs.readFileSync(path.join(BUILD_DIR, "index.html"), "utf8");
+// Read the SSG-baked build/index.html. This file has:
+//   • The correct <link>/<script> tags to the compiled bundle (unique hashes).
+//   • The homepage's SEO body baked into <div id="seo-content"> + hijacked
+//     <title>/<meta> tags in the <head>.
+// We use it ONLY as a source for the bundle asset tags. For the SPA-fallback
+// TEMPLATE (served on 404/render errors) we build a *clean* shell so any
+// route that fails to render never accidentally shows homepage content.
+const BUILT_HTML = fs.readFileSync(path.join(BUILD_DIR, "index.html"), "utf8");
+
+// Construct the clean SPA-fallback shell. We take the built HTML and remove:
+//   - the baked <div id="seo-content"> (which contains homepage body copy)
+//   - the homepage-specific baked <title>, <meta name="description">,
+//     <link rel="canonical">, and JSON-LD <script type="application/ld+json">
+//     tags added by ssr/shell.js — because they belong to the homepage, not
+//     to whatever route errored out.
+// Bundle <script src> and <link rel=stylesheet> tags stay intact so React
+// still hydrates on top of the empty shell.
+function _buildCleanTemplate() {
+  let shell = BUILT_HTML;
+
+  // Strip baked homepage body content
+  shell = shell.replace(
+    /<div id="seo-content">[\s\S]*?<\/div>\s*<div id="root">/i,
+    '<div id="root">'
+  );
+  // Strip homepage-specific <head> content injected by ssr/shell.js
+  shell = shell.replace(/<title>[\s\S]*?<\/title>/i,
+    "<title>Noir Hamburg</title>");
+  shell = shell.replace(/<meta\s+name="description"[^>]*>/gi, "");
+  shell = shell.replace(/<meta\s+property="og:[^"]+"[^>]*>/gi, "");
+  shell = shell.replace(/<meta\s+name="twitter:[^"]+"[^>]*>/gi, "");
+  shell = shell.replace(/<link\s+rel="canonical"[^>]*>/gi, "");
+  shell = shell.replace(/<link\s+rel="alternate"[^>]*hreflang[^>]*>/gi, "");
+  shell = shell.replace(/<script\s+type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi, "");
+  // Prevent crawler indexing of the fallback shell (safety net — any 404 or
+  // render error should never be indexed as duplicate homepage content).
+  if (!/<meta\s+name="robots"/i.test(shell)) {
+    shell = shell.replace(/<head>/i, '<head>\n<meta name="robots" content="noindex,nofollow">');
+  }
+  return shell;
+}
+
+const TEMPLATE = _buildCleanTemplate();
 
 // ---------- React bundle injection ----------
 // Extract React's bundle <link rel=stylesheet> + <script src> from the built
 // index.html so SSR pages still hydrate the SPA after first paint.
-const headAssetsMatch = TEMPLATE.match(/<head>([\s\S]*?)<\/head>/i);
-const bodyScriptsMatch = TEMPLATE.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+const headAssetsMatch = BUILT_HTML.match(/<head>([\s\S]*?)<\/head>/i);
+const bodyScriptsMatch = BUILT_HTML.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
 
 // Strip the <div id="root"> placeholder (SSR provides its own #seo-content +
 // empty #root for React) and the CRA boilerplate <noscript>You need to enable
