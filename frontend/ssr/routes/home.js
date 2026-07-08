@@ -172,12 +172,12 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
 </main>`;
 
   const titleByLang = {
-    de: "Luxus Escort Hamburg | Premium Escort Agentur | Noir Hamburg",
-    en: "Luxury Escort Hamburg | Premium Escort Agency | Noir Hamburg",
+    de: "Luxus Escort Hamburg | Premium Escort Agentur Hamburg | Noir Hamburg",
+    en: "Luxury Escort Hamburg | Premium Escort Agency Hamburg | Noir Hamburg",
   };
   const descByLang = {
-    de: "Exklusive Begleitung in Hamburg. Diskretion, Eleganz und Professionalität auf höchstem Niveau.",
-    en: "Exclusive companionship in Hamburg. Discretion, elegance and professionalism at the highest level.",
+    de: "Entdecken Sie Noir Hamburg – eine exklusive Escort Agentur in Hamburg mit Fokus auf Diskretion, Eleganz und individuelle Begleitung. Premium Escort Service für anspruchsvolle Kunden.",
+    en: "Discover Noir Hamburg – an exclusive escort agency in Hamburg focused on discretion, elegance and personal companionship. Premium escort service for discerning clients.",
   };
 
   return renderShell({
@@ -212,10 +212,17 @@ ${FAQS.slice(0, 4).map((f) => `<details><summary><strong>${esc(lang === "en" ? f
       {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: FAQS.map((f) => ({
+        // Kept in sync with the visible React FAQ block on the homepage so
+        // Google's rich results match what the visitor actually sees.
+        mainEntity: [
+          { q: "Ist Noir Hamburg eine Escort Agentur nur für Hamburg?", a: "Ja. Noir Hamburg konzentriert sich auf Hamburg und die umliegende Region." },
+          { q: "Wie funktioniert eine Anfrage?", a: "Sie kontaktieren uns mit Ihren Vorstellungen und wir helfen Ihnen, eine passende Begleitung zu finden." },
+          { q: "Wird Diskretion gewährleistet?", a: "Diskretion und ein respektvoller Umgang mit persönlichen Informationen gehören zu unseren wichtigsten Grundsätzen." },
+          { q: "Kann ich eine Begleitung für geschäftliche Veranstaltungen buchen?", a: "Ja, Begleitungen für Business-Termine, Dinner oder Events gehören zu unseren Services." },
+        ].map((f) => ({
           "@type": "Question",
-          name: lang === "en" ? f.qEn : f.q,
-          acceptedAnswer: { "@type": "Answer", text: lang === "en" ? f.aEn : f.a },
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
         })),
       },
     ],

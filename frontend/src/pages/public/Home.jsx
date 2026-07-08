@@ -46,8 +46,8 @@ export default function Home() {
     : undefined;
 
   useSEO({
-    title: "Luxus Escort Hamburg | Premium Escort Agentur | Noir Hamburg",
-    description: "Exklusive Begleitung in Hamburg. Diskretion, Eleganz und Professionalität auf höchstem Niveau.",
+    title: "Luxus Escort Hamburg | Premium Escort Agentur Hamburg | Noir Hamburg",
+    description: "Entdecken Sie Noir Hamburg – eine exklusive Escort Agentur in Hamburg mit Fokus auf Diskretion, Eleganz und individuelle Begleitung. Premium Escort Service für anspruchsvolle Kunden.",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -74,7 +74,7 @@ export default function Home() {
               <span className="accent-text italic font-medium">Premium Begleitung mit Stil</span>
             </h1>
             <p className="mt-8 max-w-xl text-base lg:text-lg font-normal text-[#6B5F5F] leading-relaxed animate-fade-in-up" style={{ animationDelay: "300ms" }}>
-              Ihre vertrauenswürdige Begleitagentur in Hamburg und Umland — ehrlich, diskret und stilvoll. Wir vermitteln charmante, gebildete Persönlichkeiten für unvergessliche Begegnungen.
+              Willkommen bei Noir Hamburg, Ihrer exklusiven Adresse für hochwertigen Escort Service in Hamburg. Wir verbinden Eleganz, Diskretion und Persönlichkeit, um anspruchsvollen Kunden eine individuelle Begleitung auf höchstem Niveau anzubieten. Unsere Philosophie basiert auf Qualität statt Quantität — jede Begegnung soll durch Stil, Respekt und eine persönliche Atmosphäre geprägt sein.
             </p>
             <div className="mt-10 flex flex-wrap gap-4 animate-fade-in-up" style={{ animationDelay: "500ms" }}>
               <Link to="/models" className="btn-primary" data-testid="hero-models-btn">
@@ -112,7 +112,7 @@ export default function Home() {
               <img
                 src={heroImage}
                 {...(heroSrcSet ? { srcSet: heroSrcSet, sizes: "(max-width: 768px) 100vw, 42vw" } : {})}
-                alt="Premium Escort Hamburg — Noir Hamburg Begleitagentur"
+                alt="luxus-escort-hamburg-noir — Premium Escort Agentur Hamburg"
                 width="1200"
                 height="1500"
                 fetchpriority="high"
@@ -145,114 +145,100 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SEO copy — Why a professional agency */}
+      {/* SEO copy — Premium Escort Agentur Hamburg */}
       <section className="px-6 md:px-12 lg:px-16 py-20 border-t border-[#1A1414]/8" data-testid="home-seo-why">
         <div className="max-w-4xl">
-          <span className="overline text-[10px]">Warum Noir Hamburg</span>
+          <span className="overline text-[10px]">Premium Agentur</span>
           <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
-            Warum eine professionelle Escort Agentur in Hamburg wählen?
+            Premium Escort Agentur Hamburg
           </h2>
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 text-[#3F3838] leading-relaxed">
             <p>
-              Hamburg ist eine der anspruchsvollsten Städte Europas — hanseatisch, weltoffen, mit einem
-              außergewöhnlich hohen Standard in Kultur, Gastronomie und Business. Wer sich hier für eine{" "}
-              <strong>Escort Agentur</strong> entscheidet, sollte nicht auf zufällige Vermittlung setzen,
-              sondern auf gewachsene Erfahrung und ein Team, das die Stadt versteht.
+              <strong>Noir Hamburg</strong> wurde für Kunden geschaffen, die mehr erwarten als eine gewöhnliche Begleitung.
+              Unser Anspruch ist es, einen diskreten und professionellen Service anzubieten, bei dem Persönlichkeit,
+              Ausstrahlung und Zuverlässigkeit im Mittelpunkt stehen. Ob geschäftlicher Aufenthalt, exklusives Dinner,
+              gesellschaftliches Event oder private Begleitung — Noir Hamburg steht für einen{" "}
+              <Link to="/services/luxury-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Luxury Escort Service Hamburg</Link>,
+              der sich an Ihren individuellen Vorstellungen orientiert.
             </p>
             <p>
-              Seit 2025 begleitet <strong>Noir Hamburg</strong> Herren und Damen von Rang zu privaten Dinner-Verabredungen,
-              geschäftlichen Empfängen an der Elbphilharmonie, exklusiven Kunstvernissagen in der HafenCity und
-              diskreten Wochenenden zwischen Blankenese und Winterhude. Unsere Vermittlung ist persönlich,
-              handverlesen und diskret — nie automatisiert.
+              Hamburg ist eine Stadt voller Eleganz, internationaler Gäste, exklusiver Hotels und besonderer
+              Veranstaltungen. Genau in diesem Umfeld bietet Noir Hamburg eine stilvolle Möglichkeit, besondere
+              Momente mit einer passenden Begleitung zu erleben — persönlich vermittelt und handverlesen.
             </p>
           </div>
         </div>
       </section>
 
-      {/* SEO copy — Luxus Escort Service */}
+      {/* SEO copy — Exklusive Escort Models */}
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-seo-luxus">
         <div className="max-w-4xl">
-          <span className="overline text-[10px]">Luxus Escort Service</span>
+          <span className="overline text-[10px]">Escort Models</span>
           <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
-            Luxus Escort Service in Hamburg — auf höchstem Niveau
+            Exklusive Escort Models in Hamburg
           </h2>
           <div className="mt-8 space-y-6 text-[#3F3838] leading-relaxed">
             <p>
-              Ein <strong>Luxus Escort in Hamburg</strong> unterscheidet sich in jedem Detail: die Damen tragen
-              Kleider von Chanel, Dior oder maßgeschneiderte deutsche Ateliers. Sie sprechen mindestens zwei
-              Sprachen fließend, verfügen über akademische Bildung oder eine künstlerische Karriere und bewegen
-              sich mit der stillen Selbstsicherheit einer echten Dame — nicht mit einer einstudierten Rolle.
+              Unsere ausgewählten{" "}
+              <Link to="/models" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Premium Escort Models Hamburg</Link>{" "}
+              überzeugen nicht nur durch ihr attraktives Erscheinungsbild, sondern auch durch Persönlichkeit, Charme
+              und soziale Kompetenz. Wir legen Wert darauf, dass jede Begleitung individuell ist.
             </p>
             <p>
-              Wir arbeiten ausschließlich mit Frauen, die wir persönlich kennen und deren Persönlichkeit,
-              Kultiviertheit und Diskretion wir garantieren können. Für jeden Anlass — vom stillen Abendessen
-              im Fischereihafen bis zur mehrtägigen Reise nach Sylt oder Cortina — finden wir die passende
-              Begleitung. Kein Katalog, keine Massenware, sondern maßgeschneiderte Vermittlung.
+              Jeder Kunde hat unterschiedliche Vorstellungen — deshalb helfen wir dabei, ein Model zu finden,
+              das zu Anlass, Stil und persönlichen Wünschen passt. Sprechen Sie uns über die{" "}
+              <Link to="/kontakt" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">persönliche Beratung</Link>{" "}
+              an — wir kennen unsere Damen persönlich und beraten Sie ehrlich.
             </p>
           </div>
         </div>
       </section>
 
-      {/* SEO copy — Diskretion */}
+      {/* SEO copy — VIP Escort Hamburg */}
       <section className="px-6 md:px-12 lg:px-16 py-20" data-testid="home-seo-diskretion">
         <div className="max-w-4xl">
-          <span className="overline text-[10px]">Vertrauen</span>
+          <span className="overline text-[10px]">VIP · Vertrauen</span>
           <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
-            Diskretion und Privatsphäre in Hamburg
+            VIP Escort Hamburg — Diskretion und Vertrauen
           </h2>
           <div className="mt-8 space-y-6 text-[#3F3838] leading-relaxed">
             <p>
-              Diskretion ist bei uns keine Marketing-Formel, sondern Arbeitsweise. Alle Anfragen laufen
-              verschlüsselt, wir speichern keine unnötigen Daten, und selbstverständlich erfahren weder Ihre
-              Begleitung noch Dritte mehr, als für den Abend zwingend erforderlich ist. NDAs auf Wunsch —
-              schriftlich, gegengezeichnet.
+              Diskretion ist einer der wichtigsten Bestandteile eines hochwertigen Escort Services.
+              Bei Noir Hamburg behandeln wir jede Anfrage mit höchster Aufmerksamkeit und Respekt für
+              Ihre Privatsphäre.
             </p>
             <p>
-              <strong>Professionalität</strong> beginnt für uns lange vor der Buchung: bei der Auswahl unserer
-              Damen, bei der ehrlichen Beratung im Vorgespräch, bei transparenten Tarifen ohne versteckte Zusätze,
-              und bei einer Erreichbarkeit sieben Tage die Woche — auch für kurzfristige Wünsche. Wenn Sie unsere
-              Agentur einmal getestet haben, verstehen Sie, warum Kunden nach zehn Jahren immer wieder zu uns
-              zurückkehren.
-            </p>
-            <p>
-              Konkret bedeutet das: keine SMS an Ihre Privatnummer ohne Ihre ausdrückliche Freigabe, keine
-              Kalendereinträge auf Diensttelefonen, kein Foto-Austausch, den Sie später nicht mehr zurückholen
-              können. Wir verstehen die <strong>Vertraulichkeit</strong> hanseatischer Herren — und arbeiten
-              nach diesem Maßstab.
+              Von der ersten Kontaktaufnahme bis zur Organisation legen wir Wert auf einen professionellen
+              und diskreten Ablauf. Erfahren Sie mehr über unseren{" "}
+              <Link to="/services/vip-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">VIP Escort Hamburg</Link>{" "}
+              oder lesen Sie unser{" "}
+              <Link to="/p/diskretion" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Diskretionsversprechen</Link>.
             </p>
           </div>
         </div>
       </section>
 
-      {/* NEW: VIP & Business Begleitung */}
+      {/* SEO copy — Business · Dinner · Events */}
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4] border-t border-[#1A1414]/8" data-testid="home-seo-vip-business">
         <div className="max-w-4xl">
-          <span className="overline text-[10px]">VIP · Business</span>
+          <span className="overline text-[10px]">Business · Dinner · Events</span>
           <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">
-            VIP &amp; Business Begleitung in Hamburg
+            Escort Service für Business, Dinner und Events
           </h2>
           <div className="mt-8 space-y-6 text-[#3F3838] leading-relaxed">
             <p>
-              Für <strong>Persönlichkeiten des öffentlichen Lebens</strong>, internationale Investoren und
-              Geschäftsführer bieten wir eine eigene Klasse der Begleitung: <Link to="/services/vip-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">VIP Escort</Link>{" "}
-              und <Link to="/services/business-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Business Escort Hamburg</Link>.
-              Diese Damen sind nicht nur präsentabel, sondern konferenzfähig — vertraut mit hanseatischer
-              Etikette, mit Board-Dinner-Codes und mit dem international üblichen Umgang unter CEOs, Anwälten
-              und Diplomaten.
+              Unsere Begleitung eignet sich für unterschiedliche Situationen:
             </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>Geschäftsreisen nach Hamburg — <Link to="/services/business-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Business Escort Hamburg</Link></li>
+              <li>Exklusive Dinner — <Link to="/services/dinner-companion-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Dinner Companion Hamburg</Link></li>
+              <li>Gesellschaftliche Veranstaltungen und Events</li>
+              <li>Private Treffen und diskrete Wochenenden</li>
+              <li>Besondere Anlässe in exklusiven <Link to="/services/hotel-escort-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Hotels in Hamburg</Link></li>
+            </ul>
             <p>
-              Ob ein diskretes <Link to="/services/dinner-companion-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Dinner im Vier Jahreszeiten</Link>,
-              ein Empfang in der Elbphilharmonie oder eine mehrtägige Delegation von{" "}
-              <Link to="/services/travel-companion-hamburg" className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">Sylt bis Dubai</Link>{" "}
-              — Ihre Begleitung tritt souverän auf, spricht mindestens Englisch und Deutsch fließend und
-              versteht, wann sie unterhält und wann sie sich elegant zurücknimmt. Auf Wunsch mit
-              wirtschaftlichem Hintergrund, akademischem Grad oder künstlerischer Karriere.
-            </p>
-            <p>
-              Für <strong>Führungspersönlichkeiten</strong> gilt bei uns eine erweiterte Vertraulichkeitsstufe:
-              keine öffentlichen Profile, keine gemeinsamen Fotos, kein Zwischenkontakt außerhalb Ihres
-              Ansprechpartners. Buchungen werden ausschließlich zwischen Ihnen und einem festen Betreuer
-              koordiniert — auf Wunsch mit NDA.
+              Unser Ziel ist es, eine Begleitung anzubieten, die sich natürlich und elegant in jede Umgebung
+              einfügt — von der Elbphilharmonie bis zum stillen Abendessen im Vier Jahreszeiten.
             </p>
           </div>
         </div>
@@ -323,11 +309,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="max-w-3xl">
             <span className="overline text-[10px]">Vertrauen seit 2025</span>
-            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">Warum Noir Hamburg?</h2>
+            <h2 className="font-heading text-3xl md:text-4xl mt-4 text-[#1A1414]">Warum Noir Hamburg wählen?</h2>
             <p className="mt-6 text-[#3F3838] leading-relaxed">
-              Sechs Grundpfeiler, die den Unterschied zwischen einer beliebigen Vermittlung und einer{" "}
-              <strong>gewachsenen Beziehung</strong> ausmachen — und die erklären, warum ein wesentlicher Teil
-              unserer Kunden seit vielen Jahren immer wieder zu uns zurückkehrt.
+              Premium Escort Agentur spezialisiert auf Hamburg — sechs Grundpfeiler, die den Unterschied zwischen
+              einer beliebigen Vermittlung und einer <strong>gewachsenen Beziehung</strong> ausmachen.
             </p>
           </div>
           <dl className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-12">
@@ -434,7 +419,7 @@ export default function Home() {
 
       {/* Hamburg Areas */}
       <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]" data-testid="home-coverage">
-        <SectionTitle overline="Reichweite" title="Escort Service in Hamburg Stadtteilen" description="Wir begleiten Sie diskret in der gesamten Hansestadt und Metropolregion — von HafenCity und Elbphilharmonie über Blankenese und Winterhude bis Norderstedt, Pinneberg und Lüneburg." />
+        <SectionTitle overline="Luxus Escort in Hamburg und Umgebung" title="Luxus Escort in Hamburg und Umgebung" description="Noir Hamburg konzentriert sich ausschließlich auf Hamburg und die Umgebung. Servicebereiche: Hamburg Innenstadt, HafenCity, St. Pauli, Eppendorf, Winterhude, Altona, Blankenese, Norderstedt, Pinneberg und Lüneburg. Durch diese lokale Spezialisierung bieten wir einen besonders persönlichen und hochwertigen Service." />
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-12">
           {LOCATIONS.map((l) => (
             <Link
@@ -555,13 +540,18 @@ export default function Home() {
             <Link to="/faq" className="btn-ghost mt-8 inline-flex">Alle Fragen <ArrowRight size={14} /></Link>
           </div>
           <div className="md:col-span-7 md:col-start-6 space-y-3">
-            {FAQS.slice(0, 4).map((f, i) => (
+            {[
+              { q: "Ist Noir Hamburg eine Escort Agentur nur für Hamburg?", a: "Ja. Noir Hamburg konzentriert sich auf Hamburg und die umliegende Region." },
+              { q: "Wie funktioniert eine Anfrage?", a: "Sie kontaktieren uns mit Ihren Vorstellungen und wir helfen Ihnen, eine passende Begleitung zu finden." },
+              { q: "Wird Diskretion gewährleistet?", a: "Diskretion und ein respektvoller Umgang mit persönlichen Informationen gehören zu unseren wichtigsten Grundsätzen." },
+              { q: "Kann ich eine Begleitung für geschäftliche Veranstaltungen buchen?", a: "Ja, Begleitungen für Business-Termine, Dinner oder Events gehören zu unseren Services." },
+            ].map((f, i) => (
               <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`faq-${i}`}>
                 <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
-                  <span className="font-heading text-lg text-[#1A1414]">{lang === "en" ? f.qEn : f.q}</span>
+                  <span className="font-heading text-lg text-[#1A1414]">{f.q}</span>
                   <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                 </summary>
-                <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{lang === "en" ? f.aEn : f.a}</div>
+                <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{f.a}</div>
               </details>
             ))}
           </div>
