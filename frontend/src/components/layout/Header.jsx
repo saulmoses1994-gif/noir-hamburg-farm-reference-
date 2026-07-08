@@ -53,12 +53,12 @@ export default function Header() {
           scrolled ? "bg-white shadow-md" : "bg-white border-b border-[#1A1414]/8"
         }`}
       >
-        <div className="px-6 md:px-12 lg:px-16 py-4 flex items-center justify-between">
-          <Link to={to("/")} className="font-heading text-2xl tracking-tight" data-testid="brand-logo">
+        <div className="px-6 md:px-12 lg:px-8 xl:px-16 py-4 flex items-center justify-between gap-4">
+          <Link to={to("/")} className="font-heading text-2xl tracking-tight whitespace-nowrap" data-testid="brand-logo">
             <span className="text-[#1A1414] font-semibold">Noir</span>{" "}
             <span className="accent-text italic">Hamburg</span>
           </Link>
-          <nav className="hidden lg:flex items-center gap-7">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
@@ -66,7 +66,7 @@ export default function Header() {
                 data-testid={`nav-${n.to.replace(/\//g, "") || "home"}`}
                 end={n.to === "/"}
                 className={({ isActive }) =>
-                  `text-sm font-medium transition-colors link-underline ${
+                  `text-sm font-medium transition-colors link-underline whitespace-nowrap ${
                     isActive ? "accent-text" : "text-[#1A1414] hover:accent-text"
                   }`
                 }
@@ -75,10 +75,10 @@ export default function Header() {
               </NavLink>
             ))}
           </nav>
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
             <Link
               to={switchPath}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8B1538] text-[#8B1538] text-xs font-semibold tracking-widest uppercase rounded-full hover:bg-[#8B1538] hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8B1538] text-[#8B1538] text-xs font-semibold tracking-widest uppercase rounded-full hover:bg-[#8B1538] hover:text-white transition-colors whitespace-nowrap"
               data-testid="lang-switcher-desktop"
               aria-label={t("lang.switchLabel")}
             >
@@ -87,12 +87,12 @@ export default function Header() {
             <a
               href={settings.whatsappUrl}
               target="_blank" rel="noreferrer"
-              className="btn-whatsapp"
+              className="btn-whatsapp whitespace-nowrap"
               data-testid="header-whatsapp-btn"
             >
               <MessageCircle size={14} /> {t("cta.whatsapp")}
             </a>
-            <Link to={to("/kontakt")} className="btn-primary" data-testid="header-book-btn">
+            <Link to={to("/kontakt")} className="btn-primary whitespace-nowrap" data-testid="header-book-btn">
               {t("cta.book")}
             </Link>
             {settings.recruitmentWhatsappUrl && (
@@ -100,7 +100,7 @@ export default function Header() {
                 href={settings.recruitmentWhatsappUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8B1538] text-[#8B1538] text-xs font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8B1538] text-[#8B1538] text-xs font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors whitespace-nowrap"
                 data-testid="header-recruit-btn"
                 title={t("cta.recruit")}
               >
