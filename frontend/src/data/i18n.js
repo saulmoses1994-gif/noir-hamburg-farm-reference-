@@ -35,6 +35,7 @@ const STRINGS = {
     // header CTAs
     "cta.whatsapp": "WhatsApp",
     "cta.book": "Buchen",
+    "cta.recruit": "Bei uns arbeiten",
     "cta.bookNow": "Termin anfragen",
     "cta.discoverModels": "Models entdecken",
     "cta.allModels": "Alle Models ansehen",
@@ -128,6 +129,7 @@ const STRINGS = {
 
     "cta.whatsapp": "WhatsApp",
     "cta.book": "Book",
+    "cta.recruit": "Work with us",
     "cta.bookNow": "Request Appointment",
     "cta.discoverModels": "Discover Models",
     "cta.allModels": "View all Models",

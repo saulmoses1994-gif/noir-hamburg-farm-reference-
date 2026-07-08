@@ -27,6 +27,7 @@ const brandToSettings = (b) => ({
   about_image: "",
   social_share_image: "",
   impressum_content: "",
+  recruitment_whatsapp_number: "",
 });
 
 const Ctx = createContext(brandToSettings(BRAND));
@@ -46,9 +47,11 @@ export function useSettings() {
   const s = useContext(Ctx);
   return useMemo(() => {
     const wa = (s.whatsapp_number || "").replace(/\D/g, "");
+    const recWa = (s.recruitment_whatsapp_number || "").replace(/\D/g, "");
     return {
       ...s,
       whatsappUrl: wa ? `https://wa.me/${wa}` : "",
+      recruitmentWhatsappUrl: recWa ? `https://wa.me/${recWa}` : "",
     };
   }, [s]);
 }

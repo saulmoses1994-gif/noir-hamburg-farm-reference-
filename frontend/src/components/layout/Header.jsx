@@ -1,6 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Menu, X, MessageCircle, Phone, Globe } from "lucide-react";
+import { Menu, X, MessageCircle, Phone, Globe, Briefcase } from "lucide-react";
 import { BRAND, NAV } from "@/data/site";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -95,6 +95,18 @@ export default function Header() {
             <Link to={to("/kontakt")} className="btn-primary" data-testid="header-book-btn">
               {t("cta.book")}
             </Link>
+            {settings.recruitmentWhatsappUrl && (
+              <a
+                href={settings.recruitmentWhatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8B1538] text-[#8B1538] text-xs font-semibold tracking-wide rounded-full hover:bg-[#8B1538] hover:text-white transition-colors"
+                data-testid="header-recruit-btn"
+                title={t("cta.recruit")}
+              >
+                <Briefcase size={12} /> {t("cta.recruit")}
+              </a>
+            )}
           </div>
           <button
             className="lg:hidden text-[#1A1414]"
@@ -161,6 +173,18 @@ export default function Header() {
                   {t("cta.book")}
                 </Link>
               </div>
+              {settings.recruitmentWhatsappUrl && (
+                <a
+                  href={settings.recruitmentWhatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setOpen(false)}
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-[#8B1538] text-[#8B1538] rounded-full self-start text-sm font-semibold"
+                  data-testid="mobile-recruit-btn"
+                >
+                  <Briefcase size={14} /> {t("cta.recruit")}
+                </a>
+              )}
             </nav>
           </div>
         )}

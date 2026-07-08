@@ -53,9 +53,11 @@ export default function AdminSettings() {
             <Field label="Telefon" value={form.phone} onChange={(v) => set("phone", v)} placeholder="+49 40 …" testId="settings-phone" />
             <Field label="E-Mail" value={form.email} onChange={(v) => set("email", v)} type="email" testId="settings-email" />
             <Field label="WhatsApp (nur Ziffern)" value={form.whatsapp_number} onChange={(v) => set("whatsapp_number", v)} placeholder="+4940…" testId="settings-whatsapp" />
+            <Field label='WhatsApp Recruiting ("Bei uns arbeiten")' value={form.recruitment_whatsapp_number || ""} onChange={(v) => set("recruitment_whatsapp_number", v)} placeholder="+4940… (optional)" testId="settings-recruitment-whatsapp" />
           </div>
           <p className="text-xs text-[#9B8F8F] mt-2">
-            WhatsApp-Nummer ohne Leerzeichen. Wir bauen daraus den <code>wa.me/…</code>-Link.
+            WhatsApp-Nummer ohne Leerzeichen. Wir bauen daraus den <code>wa.me/…</code>-Link.<br/>
+            Der <strong>Recruiting</strong>-Button („Bei uns arbeiten") erscheint im Header sobald hier eine Nummer eingetragen ist — für Bewerbungen neuer Models. Leer&nbsp;lassen → Button wird ausgeblendet.
           </p>
         </div>
 

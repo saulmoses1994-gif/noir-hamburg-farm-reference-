@@ -32,6 +32,7 @@ let _cached = {
   about_image: "",
   social_share_image: "",
   impressum_content: "",
+  recruitment_whatsapp_number: "",
 };
 
 async function refresh() {
@@ -48,9 +49,11 @@ setInterval(refresh, REFRESH_MS).unref();
 
 function getSettings() {
   const wa = (_cached.whatsapp_number || "").replace(/\D/g, "");
+  const recWa = (_cached.recruitment_whatsapp_number || "").replace(/\D/g, "");
   return {
     ..._cached,
     whatsappUrl: wa ? `https://wa.me/${wa}` : "",
+    recruitmentWhatsappUrl: recWa ? `https://wa.me/${recWa}` : "",
   };
 }
 

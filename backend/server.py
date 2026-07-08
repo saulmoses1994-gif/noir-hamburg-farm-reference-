@@ -306,6 +306,10 @@ class SiteSettings(BaseModel):
     # 1200×630 landscape JPEG for optimal WhatsApp/Facebook/iMessage previews.
     # Empty → falls back to homepage_hero_image → featured model cover.
     social_share_image: Optional[str] = ""
+    # Optional secondary WhatsApp number for recruitment / "Come work with us"
+    # header CTA. Only rendered on the site when a value is set. E.164 or
+    # local-format digits both accepted — normalised to E.164 on the client.
+    recruitment_whatsapp_number: Optional[str] = ""
     # Editable Impressum (legal § 5 TMG page) body content — HTML string
     # rendered on /impressum. Empty → falls back to the built-in default
     # (Noir Hamburg address, contact, image credits, youth-protection officer).
