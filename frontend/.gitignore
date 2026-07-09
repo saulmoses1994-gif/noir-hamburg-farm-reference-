@@ -9,7 +9,15 @@
 /coverage
 
 # production
-/build
+# Commit only the per-service/-area SSG output as a deploy safety net so
+# production always has route-specific HTML even if `yarn build` doesn't run
+# to completion. Everything else in build/ stays ignored.
+/build/*
+!/build/services
+!/build/services/**
+!/build/escort
+!/build/escort/**
+!/build/index.html
 
 # misc
 .DS_Store

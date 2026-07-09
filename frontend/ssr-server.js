@@ -31,13 +31,29 @@ const BUILD_DIR = path.join(__dirname, "build");
 // Emergent's) hand us a fresh container without running `yarn build` first.
 // Rather than crash-loop, we run the build in-process before the server
 // starts. This keeps deploys self-healing without a shell start script.
-if (!fs.existsSync(path.join(BUILD_DIR, "index.html"))) {
-  console.log("[ssr] build/ missing — running `yarn build` now (one-time)...");
+//
+// We check for BOTH the SSG-baked index.html AND at least one compiled JS
+// bundle. The former can now be committed to git as a deploy safety net
+// (see frontend/.gitignore) but that doesn't imply the React bundle exists.
+function _needsFreshBuild() {
+  if (!fs.existsSync(path.join(BUILD_DIR, "index.html"))) return true;
+  try {
+    const jsDir = path.join(BUILD_DIR, "static", "js");
+    if (!fs.existsSync(jsDir)) return true;
+    const hasMainBundle = fs.readdirSync(jsDir).some((f) => /^main\.[a-z0-9]+\.js$/i.test(f));
+    return !hasMainBundle;
+  } catch (_) { return true; }
+}
+
+if (_needsFreshBuild()) {
+  console.log("[ssr] build/ incomplete — running `yarn build` now (one-time)...");
   try {
     execSync("yarn build", { cwd: __dirname, stdio: "inherit" });
   } catch (err) {
     console.error("[ssr] yarn build failed:", err);
-    process.exit(1);
+    // Do NOT process.exit — if a partial build exists (e.g. committed SSG
+    // HTML but no compiled bundle), the server can still serve degraded but
+    // useful SEO HTML. Better than a crash loop that shows nothing.
   }
 }
 
@@ -102,7 +118,7 @@ const TEMPLATE = _buildCleanTemplate();
 // Should print `x-app-build: 2026-02-09-business-seo`. If it prints an
 // older value (or no header at all), production is running stale code and
 // needs to be redeployed.
-const APP_BUILD_ID = process.env.APP_BUILD_ID || "2026-02-09-business-seo";
+const APP_BUILD_ID = process.env.APP_BUILD_ID || "2026-02-09-prebuilt-fallback";
 console.log(`[ssr] APP_BUILD_ID = ${APP_BUILD_ID}`);
 console.log(`[ssr] TEMPLATE sanitized: ${TEMPLATE.length}B, homepage-title=${/Luxus Escort Hamburg \| Premium Escort Agentur/i.test(TEMPLATE) ? "LEAKED" : "clean"}`);
 
@@ -232,23 +248,52 @@ const send404 = (res, html) => res.set("Content-Type", "text/html; charset=utf-8
 
 // Wrap an async route handler so backend failures fall back to the SPA shell
 // instead of returning a 500 to crawlers.
+//
+// Recovery strategy on failure:
+//   1. Try dynamic renderer (fn).
+//   2. If it returns null (unknown slug) OR throws, look for a pre-generated
+//      SSG file on disk at `build/{route}/index.html`. This file is committed
+//      to git as a deploy safety net, so even if the dynamic renderer's
+//      backend dependencies are unavailable, the SSG-baked HTML is served.
+//   3. Only if BOTH fail: serve the sanitized SPA shell TEMPLATE.
+function _tryReadPrebuilt(reqPath) {
+  const clean = reqPath.replace(/^\/+/, "").replace(/\/+$/, "") || "index";
+  const filePath = clean === "index"
+    ? path.join(BUILD_DIR, "index.html")
+    : path.join(BUILD_DIR, clean, "index.html");
+  try {
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, "utf8");
+    }
+  } catch (_) { /* fall through */ }
+  return null;
+}
+
 function safe(fn) {
   return async (req, res) => {
     try {
       const html = await fn(req, res);
       if (html === null) {
-        // Route rendered nothing (unknown slug etc.) → clean 404 shell.
-        // Expose why via a response header so diagnostics don't need log access.
+        // Route rendered nothing (unknown slug etc.) → try prebuilt, else clean 404 shell.
+        const prebuilt = _tryReadPrebuilt(req.path);
+        if (prebuilt) {
+          res.set("X-SSR-Status", "prebuilt-fallback-404");
+          return send(res, prebuilt);
+        }
         res.set("X-SSR-Status", "not-found");
         return send404(res, TEMPLATE);
       }
       res.set("X-SSR-Status", "ok");
       send(res, html);
     } catch (e) {
-      // Something in the renderer threw. Emit a header + log so we can trace
-      // it externally with `curl -I`. Falls back to the neutral shell (not
-      // the homepage — TEMPLATE is now sanitized).
       console.error(`[ssr] ${req.path} failed:`, e.message);
+      // Try prebuilt SSG output first before falling back to the neutral shell.
+      const prebuilt = _tryReadPrebuilt(req.path);
+      if (prebuilt) {
+        res.set("X-SSR-Status", "prebuilt-fallback-error");
+        res.set("X-SSR-Error", (e.message || "unknown").slice(0, 200).replace(/[\r\n]/g, " "));
+        return send(res, prebuilt);
+      }
       res.set("X-SSR-Status", "error");
       res.set("X-SSR-Error", (e.message || "unknown").slice(0, 200).replace(/[\r\n]/g, " "));
       send(res, TEMPLATE);
