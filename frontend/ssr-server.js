@@ -118,7 +118,7 @@ const TEMPLATE = _buildCleanTemplate();
 // Should print `x-app-build: 2026-02-09-business-seo`. If it prints an
 // older value (or no header at all), production is running stale code and
 // needs to be redeployed.
-const APP_BUILD_ID = process.env.APP_BUILD_ID || "2026-02-09-prebuilt-fallback";
+const APP_BUILD_ID = process.env.APP_BUILD_ID || "2026-02-09-nginx-tryfiles";
 console.log(`[ssr] APP_BUILD_ID = ${APP_BUILD_ID}`);
 console.log(`[ssr] TEMPLATE sanitized: ${TEMPLATE.length}B, homepage-title=${/Luxus Escort Hamburg \| Premium Escort Agentur/i.test(TEMPLATE) ? "LEAKED" : "clean"}`);
 
