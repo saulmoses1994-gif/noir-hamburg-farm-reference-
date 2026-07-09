@@ -250,45 +250,21 @@ ${bootstrapData ? `<script>window.__NOIR_INITIAL__=${JSON.stringify(bootstrapDat
 ${reactScripts}
 <script>
 /* Hide the pre-rendered #seo-content div for two reasons:
-   1. URL mismatch — nginx may have served the wrong static file (e.g.
-      /index.html as SPA fallback when the specific route file is missing).
-      In that case the baked SEO content is for the WRONG URL and would
-      show homepage HTML on a service page. Detect via canonical mismatch
-      and hide immediately, before React even loads.
-   2. Once React mounts and renders into #root, hide anyway to avoid a
-      double-render (React's content is the source of truth for users;
-      the seo-content was only needed for crawlers on first byte).
-*/
+   1. Users always see React's rendered UI. The seo-content div is a
+      crawler-only artifact — humans get the styled React app.
+   2. Compatible with any SPA version (old bundle, new bundle) since we
+      don't depend on React's mount lifecycle. Runs synchronously when the
+      HTML parses this <script> tag.
+
+   Crawlers without JS (some search engines, social preview bots) still
+   see the full seo-content in their raw HTML parse — perfect for SEO.
+   Google's headless Chromium runs JS AND indexes hidden content via DOM
+   text extraction, so hiding it does not hurt indexing either. */
 (function(){
-  var seo = document.getElementById('seo-content');
-  if (!seo) return;
-
-  // Fast path — URL mismatch check. Runs before React script downloads
-  // so users on prod nginx never see the wrong baked content flash.
   try {
-    var canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) {
-      // Compare pathnames only (strip origin, trailing slash, query, hash).
-      var canonHref = canonical.getAttribute('href') || '';
-      var canonPath = canonHref.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '') || '/';
-      var currPath  = window.location.pathname.replace(/\/+$/, '') || '/';
-      if (canonPath !== currPath) {
-        seo.style.display = 'none';
-        return;
-      }
-    }
-  } catch (_) { /* fall through to MutationObserver */ }
-
-  // Slow path — hide once React finishes hydrating.
-  var observer = new MutationObserver(function(){
-    var root = document.getElementById('root');
-    if (root && root.childNodes.length > 0) {
-      seo.style.display = 'none';
-      observer.disconnect();
-    }
-  });
-  var root = document.getElementById('root');
-  if (root) observer.observe(root, { childList: true });
+    var seo = document.getElementById('seo-content');
+    if (seo) seo.style.display = 'none';
+  } catch (_) { /* noop */ }
 })();
 </script>
 </body>
