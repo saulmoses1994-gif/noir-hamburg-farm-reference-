@@ -1589,13 +1589,14 @@ async def shutdown_db_client():
 app.include_router(api_router)
 
 # SEC-002: never combine wildcard origin with credentials. Default to the known
-# preview URL; production deployments should set CORS_ORIGINS to an explicit
-# comma-separated list.
-_default_origin = "https://client-portal-385.preview.emergentagent.com"
+# preview URL PLUS the production domain (and its www variant) so admin
+# fetch/XHR from noir-hamburg.com works out of the box. Production deployments
+# can override via CORS_ORIGINS (comma-separated).
+_default_origin = "https://client-portal-385.preview.emergentagent.com,https://noir-hamburg.com,https://www.noir-hamburg.com"
 _cors_origins_raw = os.environ.get('CORS_ORIGINS', _default_origin)
 _cors_origins = [o.strip() for o in _cors_origins_raw.split(',') if o.strip() and o.strip() != '*']
 if not _cors_origins:
-    _cors_origins = [_default_origin]
+    _cors_origins = _default_origin.split(",")
 
 app.add_middleware(
     CORSMiddleware,

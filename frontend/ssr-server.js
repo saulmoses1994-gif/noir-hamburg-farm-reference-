@@ -93,6 +93,19 @@ function _buildCleanTemplate() {
 
 const TEMPLATE = _buildCleanTemplate();
 
+// Version marker — bump this whenever ssr-server.js changes. Emitted at
+// startup AND on every response header (X-App-Build) so we can verify from
+// outside what code is deployed without needing internal log access:
+//
+//   curl -sI https://noir-hamburg.com/services/vip-escort-hamburg | grep -i build
+//
+// Should print `x-app-build: 2026-02-09-business-seo`. If it prints an
+// older value (or no header at all), production is running stale code and
+// needs to be redeployed.
+const APP_BUILD_ID = process.env.APP_BUILD_ID || "2026-02-09-business-seo";
+console.log(`[ssr] APP_BUILD_ID = ${APP_BUILD_ID}`);
+console.log(`[ssr] TEMPLATE sanitized: ${TEMPLATE.length}B, homepage-title=${/Luxus Escort Hamburg \| Premium Escort Agentur/i.test(TEMPLATE) ? "LEAKED" : "clean"}`);
+
 // ---------- React bundle injection ----------
 // Extract React's bundle <link rel=stylesheet> + <script src> from the built
 // index.html so SSR pages still hydrate the SPA after first paint.
@@ -165,6 +178,8 @@ app.use((req, res, next) => {
   res.set("X-Frame-Options", "DENY");
   res.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.set("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
+  // Externally-visible build fingerprint (see APP_BUILD_ID definition above).
+  res.set("X-App-Build", APP_BUILD_ID);
   // Static asset responses get long-lived caching set below; do NOT add HSTS
   // here — the ingress already terminates TLS and emits HSTS.
   next();
@@ -221,10 +236,21 @@ function safe(fn) {
   return async (req, res) => {
     try {
       const html = await fn(req, res);
-      if (html === null) return send404(res, TEMPLATE);
+      if (html === null) {
+        // Route rendered nothing (unknown slug etc.) → clean 404 shell.
+        // Expose why via a response header so diagnostics don't need log access.
+        res.set("X-SSR-Status", "not-found");
+        return send404(res, TEMPLATE);
+      }
+      res.set("X-SSR-Status", "ok");
       send(res, html);
     } catch (e) {
+      // Something in the renderer threw. Emit a header + log so we can trace
+      // it externally with `curl -I`. Falls back to the neutral shell (not
+      // the homepage — TEMPLATE is now sanitized).
       console.error(`[ssr] ${req.path} failed:`, e.message);
+      res.set("X-SSR-Status", "error");
+      res.set("X-SSR-Error", (e.message || "unknown").slice(0, 200).replace(/[\r\n]/g, " "));
       send(res, TEMPLATE);
     }
   };
