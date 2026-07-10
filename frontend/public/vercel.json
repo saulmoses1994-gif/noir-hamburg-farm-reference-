@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/services/:slug", "destination": "/services/:slug/index.html" },
+    { "source": "/models/:slug",   "destination": "/models/:slug/index.html" },
+    { "source": "/escort/:slug",   "destination": "/escort/:slug/index.html" },
+    { "source": "/blog/:slug",     "destination": "/blog/:slug/index.html" },
+    { "source": "/p/:slug",        "destination": "/p/:slug/index.html" },
+    { "source": "/en/services/:slug", "destination": "/en/services/:slug/index.html" },
+    { "source": "/en/models/:slug",   "destination": "/en/models/:slug/index.html" },
+    { "source": "/en/escort/:slug",   "destination": "/en/escort/:slug/index.html" },
+    { "source": "/en/blog/:slug",     "destination": "/en/blog/:slug/index.html" },
+    { "source": "/en/p/:slug",        "destination": "/en/p/:slug/index.html" }
+  ]
+}

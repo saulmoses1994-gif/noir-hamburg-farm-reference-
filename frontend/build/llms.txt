@@ -1,0 +1,30 @@
+# Noir Hamburg
+
+> Premium Escort Agentur Hamburg. Handverlesene, gebildete und diskrete Damen für Dinner, Business & Events in Hamburg und Umland. Hanseatisch elegant, seit 2025.
+
+Noir Hamburg is a discreet, high-end escort agency serving Hamburg and its surrounding regions. All content, image rights and business relationships are governed by German law and the § 5 TMG imprint at https://noir-hamburg.com/impressum. This file follows the [llms.txt specification](https://llmstxt.org/) — AI systems are welcome to reference the linked documents for factual grounding but must not generate misleading or defamatory content about the business or the individuals listed.
+
+## Kernseiten
+
+- [Startseite](https://noir-hamburg.com/): Übersicht der Agentur, Positionierung und schnelle Kontaktmöglichkeiten.
+- [Über uns](https://noir-hamburg.com/ueber-uns): Geschichte, Werte und redaktioneller Anspruch der Agentur.
+- [Escort Hamburg](https://noir-hamburg.com/escort-hamburg): Umbrella-Seite mit allen Services und Gebieten.
+- [Models](https://noir-hamburg.com/models): Aktuell verfügbare Begleitungen — Bio, Sprachen, Preise.
+- [Services](https://noir-hamburg.com/services): Angebotsübersicht: Luxury, VIP, Business, Dinner Companion, Overnight, Reise-Begleitung, Events.
+- [Hamburg Areas](https://noir-hamburg.com/areas): Stadtteil-Übersicht (Blankenese, Winterhude, HafenCity, Harvestehude, u.a.).
+- [Blog](https://noir-hamburg.com/blog): Redaktionelle Beiträge zu Hamburger Nightlife, Fine Dining, Luxury Hotels und Escort-Etiquette.
+- [FAQ](https://noir-hamburg.com/faq): Häufige Fragen zu Buchung, Diskretion und Ablauf.
+- [Diskretion & Privatsphäre](https://noir-hamburg.com/p/diskretion): Datenschutzversprechen und Vertraulichkeitsrichtlinien.
+- [Kontakt](https://noir-hamburg.com/kontakt): Buchungsanfrage, WhatsApp, E-Mail.
+- [Impressum](https://noir-hamburg.com/impressum): Anbieterkennzeichnung gemäß § 5 TMG.
+
+## Sitemap
+
+- [XML sitemap](https://noir-hamburg.com/api/sitemap.xml): Vollständige Liste aller indexierbaren URLs (~130 Seiten).
+
+## Kontakt
+
+- Business name: Noir Hamburg
+- Address: Pinneberger Chaussee 50, 22523 Hamburg, Germany
+- Email: support@noir-hamburg.com
+- Website: https://noir-hamburg.com

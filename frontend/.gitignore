@@ -9,15 +9,46 @@
 /coverage
 
 # production
-# Commit only the per-service/-area SSG output as a deploy safety net so
+# Commit only the per-route SSG output as a deploy safety net so
 # production always has route-specific HTML even if `yarn build` doesn't run
-# to completion. Everything else in build/ stays ignored.
+# to completion. Static production hosts serve these files directly via the
+# `_redirects` rules in build/_redirects (see public/_redirects).
 /build/*
+!/build/index.html
+!/build/_redirects
+!/build/vercel.json
+!/build/robots.txt
+!/build/sitemap.xml
+!/build/llms.txt
+!/build/asset-manifest.json
 !/build/services
 !/build/services/**
 !/build/escort
 !/build/escort/**
-!/build/index.html
+!/build/models
+!/build/models/**
+!/build/blog
+!/build/blog/**
+!/build/p
+!/build/p/**
+!/build/areas
+!/build/areas/**
+!/build/faq
+!/build/faq/**
+!/build/kontakt
+!/build/kontakt/**
+!/build/ueber-uns
+!/build/ueber-uns/**
+!/build/impressum
+!/build/impressum/**
+!/build/escort-hamburg
+!/build/escort-hamburg/**
+!/build/en
+!/build/en/**
+!/build/noir-social-share-*.jpg
+!/build/*.png
+!/build/*.ico
+!/build/*.svg
 
 # misc
 .DS_Store

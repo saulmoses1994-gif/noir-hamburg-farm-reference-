@@ -1,0 +1,60 @@
+# Noir Hamburg — SPA rewrite rules for static production host
+#
+# Emergent's production is a static file server (no Node.js runtime), so the
+# preview-only `ssr-server.js` and `nginx.conf` are not consulted. To make
+# deep routes serve their pre-rendered HTML instead of the SPA shell (which
+# would show homepage content), we tell the static host to rewrite each
+# `/services/:slug` request to the corresponding `build/services/:slug/index.html`
+# file before falling back to the root SPA shell.
+#
+# This file follows the Netlify / Cloudflare Pages `_redirects` format,
+# which most modern static hosts recognise. It is copied verbatim from
+# `frontend/public/_redirects` into `frontend/build/_redirects` during
+# `yarn build` so it lands in the deployed frontend artifact.
+#
+# Format:  <from>  <to>  <status>
+#   status 200 = rewrite (URL stays the same, content served from `<to>`)
+#   status 301/302 = redirect (URL changes)
+#
+# `:splat` captures the wildcard portion of `<from>` and injects it in `<to>`.
+
+# ---------- German (default) routes ----------
+/services/*    /services/:splat/index.html    200
+/models/*      /models/:splat/index.html      200
+/escort/*      /escort/:splat/index.html      200
+/blog/*        /blog/:splat/index.html        200
+/p/*           /p/:splat/index.html           200
+
+# Fixed listing pages
+/services                                     /services/index.html          200
+/models                                       /models/index.html            200
+/areas                                        /areas/index.html             200
+/blog                                         /blog/index.html              200
+/faq                                          /faq/index.html               200
+/kontakt                                      /kontakt/index.html           200
+/ueber-uns                                    /ueber-uns/index.html         200
+/impressum                                    /impressum/index.html         200
+/escort-hamburg                               /escort-hamburg/index.html    200
+
+# ---------- English (/en/*) mirror ----------
+/en/services/*    /en/services/:splat/index.html    200
+/en/models/*      /en/models/:splat/index.html      200
+/en/escort/*      /en/escort/:splat/index.html      200
+/en/blog/*        /en/blog/:splat/index.html        200
+/en/p/*           /en/p/:splat/index.html           200
+
+# English listing pages
+/en/services                                  /en/services/index.html       200
+/en/models                                    /en/models/index.html         200
+/en/areas                                     /en/areas/index.html          200
+/en/blog                                      /en/blog/index.html           200
+/en/faq                                       /en/faq/index.html            200
+/en/kontakt                                   /en/kontakt/index.html        200
+/en/ueber-uns                                 /en/ueber-uns/index.html      200
+/en/escort-hamburg                            /en/escort-hamburg/index.html 200
+/en                                           /en/index.html                200
+
+# ---------- SPA fallback ----------
+# Anything not matched above (dynamic client-only routes like /admin/*)
+# gets the SPA shell so React Router can handle it.
+/*             /index.html                    200
