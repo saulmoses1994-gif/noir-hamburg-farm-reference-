@@ -1,0 +1,20 @@
+[
+  {
+    "q": "Sind Sie in {name} regelmäßig verfügbar?",
+    "qEn": "Are you regularly available in {name}?",
+    "a": "Ja. Noir Hamburg vermittelt kontinuierlich in {name} und den umliegenden Stadtteilen. Für Erstbuchungen empfehlen wir 24–48 Stunden Vorlauf, kurzfristige Termine sind je nach Verfügbarkeit möglich.",
+    "aEn": "Yes. Noir Hamburg continuously arranges bookings in {name} and the surrounding districts. For first bookings we recommend 24–48 hours' notice; short-notice engagements are possible subject to availability."
+  },
+  {
+    "q": "Können Ihre Damen in Hotels und Privatadressen in {name} kommen?",
+    "qEn": "Can your companions visit hotels and private addresses in {name}?",
+    "a": "Selbstverständlich. Wir vermitteln sowohl in Hotels als auch zu privaten Adressen in {name} — diskret, pünktlich und ohne Nachfragen an der Rezeption.",
+    "aEn": "Naturally. We arrange bookings both in hotels and to private addresses in {name} — discreet, punctual and without any enquiry at reception."
+  },
+  {
+    "q": "Wie diskret ist die Anfahrt nach {name}?",
+    "qEn": "How discreet is the arrival in {name}?",
+    "a": "Unsere Damen reisen anonym an, tragen keine sichtbare Werbung und verhalten sich in der Öffentlichkeit unauffällig. Auf Wunsch koordinieren wir Chauffeur oder Taxi.",
+    "aEn": "Our companions travel anonymously, carry no visible advertising and act unobtrusively in public. On request we coordinate a chauffeur or taxi."
+  }
+]
