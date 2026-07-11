@@ -1,0 +1,60 @@
+import { notFound } from 'next/navigation'
+import PageDetailBody from '@/components/public/PageDetailBody'
+import { getPublicPageWithAlias, listPublicPages } from '@/lib/pages'
+import { listServiceContent, listAreaContent } from '@/lib/service-content'
+import { buildMetadata } from '@/lib/seo'
+import { pick, t } from '@/lib/i18n'
+
+export const revalidate = 300
+export const dynamicParams = true
+
+export async function generateStaticParams() {
+  try {
+    const pages = await listPublicPages()
+    return pages.map((p) => ({ slug: p.slug }))
+  } catch {
+    return []
+  }
+}
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params
+  const p = await getPublicPageWithAlias(slug)
+  if (!p) return { title: t('de', 'page.notFound') }
+  const lang = 'de'
+  const title = pick(p, 'meta_title', lang) || `${pick(p, 'title', lang)} | Noir Hamburg`
+  const description = pick(p, 'meta_description', lang) || pick(p, 'intro', lang) || ''
+  return buildMetadata({
+    title,
+    description,
+    image: p.hero_image,
+    imageAlt: pick(p, 'title', lang),
+    // Canonicalise the requested slug (e.g. /p/diskretion resolves to the
+    // long DB slug but the URL the user visits is what we canonicalise).
+    path: `/p/${slug}`,
+    lang,
+  })
+}
+
+export default async function PageDetail({ params }) {
+  const { slug } = await params
+  const page = await getPublicPageWithAlias(slug)
+  if (!page) notFound()
+
+  const [services, areas] = await Promise.all([
+    listServiceContent().catch(() => []),
+    listAreaContent().catch(() => []),
+  ])
+
+  const relatedServices = services.filter((s) => (page.related_services || []).includes(s.slug))
+  const relatedLocations = areas.filter((a) => (page.related_locations || []).includes(a.slug))
+
+  return (
+    <PageDetailBody
+      lang="de"
+      page={page}
+      relatedServices={relatedServices}
+      relatedLocations={relatedLocations}
+    />
+  )
+}

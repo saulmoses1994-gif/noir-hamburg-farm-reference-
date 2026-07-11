@@ -517,16 +517,126 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.0"
-  test_sequence: 21
+  version: "3.1"
+  test_sequence: 23
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Public /escort/[slug] area detail (+ EN twins)"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+phase3_d4_custom_pages_public:
+  - task: "Public /p/[slug] custom pages (+ EN twins)"
+    implemented: true
+    working: true
+    file: "app/(de)/p/[slug]/page.js + app/(en)/en/p/[slug]/page.js + components/public/PageDetailBody.js + lib/pages.js + lib/i18n.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Phase 3 chunk d4 shipped: /p/[slug] CMS-driven custom pages with EN twin.
+            * Shared component: components/public/PageDetailBody.js — takes `lang`
+              plus prefetched page + related-services/locations arrays.
+            * generateMetadata + generateStaticParams built from listPublicPages().
+              Meta title falls back to "{title} | Noir Hamburg" when the CMS
+              meta_title is empty; description falls back to intro.
+            * 2 JSON-LD blocks in <body>: WebPage + BreadcrumbList.
+            * Hero image variant vs. plain-header variant — picks based on whether
+              page.hero_image is set. Both variants render the intro when present.
+            * EN preview banner (`data-testid="en-fallback-note"`) rendered only
+              when reader is on /en and page.content_en is empty (rule (a)).
+            * Related-services + related-locations blocks render locale-prefixed
+              links (`/services/` vs `/en/services/`, `/escort/` vs `/en/escort/`).
+            * SLUG ALIAS BUG FIX:
+              The site Footer + sitemap both link to `/p/diskretion` but the CMS
+              stores the page under `/p/diskretion-und-datenschutz-noir-hamburg`.
+              Added `lib/pages.js > getPublicPageWithAlias(slug)` with a tiny
+              alias map so short marketing URLs resolve to the long CMS slug
+              without touching the DB. Both routes now use the alias resolver.
+              /p/diskretion + /en/p/diskretion now return 200 (were 404).
+            * lib/i18n.js gained `page.*` keys.
+            * Sitemap already covered all 3 CMS-authored /p/{slug} entries + the
+              /p/diskretion static entry (existing coverage).
+            Manual curl verification:
+              * DE /p/diskretion-und-datenschutz-noir-hamburg 200 -> <html lang="de">,
+                title "Diskretion & Datenschutz — Noir Hamburg Premium Escort",
+                canonical /p/diskretion-und-datenschutz-noir-hamburg, hreflang
+                de-DE + en + x-default, 2 JSON-LD blocks (WebPage + Breadcrumb),
+                H1 "Unser Diskretions-Versprechen", intro rendered, prose-noir body
+                rendered from CMS content, 3 related-services + 3 related-locations.
+              * EN /en/p/diskretion-und-datenschutz-noir-hamburg 200 -> <html lang="en">,
+                canonical /en/p/…, en-fallback-note banner rendered (content_en empty),
+                all cross-links use /en/ prefix.
+              * Alias: /p/diskretion + /en/p/diskretion both 200; canonical matches
+                the requested short URL.
+              * 404 handling: /p/does-not-exist + /en/p/does-not-exist both 404.
+            Please run standard read-path + SEO smoke tests.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 9-test suite completed with ALL TESTS PASSED (9/9).
+            All SSR SEO artifacts render correctly in raw HTML (curl-based, no JS required).
+            Base URL: https://noir-migration.preview.emergentagent.com
+            
+            TEST 1 - DE DETAIL (LONG SLUG) — GET /p/diskretion-und-datenschutz-noir-hamburg:
+            200, html lang=de, title "Diskretion & Datenschutz — Noir Hamburg Premium Escort",
+            canonical=/p/diskretion-und-datenschutz-noir-hamburg, hreflang alternates (de-de, en, x-default)
+            present, 2 JSON-LD blocks in body (WebPage with inLanguage='de-DE' + BreadcrumbList),
+            H1 "Unser Diskretions-Versprechen", body contains "Diskretion ist unsere höchste Verpflichtung",
+            3 related-services links starting with /services/, 3 related-areas links starting with /escort/,
+            data-testid='page-content' present (plain header variant used because hero_image is empty),
+            data-testid='en-fallback-note' NOT present (correct for DE page).
+            
+            TEST 2 - EN DETAIL (LONG SLUG) — GET /en/p/diskretion-und-datenschutz-noir-hamburg:
+            200, html lang=en, title "Diskretion & Datenschutz — Noir Hamburg Premium Escort",
+            canonical=/en/p/diskretion-und-datenschutz-noir-hamburg, 2 JSON-LD blocks (WebPage with
+            inLanguage='de-DE' [fallback because content_en empty] + BreadcrumbList),
+            data-testid='en-fallback-note' present with "The English translation is coming soon" message,
+            3+ related-services links starting with /en/services/, 3+ related-areas links starting with
+            /en/escort/, zero German UI-string leaks (CMS content fallback is expected and correct).
+            
+            TEST 3 - SLUG ALIAS (DE) — GET /p/diskretion:
+            200, canonical=.../p/diskretion (short URL preserved), H1 "Unser Diskretions-Versprechen"
+            (same content as long slug), hreflang en alternate points to .../en/p/diskretion.
+            
+            TEST 4 - SLUG ALIAS (EN) — GET /en/p/diskretion:
+            200, canonical=.../en/p/diskretion (short URL preserved), hreflang de-DE alternate points
+            to .../p/diskretion.
+            
+            TEST 5 - 404 HANDLING:
+            GET /p/does-not-exist → 404, GET /en/p/does-not-exist → 404.
+            
+            TEST 6 - SECONDARY PAGES SANITY:
+            GET /p/professionelle-standards-noir-hamburg → 200 (2 JSON-LD blocks, H1 present),
+            GET /en/p/professionelle-standards-noir-hamburg → 200 (2 JSON-LD blocks, H1 present),
+            GET /p/so-funktioniert-eine-buchung-noir-hamburg → 200 (2 JSON-LD blocks, H1 present),
+            GET /en/p/so-funktioniert-eine-buchung-noir-hamburg → 200 (2 JSON-LD blocks, H1 present).
+            
+            TEST 7 - SITEMAP COVERAGE:
+            GET /sitemap.xml → 200, found 4 /p/ entries (3 CMS pages + 1 static /p/diskretion entry),
+            all entries have xhtml:link rel="alternate" hreflang="en" pointing to /en/p/... twins.
+            
+            TEST 8 - FOOTER LINK INTEGRITY:
+            GET /blog → 200, footer contains link to /p/diskretion, link resolves to 200 (regression
+            fixed - footer link no longer 404s).
+            
+            TEST 9 - REGRESSION ON PRIOR WORK:
+            GET /api/health → 200 (Phase 0), GET /api/pages → 200 with exactly 3 items (published,
+            non-deleted), GET /services/vip-escort-hamburg → 200 (Phase 1), GET /models → 200
+            (Phase 3 d1), GET /blog → 200 (Phase 3 d2), GET /escort/hafencity → 200 (Phase 3 d3).
+            
+            CRITICAL SEO VERIFICATIONS: Every tested URL has exactly ONE <title> tag with unique
+            non-empty title, ONE <meta name="description"> with non-empty content, ONE <link rel="canonical">
+            pointing to correct URL, hreflang alternates (de-DE, en, x-default) all present,
+            <html lang="de"> for DE routes and <html lang="en"> for EN routes, ALL JSON-LD blocks
+            appear in <body> (not <head>), each JSON-LD block parses as valid JSON.
+            
+            All requirements met. No issues found. Phase 3 chunk d4 is production-ready.
 
 phase3_d1_models_public:
   - task: "Public /models list + detail (+ EN twins) + sitemap update"
@@ -1633,3 +1743,39 @@ agent_communication:
         
         All backend tasks for Phase 3 d3 marked as working=true, needs_retesting=false.
         No issues found. Phase 3 d3 implementation is production-ready.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 D4 CUSTOM PAGES PUBLIC — TESTING COMPLETE - ALL TESTS PASSED (9/9)
+        
+        Comprehensive testing of public custom page SSR routes at /p/[slug] and /en/p/[slug] completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Test slugs: diskretion-und-datenschutz-noir-hamburg (primary long slug), diskretion (alias),
+        professionelle-standards-noir-hamburg (secondary), so-funktioniert-eine-buchung-noir-hamburg (secondary)
+        
+        Test Results Summary:
+        ✅ TEST 1 - DE detail (long slug) - Full SSR with unique title, meta, H1, canonical, hreflang, 2 JSON-LD blocks (WebPage + BreadcrumbList), related-services (3 links), related-areas (3 links), plain header variant (no hero_image)
+        ✅ TEST 2 - EN detail (long slug) - Full SSR with EN fallback banner, all links use /en/ prefix, zero German UI leaks
+        ✅ TEST 3 - Slug alias (DE) - /p/diskretion resolves to same content, canonical preserves short URL
+        ✅ TEST 4 - Slug alias (EN) - /en/p/diskretion resolves to same content, canonical preserves short URL
+        ✅ TEST 5 - 404 handling - Both DE and EN return 404 for non-existent slugs
+        ✅ TEST 6 - Secondary pages - All 4 secondary page URLs (2 slugs × 2 locales) working with correct SSR artifacts
+        ✅ TEST 7 - Sitemap coverage - 4 /p/ entries with EN alternates
+        ✅ TEST 8 - Footer link integrity - Footer link to /p/diskretion present and resolves to 200 (regression fixed)
+        ✅ TEST 9 - Regression - All prior work (Phase 0, 1, 2, 3d1, 3d2, 3d3) still functional
+        
+        Critical Verifications:
+        • SSR working correctly - all SEO artifacts in raw HTML (not JS-dependent)
+        • Slug alias resolver working - /p/diskretion maps to diskretion-und-datenschutz-noir-hamburg without DB change
+        • Canonical URL preservation - short alias URLs keep their short canonical (not expanded to long slug)
+        • EN fallback logic working (rule (a)) - EN pages show fallback banner when content_en is empty
+        • JSON-LD blocks correctly placed in <body> (not <head>)
+        • WebPage schema has correct inLanguage (de-DE for fallback, en when content_en exists)
+        • Related-services and related-locations blocks render with correct locale prefix
+        • Hero vs plain header variant logic working - pages without hero_image use plain header (data-testid='page-content')
+        • Footer link regression fixed - /p/diskretion no longer 404s
+        • All cross-links use correct locale prefix (/en/services/, /en/escort/)
+        • No German UI string leaks in EN visible content (CMS content fallback is expected and correct)
+        
+        All backend tasks for Phase 3 d4 marked as working=true, needs_retesting=false.
+        No issues found. Phase 3 d4 implementation is production-ready.
