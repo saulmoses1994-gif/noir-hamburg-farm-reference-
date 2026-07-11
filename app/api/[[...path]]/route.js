@@ -21,6 +21,20 @@ function cors(res) {
 const j = (data, init = {}) => cors(NextResponse.json(data, init))
 export async function OPTIONS() { return cors(new NextResponse(null, { status: 200 })) }
 
+// Editable model fields (whitelist used by POST and PUT).
+const MODEL_FIELDS = [
+  'name', 'short_tagline', 'short_tagline_en',
+  'bio', 'bio_en',
+  'cover_image', 'gallery',
+  'age', 'height_cm', 'measurements', 'dress_size',
+  'hair_color', 'eye_color', 'nationality',
+  'languages', 'interests', 'services', 'locations',
+  'prices',
+  'meta_title', 'meta_title_en',
+  'meta_description', 'meta_description_en',
+  'featured', 'available',
+]
+
 async function readJson(request) {
   try { return await request.json() } catch { return {} }
 }
@@ -218,15 +232,95 @@ async function route(request, ctx, method) {
 
     // ---------- Models ----------
     if (p === '/models' && method === 'GET') {
-      const db = await getDb()
-      const docs = await db.collection('models').find({ published: { $ne: false } }).sort({ created_at: -1 }).toArray()
-      return j(docs.map(cleanDoc))
+      const { listPublicModels } = await import('@/lib/models')
+      return j(await listPublicModels())
     }
     if (parts[0] === 'models' && parts.length === 2 && method === 'GET') {
-      const db = await getDb()
-      const doc = await db.collection('models').findOne({ slug: parts[1] })
+      const { getPublicModel } = await import('@/lib/models')
+      const doc = await getPublicModel(parts[1])
       if (!doc) return j({ detail: 'Model not found' }, { status: 404 })
-      return j(cleanDoc(doc))
+      return j(doc)
+    }
+
+    // Admin \u2014 create model.
+    if (p === '/models' && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const body = await readJson(request)
+      if (!body.slug || !body.name) {
+        return j({ detail: 'slug and name are required' }, { status: 400 })
+      }
+      const slug = String(body.slug).toLowerCase().trim()
+      if (!/^[a-z0-9-]+$/.test(slug)) {
+        return j({ detail: 'slug may only contain a-z, 0-9 and hyphens' }, { status: 400 })
+      }
+      const db = await getDb()
+      const existing = await db.collection('models').findOne({ slug })
+      if (existing) return j({ detail: 'A model with that slug already exists (including soft-deleted). Choose another slug.' }, { status: 409 })
+      const ALLOW = MODEL_FIELDS
+      const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
+      for (const k of ALLOW) if (k in body) doc[k] = body[k]
+      doc.available = doc.available ?? true
+      doc.featured = doc.featured ?? false
+      await db.collection('models').insertOne(doc)
+      try {
+        revalidatePath('/models')
+        revalidatePath('/en/models')
+        revalidatePath('/')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(doc), { status: 201 })
+    }
+
+    // Admin \u2014 edit model.
+    if (parts[0] === 'models' && parts.length === 2 && method === 'PUT') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[1]
+      const body = await readJson(request)
+      const ALLOW = MODEL_FIELDS
+      const update = {}
+      for (const k of ALLOW) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      const result = await db.collection('models').findOneAndUpdate(
+        { slug },
+        { $set: update },
+        { returnDocument: 'after' }
+      )
+      if (!result) return j({ detail: 'Model not found' }, { status: 404 })
+      try {
+        revalidatePath(`/models/${slug}`)
+        revalidatePath(`/en/models/${slug}`)
+        revalidatePath('/models')
+        revalidatePath('/en/models')
+        revalidatePath('/')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(result))
+    }
+
+    // Admin \u2014 soft delete.  Sets deleted_at, keeps the doc for recovery.
+    if (parts[0] === 'models' && parts.length === 2 && method === 'DELETE') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[1]
+      const db = await getDb()
+      const result = await db.collection('models').findOneAndUpdate(
+        { slug, deleted_at: { $in: [null, undefined] } },
+        { $set: { deleted_at: new Date(), updated_at: new Date() } },
+        { returnDocument: 'after' }
+      )
+      if (!result) return j({ detail: 'Model not found or already deleted' }, { status: 404 })
+      try {
+        revalidatePath(`/models/${slug}`)
+        revalidatePath(`/en/models/${slug}`)
+        revalidatePath('/models')
+        revalidatePath('/en/models')
+        revalidatePath('/')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j({ ok: true, slug, deleted_at: result.deleted_at })
     }
 
     // ---------- Blog (real collection is `blog`) ----------

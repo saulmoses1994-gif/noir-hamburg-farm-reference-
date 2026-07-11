@@ -360,8 +360,8 @@ backend_phase2:
 
 metadata:
   created_by: "main_agent"
-  version: "1.7"
-  test_sequence: 8
+  version: "1.9"
+  test_sequence: 10
   run_ui: false
 
 test_plan:
@@ -369,6 +369,67 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+backend_phase2_models_cms:
+  - task: "GET /api/models (filters soft-deleted)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + lib/models.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Returns rows where deleted_at is null/undefined. Sorted by featured desc, created_at desc. Verified 14 rows in production, hides soft-deleted rows from list and single-doc GET."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: GET /api/models returns exactly 14 production models. All have slug, name, cover_image. No _id fields. No deleted_at fields in response. Sort order correct: 8 featured models first. GET /api/models/aurelia returns 200 with all required fields (slug, name, bio, bio_en, gallery, prices). GET /api/models/does-not-exist returns 404 'Model not found'. Soft-deleted models correctly hidden from both list and detail endpoints."
+
+  - task: "POST /api/models (create)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only. Validates slug regex ^[a-z0-9-]+$ and uniqueness (409 conflict includes soft-deleted rows). Assigns UUID id + created_at + updated_at. Defaults available=true, featured=false. Returns 201 + full doc."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Auth guard working (401 without cookie). Validation working: missing slug/name → 400 'slug and name are required', invalid slug pattern → 400 'may only contain a-z, 0-9 and hyphens', existing slug → 409 'already exists (including soft-deleted)'. Create success: POST qa-model-alpha → 201 with server-assigned UUID id, created_at, updated_at, all sent fields present, no _id. Whitelist enforcement: POST with _id/deleted_at/password_hash/id → 201, forbidden fields ignored, server assigns own UUID id. Created model appears in public list."
+
+  - task: "PUT /api/models/{slug} (update)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only. Whitelist same as POST minus slug. Sets updated_at. revalidatePath('/models/{slug}','/en/models/{slug}','/models','/en/models','/','/sitemap.xml'). 404 on unknown slug."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Auth guard working (401 without cookie). Partial update working: PUT name + featured → 200, other fields (bio, gallery, prices) unchanged. Whitelist enforcement: PUT slug='qa-slug-hijack' + _id='HACK' → 200, both ignored (slug still original, hijacked slug does not exist). PUT /api/models/does-not-exist → 404 'Model not found'."
+
+  - task: "DELETE /api/models/{slug} (soft delete)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only. Sets deleted_at + updated_at. Does NOT hard-delete. Returns {ok:true, slug, deleted_at}. Doc remains in DB (Mongo verified). Public GET on soft-deleted row -> 404. Second DELETE on already-deleted -> 404. Recovery: `db.models.updateOne({slug},{$unset:{deleted_at:1}})`."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Auth guard working (401 without cookie). Soft-delete working: DELETE qa-model-alpha → 200 {ok:true, slug, deleted_at} with valid ISO timestamp. GET /api/models/qa-model-alpha after delete → 404. Public list no longer includes soft-deleted model (count 15 = 14 production + 1 qa-model-beta). DELETE already-deleted → 404 'Model not found or already deleted'. Hard-delete cleanup successful: mongosh deleted 2 test models, production baseline restored (14 models). All 14 production models present, no deleted_at set."
 
 backend_phase2_settings_cms:
   - task: "PUT /api/settings"
@@ -758,3 +819,94 @@ agent_communication:
         
         All tests passed. PUT /api/settings endpoint is production-ready.
         Task marked as working=true, needs_retesting=false.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 2 MODELS CMS — COMPREHENSIVE CRUD + SOFT-DELETE TESTING COMPLETE - ALL TESTS PASSED (26/26)
+        
+        Comprehensive 26-step test of Models CMS CRUD operations with soft-delete semantics completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Test slugs: qa-model-alpha, qa-model-beta (hard-deleted after tests)
+        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        
+        Test Results by Section:
+        
+        SECTION 1: READ PATH (3/3 passed)
+        ✅ GET /api/models → 200 with exactly 14 production models
+        ✅ All models have slug, name, cover_image, no _id, no deleted_at
+        ✅ Sort order correct: 8 featured models first, then by created_at desc
+        ✅ GET /api/models/aurelia → 200 with all required fields (slug, name, bio, bio_en, gallery, prices)
+        ✅ GET /api/models/does-not-exist → 404 'Model not found'
+        
+        SECTION 2: AUTH GUARDS (4/4 passed)
+        ✅ POST /api/models without cookie → 401 'Not authenticated'
+        ✅ PUT /api/models/aurelia without cookie → 401
+        ✅ DELETE /api/models/aurelia without cookie → 401
+        ✅ Admin login successful → access_token cookie
+        
+        SECTION 3: POST VALIDATION (4/4 passed)
+        ✅ POST missing slug → 400 'slug and name are required'
+        ✅ POST missing name → 400 'slug and name are required'
+        ✅ POST invalid slug pattern (BAD SLUG) → 400 'may only contain a-z, 0-9 and hyphens'
+        ✅ POST existing slug (aurelia) → 409 'already exists (including soft-deleted)'
+        
+        SECTION 4: POST CREATE SUCCESS (3/3 passed)
+        ✅ POST qa-model-alpha with full payload → 201 with server-assigned UUID id, created_at, updated_at
+        ✅ All sent fields present in response (bio, bio_en, gallery, age, height_cm, prices, featured, available)
+        ✅ GET /api/models → count now 15 (14 production + qa-model-alpha)
+        ✅ GET /api/models/qa-model-alpha → 200 with matching data
+        
+        SECTION 5: WHITELIST ENFORCEMENT ON POST (1/1 passed)
+        ✅ POST qa-model-beta with forbidden fields (_id, deleted_at, password_hash, id) → 201
+        ✅ Forbidden fields ignored: no _id in response, no deleted_at set, no password_hash stored
+        ✅ Server assigns own UUID id (client-supplied id='HACK-ID' ignored)
+        ✅ qa-model-beta appears in public list (not soft-deleted)
+        
+        SECTION 6: PUT UPDATE (3/3 passed)
+        ✅ PUT qa-model-alpha name + featured → 200, other fields (bio, gallery, prices) unchanged
+        ✅ PUT with non-whitelisted fields (slug='qa-slug-hijack', _id='HACK') → 200, both ignored
+        ✅ GET qa-model-alpha → slug still 'qa-model-alpha'
+        ✅ GET qa-slug-hijack → 404 (hijacked slug does not exist)
+        ✅ PUT /api/models/does-not-exist → 404 'Model not found'
+        
+        SECTION 7: DELETE SOFT-DELETE (6/6 passed)
+        ✅ DELETE qa-model-alpha → 200 {ok:true, slug, deleted_at} with valid ISO timestamp
+        ✅ GET qa-model-alpha after delete → 404
+        ✅ GET /api/models → count 15 (14 production + qa-model-beta), qa-model-alpha not in list
+        ✅ DELETE qa-model-alpha again (already deleted) → 404 'Model not found or already deleted'
+        ✅ DELETE qa-model-beta → 200
+        ✅ GET /api/models → count back to 14 (production baseline)
+        
+        SECTION 8: CLEANUP HARD-DELETE (1/1 passed)
+        ✅ Hard-deleted qa-model-alpha and qa-model-beta from MongoDB via mongosh
+        ✅ mongosh output: { acknowledged: true, deletedCount: 2 }
+        ✅ GET /api/models → count still 14 (production baseline restored)
+        
+        SECTION 9: REGRESSION CHECKS (1/1 passed)
+        ✅ GET /api/health → 200
+        ✅ GET /api/auth/me (with cookie) → 200
+        ✅ GET /api/service-content → 200 with 8 items
+        ✅ GET /api/area-content → 200 with 18 items
+        ✅ GET /api/blog → 200 with 13 items
+        ✅ GET /api/pages → 200 with 3 items
+        ✅ GET /api/settings → 200
+        
+        FINAL VERIFICATION:
+        ✅ No production model has deleted_at set
+        ✅ All 14 production models present: aurelia, valentina, sophia, mila, helena, lara, isabella, charlotte, anastasia, camille, beatrice, nina, marlene, elena
+        
+        Critical Verifications:
+        • Public list correctly filters soft-deleted models (deleted_at: {$in: [null, undefined]})
+        • Sort order correct: featured=true first (8 models), then by created_at desc
+        • Auth guards working on all write endpoints (requireAdmin)
+        • POST validation working: slug/name required, slug pattern ^[a-z0-9-]+$, uniqueness check includes soft-deleted
+        • POST create working: assigns UUID id, timestamps, defaults (available=true, featured=false)
+        • Whitelist enforcement working: MODEL_FIELDS whitelist excludes slug (cannot change via PUT), _id, deleted_at, password_hash, id
+        • PUT update working: partial updates, whitelist enforcement, 404 on unknown slug
+        • DELETE soft-delete working: sets deleted_at + updated_at, hides from public list, 404 on already-deleted
+        • Hard-delete cleanup successful: test models removed from MongoDB, production baseline restored
+        • Regression checks passed: all Phase 1 and Phase 2 endpoints still working
+        • CRITICAL: Production data safe - all 14 production models present, no deleted_at set
+        
+        All 4 Models CMS tasks marked as working=true, needs_retesting=false.
+        No issues found. Phase 2 Models CMS implementation is production-ready.
