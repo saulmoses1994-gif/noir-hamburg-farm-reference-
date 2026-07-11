@@ -177,7 +177,9 @@ async function route(request, ctx, method) {
         'homepage_hero_image', 'escort_hamburg_image', 'about_image', 'social_share_image',
         'service_images', 'area_images',
         'facebook_url', 'instagram_url', 'twitter_url',
-        'impressum_content', 'diskretion_content',
+        'impressum_content', 'impressum_content_en',
+        'diskretion_content',
+        'about_content', 'about_content_en',
       ]
       const update = {}
       for (const k of ALLOW) if (k in body) update[k] = body[k]
@@ -481,6 +483,57 @@ async function route(request, ctx, method) {
       if (!result) return j({ detail: 'Page not found or already deleted' }, { status: 404 })
       try { revalidatePath(`/p/${slug}`); revalidatePath('/sitemap.xml') } catch {}
       return j({ ok: true, slug, deleted_at: result.deleted_at })
+    }
+
+    // ---------- Public contact form ----------
+    // POST /api/contact — public endpoint used by the /kontakt form.
+    // Writes a shape-compatible document to the same `contacts` collection
+    // that the admin inbox reads. Honeypot silently absorbs bot traffic.
+    if (p === '/contact' && method === 'POST') {
+      const body = await readJson(request) || {}
+      // Honeypot: hidden "website" field must remain empty. If populated,
+      // we still return a 200 so bots don't retry, but skip the DB write.
+      if (typeof body.website === 'string' && body.website.trim() !== '') {
+        return j({ ok: true })
+      }
+      const name = (body.name || '').toString().trim()
+      const email = (body.email || '').toString().trim()
+      const message = (body.message || '').toString().trim()
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      const errors = {}
+      if (!name) errors.name = 'required'
+      if (!email) errors.email = 'required'
+      else if (!emailRe.test(email)) errors.email = 'invalid'
+      if (!message) errors.message = 'required'
+      else if (message.length < 20) errors.message = 'too_short'
+      if (body.consent !== true && body.consent !== 'true') errors.consent = 'required'
+      if (Object.keys(errors).length > 0) {
+        return j({ detail: 'Validation failed', errors }, { status: 400 })
+      }
+      const doc = {
+        id: crypto.randomUUID(),
+        name,
+        email,
+        phone: (body.phone || '').toString().trim(),
+        message,
+        service: (body.service || '').toString().trim(),
+        location: (body.location || '').toString().trim(),
+        date: (body.date || '').toString().trim(),
+        model_slug: (body.model_slug || '').toString().trim(),
+        source_lang: body.lang === 'en' ? 'en' : 'de',
+        // Admin inbox uses `read`/`archived`/`starred` booleans; keep the
+        // legacy `status` field too so the 80 existing leads and new
+        // submissions coexist in a single list without schema drift.
+        read: false,
+        archived: false,
+        starred: false,
+        status: 'new',
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+      const db = await getDb()
+      await db.collection('contacts').insertOne(doc)
+      return j({ ok: true, id: doc.id })
     }
 
     // ---------- Contacts (admin only) ----------

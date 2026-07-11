@@ -68,7 +68,10 @@ export default function SettingsEditor({ initial, serviceSlugs = [], areaSlugs =
         instagram_url: doc.instagram_url || '',
         twitter_url: doc.twitter_url || '',
         impressum_content: doc.impressum_content || '',
+        impressum_content_en: doc.impressum_content_en || '',
         diskretion_content: doc.diskretion_content || '',
+        about_content: doc.about_content || '',
+        about_content_en: doc.about_content_en || '',
       }
       const r = await fetch('/api/settings', {
         method: 'PUT',
@@ -156,7 +159,19 @@ export default function SettingsEditor({ initial, serviceSlugs = [], areaSlugs =
 
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">Impressum</h2>
-          <Field label="Impressum-Text (Markdown / HTML erlaubt)" name="impressum_content" type="textarea-lg" value={doc.impressum_content} onChange={set} />
+          <div className="space-y-5">
+            <Field label="Impressum-Text DE (Markdown / HTML erlaubt)" name="impressum_content" type="textarea-lg" value={doc.impressum_content} onChange={set} />
+            <Field label="Impressum-Text EN (leer = DE-Version wird angezeigt)" name="impressum_content_en" type="textarea-lg" value={doc.impressum_content_en} onChange={set} />
+          </div>
+        </section>
+
+        <section className="bg-white p-8 rounded-lg">
+          <h2 className="font-heading text-xl mb-6">Über uns</h2>
+          <p className="text-xs font-mono text-[#6B5F5F] mb-4">Reichhaltiger Fließtext für die /ueber-uns Seite. Leer lassen = eingebautes Fallback-Prosatext wird verwendet.</p>
+          <div className="space-y-5">
+            <Field label="Über uns – Fließtext DE (HTML erlaubt)" name="about_content" type="textarea-lg" value={doc.about_content} onChange={set} />
+            <Field label="Über uns – Fließtext EN (leer = DE-Version wird angezeigt)" name="about_content_en" type="textarea-lg" value={doc.about_content_en} onChange={set} />
+          </div>
         </section>
 
         <section className="bg-white p-8 rounded-lg">

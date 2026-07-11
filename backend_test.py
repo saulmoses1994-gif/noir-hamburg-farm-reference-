@@ -1,518 +1,641 @@
 #!/usr/bin/env python3
 """
-Phase 3 chunk d4 — Public custom-page SSR routes (DE + EN twins) at /p/[slug] and /en/p/[slug]
-Comprehensive curl-based SEO+SSR read-path smoke test
+Phase 3 d5 Backend Test Suite
+Tests static pages (kontakt, ueber-uns, impressum) + EN twins + POST /api/contact
 """
-
 import requests
 import json
 import re
-from typing import Dict, List, Tuple
 from html.parser import HTMLParser
+from typing import Dict, List, Tuple
 
 BASE_URL = "https://noir-migration.preview.emergentagent.com"
+ADMIN_EMAIL = "admin@noir-hamburg.de"
+ADMIN_PASSWORD = "NoirAdmin2026!"
 
-class HTMLMetaParser(HTMLParser):
-    """Extract meta tags, title, canonical, hreflang, JSON-LD, and other elements from HTML"""
+class HTMLMetaExtractor(HTMLParser):
+    """Extract metadata from HTML"""
     def __init__(self):
         super().__init__()
+        self.lang = None
         self.title = None
-        self.meta_description = None
+        self.title_count = 0
         self.canonical = None
+        self.canonical_count = 0
         self.hreflang_alternates = []
-        self.html_lang = None
+        self.meta_description = None
         self.json_ld_blocks = []
-        self.h1_texts = []
-        self.in_title = False
-        self.in_script = False
         self.in_body = False
-        self.current_script_content = []
-        self.data_testids = []
-        self.links = []
-        self.in_h1 = False
-        self.current_h1 = []
+        self.in_script = False
+        self.current_script_type = None
+        self.script_content = ""
+        self.visible_text = []
+        self.in_title = False
         
     def handle_starttag(self, tag, attrs):
         attrs_dict = dict(attrs)
         
         if tag == 'html':
-            self.html_lang = attrs_dict.get('lang')
+            self.lang = attrs_dict.get('lang')
         
         elif tag == 'title':
             self.in_title = True
-            
-        elif tag == 'meta':
-            if attrs_dict.get('name') == 'description':
-                self.meta_description = attrs_dict.get('content', '')
-                
+            self.title_count += 1
+        
         elif tag == 'link':
-            if attrs_dict.get('rel') == 'canonical':
-                self.canonical = attrs_dict.get('href', '')
-            elif attrs_dict.get('rel') == 'alternate':
-                hreflang = attrs_dict.get('hreflang')
+            rel = attrs_dict.get('rel')
+            if rel == 'canonical':
+                self.canonical = attrs_dict.get('href')
+                self.canonical_count += 1
+            elif rel == 'alternate':
+                hreflang = attrs_dict.get('hreflang') or attrs_dict.get('hrefLang')
                 href = attrs_dict.get('href')
                 if hreflang and href:
                     self.hreflang_alternates.append({'hreflang': hreflang, 'href': href})
-                    
-        elif tag == 'script':
-            if attrs_dict.get('type') == 'application/ld+json':
-                self.in_script = True
-                self.current_script_content = []
-                
+        
+        elif tag == 'meta':
+            name = attrs_dict.get('name')
+            if name == 'description':
+                self.meta_description = attrs_dict.get('content')
+        
         elif tag == 'body':
             self.in_body = True
-            
-        elif tag == 'h1':
-            self.in_h1 = True
-            self.current_h1 = []
-            
-        elif tag == 'a':
-            href = attrs_dict.get('href', '')
-            if href:
-                self.links.append(href)
         
-        # Track data-testid attributes
-        if 'data-testid' in attrs_dict:
-            self.data_testids.append(attrs_dict['data-testid'])
+        elif tag == 'script' and self.in_body:
+            script_type = attrs_dict.get('type')
+            if script_type == 'application/ld+json':
+                self.in_script = True
+                self.current_script_type = script_type
+                self.script_content = ""
     
     def handle_endtag(self, tag):
         if tag == 'title':
             self.in_title = False
         elif tag == 'script' and self.in_script:
+            if self.current_script_type == 'application/ld+json':
+                self.json_ld_blocks.append(self.script_content.strip())
             self.in_script = False
-            content = ''.join(self.current_script_content).strip()
-            if content and self.in_body:
-                try:
-                    parsed = json.loads(content)
-                    self.json_ld_blocks.append(parsed)
-                except json.JSONDecodeError:
-                    pass
-        elif tag == 'h1':
-            self.in_h1 = False
-            if self.current_h1:
-                self.h1_texts.append(''.join(self.current_h1).strip())
+            self.current_script_type = None
+            self.script_content = ""
     
     def handle_data(self, data):
-        if self.in_title:
+        if self.in_title and not self.title:
             self.title = data.strip()
         elif self.in_script:
-            self.current_script_content.append(data)
-        elif self.in_h1:
-            self.current_h1.append(data)
+            self.script_content += data
+        elif self.in_body and not self.in_script:
+            # Collect visible text for leak detection
+            text = data.strip()
+            if text:
+                self.visible_text.append(text)
 
-def parse_html(html: str) -> HTMLMetaParser:
-    """Parse HTML and extract metadata"""
-    parser = HTMLMetaParser()
+def extract_html_metadata(html: str) -> Dict:
+    """Extract metadata from HTML string"""
+    parser = HTMLMetaExtractor()
     parser.feed(html)
-    return parser
+    
+    # Parse JSON-LD blocks
+    json_ld_parsed = []
+    for block in parser.json_ld_blocks:
+        try:
+            parsed = json.loads(block)
+            json_ld_parsed.append(parsed)
+        except json.JSONDecodeError as e:
+            json_ld_parsed.append({'error': str(e), 'raw': block[:100]})
+    
+    return {
+        'lang': parser.lang,
+        'title': parser.title,
+        'title_count': parser.title_count,
+        'canonical': parser.canonical,
+        'canonical_count': parser.canonical_count,
+        'hreflang_alternates': parser.hreflang_alternates,
+        'meta_description': parser.meta_description,
+        'json_ld_blocks': json_ld_parsed,
+        'json_ld_count': len(parser.json_ld_blocks),
+        'visible_text': ' '.join(parser.visible_text)
+    }
 
-def test_de_detail_long_slug():
-    """Test 1: DE detail — GET /p/diskretion-und-datenschutz-noir-hamburg"""
-    print("\n" + "="*80)
-    print("TEST 1: DE DETAIL (LONG SLUG) — GET /p/diskretion-und-datenschutz-noir-hamburg")
-    print("="*80)
+def get_admin_cookie() -> str:
+    """Login as admin and return cookie"""
+    resp = requests.post(
+        f"{BASE_URL}/api/auth/login",
+        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+        timeout=10
+    )
+    if resp.status_code != 200:
+        raise Exception(f"Admin login failed: {resp.status_code} {resp.text}")
     
-    url = f"{BASE_URL}/p/diskretion-und-datenschutz-noir-hamburg"
-    response = requests.get(url)
+    cookie = resp.cookies.get('access_token')
+    if not cookie:
+        raise Exception("No access_token cookie in login response")
+    return cookie
+
+def check_ssr_page(url: str, expected_lang: str, expected_title_contains: str, 
+                   expected_canonical_ends: str, expected_json_ld_types: List[str]) -> Dict:
+    """Check SSR page for all required metadata"""
+    print(f"\n  Testing {url}...")
+    resp = requests.get(url, timeout=10)
     
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    print("✅ Status: 200")
+    result = {
+        'url': url,
+        'status': resp.status_code,
+        'errors': []
+    }
     
-    parser = parse_html(response.text)
+    if resp.status_code != 200:
+        result['errors'].append(f"Expected 200, got {resp.status_code}")
+        return result
+    
+    meta = extract_html_metadata(resp.text)
     
     # Check html lang
-    assert parser.html_lang == 'de', f"Expected html lang='de', got '{parser.html_lang}'"
-    print(f"✅ HTML lang: {parser.html_lang}")
+    if meta['lang'] != expected_lang:
+        result['errors'].append(f"html lang: expected '{expected_lang}', got '{meta['lang']}'")
     
     # Check title
-    assert parser.title, "Title is missing"
-    assert 'Diskretion' in parser.title, f"Title missing 'Diskretion': {parser.title}"
-    assert 'Noir Hamburg' in parser.title, f"Title missing 'Noir Hamburg': {parser.title}"
-    print(f"✅ Title: {parser.title}")
+    if meta['title_count'] != 1:
+        result['errors'].append(f"Expected exactly 1 <title>, found {meta['title_count']}")
+    if not meta['title'] or expected_title_contains not in meta['title']:
+        result['errors'].append(f"Title '{meta['title']}' does not contain '{expected_title_contains}'")
     
     # Check canonical
-    assert parser.canonical, "Canonical is missing"
-    assert parser.canonical.endswith('/p/diskretion-und-datenschutz-noir-hamburg'), f"Canonical incorrect: {parser.canonical}"
-    print(f"✅ Canonical: {parser.canonical}")
+    if meta['canonical_count'] != 1:
+        result['errors'].append(f"Expected exactly 1 canonical, found {meta['canonical_count']}")
+    if not meta['canonical'] or not meta['canonical'].endswith(expected_canonical_ends):
+        result['errors'].append(f"Canonical '{meta['canonical']}' does not end with '{expected_canonical_ends}'")
     
-    # Check hreflang alternates
-    hreflang_values = [alt['hreflang'].lower() for alt in parser.hreflang_alternates]
-    assert 'de-de' in hreflang_values or 'de' in hreflang_values, f"Missing de-DE hreflang: {hreflang_values}"
-    assert 'en' in hreflang_values, f"Missing en hreflang: {hreflang_values}"
-    assert 'x-default' in hreflang_values, f"Missing x-default hreflang: {hreflang_values}"
-    print(f"✅ Hreflang alternates: {len(parser.hreflang_alternates)} ({', '.join(hreflang_values)})")
+    # Check hreflang alternates (should have de-DE, en, x-default)
+    hreflang_values = [alt['hreflang'] for alt in meta['hreflang_alternates']]
+    required_hreflangs = ['de-DE', 'en', 'x-default']
+    for req in required_hreflangs:
+        if req not in hreflang_values:
+            result['errors'].append(f"Missing hreflang alternate: {req}")
     
-    # Check JSON-LD blocks
-    assert len(parser.json_ld_blocks) == 2, f"Expected 2 JSON-LD blocks, got {len(parser.json_ld_blocks)}"
-    types = [block.get('@type') for block in parser.json_ld_blocks]
-    assert 'WebPage' in types, f"Missing WebPage JSON-LD: {types}"
-    assert 'BreadcrumbList' in types, f"Missing BreadcrumbList JSON-LD: {types}"
+    # Check JSON-LD blocks (should be exactly 2 in body)
+    if meta['json_ld_count'] != 2:
+        result['errors'].append(f"Expected exactly 2 JSON-LD blocks in body, found {meta['json_ld_count']}")
     
-    # Check WebPage inLanguage
-    webpage_block = next((b for b in parser.json_ld_blocks if b.get('@type') == 'WebPage'), None)
-    assert webpage_block, "WebPage JSON-LD block not found"
-    assert webpage_block.get('inLanguage') == 'de-DE', f"WebPage inLanguage incorrect: {webpage_block.get('inLanguage')}"
-    print(f"✅ JSON-LD blocks: 2 (WebPage with inLanguage='de-DE', BreadcrumbList)")
+    # Check JSON-LD types
+    found_types = []
+    for block in meta['json_ld_blocks']:
+        if isinstance(block, dict) and '@type' in block:
+            found_types.append(block['@type'])
     
-    # Check H1
-    assert len(parser.h1_texts) > 0, "No H1 found"
-    h1_text = parser.h1_texts[0]
-    assert 'Unser Diskretions-Versprechen' in h1_text or 'Diskretions-Versprechen' in h1_text, f"H1 incorrect: {h1_text}"
-    print(f"✅ H1: {h1_text}")
+    for expected_type in expected_json_ld_types:
+        if expected_type not in found_types:
+            result['errors'].append(f"Missing JSON-LD type: {expected_type}")
     
-    # Check body content
-    assert 'Diskretion ist unsere höchste Verpflichtung' in response.text, "Missing expected body content"
-    print("✅ Body contains: 'Diskretion ist unsere höchste Verpflichtung'")
-    
-    # Check related-services links
-    services_links = [link for link in parser.links if link.startswith('/services/')]
-    assert len(services_links) >= 3, f"Expected at least 3 related-services links, got {len(services_links)}"
-    print(f"✅ Related-Services: {len(services_links)} links starting with /services/")
-    
-    # Check related-areas links
-    areas_links = [link for link in parser.links if link.startswith('/escort/')]
-    assert len(areas_links) >= 3, f"Expected at least 3 related-areas links, got {len(areas_links)}"
-    print(f"✅ Related-Areas: {len(areas_links)} links starting with /escort/")
-    
-    # Check page-hero or page-content data-testid (depends on whether hero_image is set)
-    # Note: The review request assumed hero_image is set, but the actual DB data shows it's empty
-    # So we check for page-content instead (which is always present)
-    assert 'page-content' in parser.data_testids, f"Missing data-testid='page-content': {parser.data_testids}"
-    print("✅ data-testid='page-content' present (no hero_image, so plain header variant used)")
-    
-    # Check en-fallback-note MUST NOT appear
-    assert 'en-fallback-note' not in parser.data_testids, "data-testid='en-fallback-note' should NOT appear on DE page"
-    print("✅ data-testid='en-fallback-note' NOT present (correct)")
-    
-    print("\n✅ TEST 1 PASSED: DE detail page working correctly")
-    return True
+    result['meta'] = meta
+    return result
 
-def test_en_detail_long_slug():
-    """Test 2: EN detail — GET /en/p/diskretion-und-datenschutz-noir-hamburg"""
-    print("\n" + "="*80)
-    print("TEST 2: EN DETAIL (LONG SLUG) — GET /en/p/diskretion-und-datenschutz-noir-hamburg")
-    print("="*80)
+def check_en_leak(url: str) -> Dict:
+    """Check EN page for German UI string leaks"""
+    print(f"\n  Checking EN leak for {url}...")
+    resp = requests.get(url, timeout=10)
     
-    url = f"{BASE_URL}/en/p/diskretion-und-datenschutz-noir-hamburg"
-    response = requests.get(url)
+    result = {
+        'url': url,
+        'status': resp.status_code,
+        'leaks': []
+    }
     
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    print("✅ Status: 200")
+    if resp.status_code != 200:
+        result['leaks'].append(f"Page returned {resp.status_code}")
+        return result
     
-    parser = parse_html(response.text)
+    # Remove all script tags
+    html = re.sub(r'<script[^>]*>.*?</script>', '', resp.text, flags=re.DOTALL | re.IGNORECASE)
+    # Remove all tags
+    text = re.sub(r'<[^>]+>', ' ', html)
     
-    # Check html lang
-    assert parser.html_lang == 'en', f"Expected html lang='en', got '{parser.html_lang}'"
-    print(f"✅ HTML lang: {parser.html_lang}")
-    
-    # Check title
-    assert parser.title, "Title is missing"
-    assert 'Diskretion' in parser.title or 'Discretion' in parser.title, f"Title missing expected content: {parser.title}"
-    assert 'Noir Hamburg' in parser.title, f"Title missing 'Noir Hamburg': {parser.title}"
-    print(f"✅ Title: {parser.title}")
-    
-    # Check canonical
-    assert parser.canonical, "Canonical is missing"
-    assert parser.canonical.endswith('/en/p/diskretion-und-datenschutz-noir-hamburg'), f"Canonical incorrect: {parser.canonical}"
-    print(f"✅ Canonical: {parser.canonical}")
-    
-    # Check JSON-LD blocks
-    assert len(parser.json_ld_blocks) == 2, f"Expected 2 JSON-LD blocks, got {len(parser.json_ld_blocks)}"
-    types = [block.get('@type') for block in parser.json_ld_blocks]
-    assert 'WebPage' in types, f"Missing WebPage JSON-LD: {types}"
-    assert 'BreadcrumbList' in types, f"Missing BreadcrumbList JSON-LD: {types}"
-    
-    # Check WebPage inLanguage (should be de-DE because content_en is empty)
-    webpage_block = next((b for b in parser.json_ld_blocks if b.get('@type') == 'WebPage'), None)
-    assert webpage_block, "WebPage JSON-LD block not found"
-    assert webpage_block.get('inLanguage') == 'de-DE', f"WebPage inLanguage should be 'de-DE' (fallback): {webpage_block.get('inLanguage')}"
-    print(f"✅ JSON-LD blocks: 2 (WebPage with inLanguage='de-DE' [fallback], BreadcrumbList)")
-    
-    # Check en-fallback-note MUST appear
-    assert 'en-fallback-note' in parser.data_testids, f"Missing data-testid='en-fallback-note': {parser.data_testids}"
-    assert 'The English translation is coming soon' in response.text or 'English translation' in response.text, "Missing fallback note text"
-    print("✅ data-testid='en-fallback-note' present with fallback message")
-    
-    # Check related-services links (EN prefix)
-    services_links = [link for link in parser.links if link.startswith('/en/services/')]
-    assert len(services_links) >= 3, f"Expected at least 3 related-services links with /en/services/, got {len(services_links)}"
-    print(f"✅ Related-Services: {len(services_links)} links starting with /en/services/")
-    
-    # Check related-areas links (EN prefix)
-    areas_links = [link for link in parser.links if link.startswith('/en/escort/')]
-    assert len(areas_links) >= 3, f"Expected at least 3 related-areas links with /en/escort/, got {len(areas_links)}"
-    print(f"✅ Related-Areas: {len(areas_links)} links starting with /en/escort/")
-    
-    # Check for German UI-string leaks (excluding CMS content and email)
-    # Remove script tags and email before checking
-    text_without_scripts = re.sub(r'<script[^>]*>.*?</script>', '', response.text, flags=re.DOTALL)
-    text_without_email = text_without_scripts.replace('kontakt@noir-hamburg.de', '')
-    
-    german_ui_strings = ['Startseite', 'Über uns', 'Häufige Fragen', 'Kategorien', 'Termin', 'Sprache', 'Passende Services', 'Verwandte Orte']
-    found_leaks = [s for s in german_ui_strings if s in text_without_email]
-    
-    # Note: German CMS content is expected (fallback), so we only check UI strings
-    if found_leaks:
-        print(f"⚠️  WARNING: Found German UI strings (should be English): {found_leaks}")
-    else:
-        print("✅ Zero German UI-string leaks (CMS content fallback is expected)")
-    
-    print("\n✅ TEST 2 PASSED: EN detail page working correctly")
-    return True
-
-def test_slug_alias_de():
-    """Test 3: Slug alias — GET /p/diskretion"""
-    print("\n" + "="*80)
-    print("TEST 3: SLUG ALIAS (DE) — GET /p/diskretion")
-    print("="*80)
-    
-    url = f"{BASE_URL}/p/diskretion"
-    response = requests.get(url)
-    
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    print("✅ Status: 200")
-    
-    parser = parse_html(response.text)
-    
-    # Check canonical (should preserve short URL)
-    assert parser.canonical, "Canonical is missing"
-    assert parser.canonical.endswith('/p/diskretion'), f"Canonical should be short URL: {parser.canonical}"
-    print(f"✅ Canonical: {parser.canonical}")
-    
-    # Check H1 (same content as long slug)
-    assert len(parser.h1_texts) > 0, "No H1 found"
-    h1_text = parser.h1_texts[0]
-    assert 'Unser Diskretions-Versprechen' in h1_text or 'Diskretions-Versprechen' in h1_text, f"H1 incorrect: {h1_text}"
-    print(f"✅ H1: {h1_text}")
-    
-    # Check hreflang en alternate
-    en_alternates = [alt for alt in parser.hreflang_alternates if alt['hreflang'].lower() == 'en']
-    assert len(en_alternates) > 0, "Missing hreflang en alternate"
-    assert en_alternates[0]['href'].endswith('/en/p/diskretion'), f"EN alternate should point to /en/p/diskretion: {en_alternates[0]['href']}"
-    print(f"✅ Hreflang en alternate: {en_alternates[0]['href']}")
-    
-    print("\n✅ TEST 3 PASSED: Slug alias (DE) working correctly")
-    return True
-
-def test_slug_alias_en():
-    """Test 4: Slug alias — GET /en/p/diskretion"""
-    print("\n" + "="*80)
-    print("TEST 4: SLUG ALIAS (EN) — GET /en/p/diskretion")
-    print("="*80)
-    
-    url = f"{BASE_URL}/en/p/diskretion"
-    response = requests.get(url)
-    
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    print("✅ Status: 200")
-    
-    parser = parse_html(response.text)
-    
-    # Check canonical (should preserve short URL)
-    assert parser.canonical, "Canonical is missing"
-    assert parser.canonical.endswith('/en/p/diskretion'), f"Canonical should be short URL: {parser.canonical}"
-    print(f"✅ Canonical: {parser.canonical}")
-    
-    # Check hreflang de-DE alternate
-    de_alternates = [alt for alt in parser.hreflang_alternates if 'de' in alt['hreflang'].lower()]
-    assert len(de_alternates) > 0, "Missing hreflang de-DE alternate"
-    assert de_alternates[0]['href'].endswith('/p/diskretion'), f"DE alternate should point to /p/diskretion: {de_alternates[0]['href']}"
-    print(f"✅ Hreflang de-DE alternate: {de_alternates[0]['href']}")
-    
-    print("\n✅ TEST 4 PASSED: Slug alias (EN) working correctly")
-    return True
-
-def test_404_handling():
-    """Test 5: 404 handling"""
-    print("\n" + "="*80)
-    print("TEST 5: 404 HANDLING")
-    print("="*80)
-    
-    # Test DE 404
-    url_de = f"{BASE_URL}/p/does-not-exist"
-    response_de = requests.get(url_de)
-    assert response_de.status_code == 404, f"Expected 404 for DE, got {response_de.status_code}"
-    print(f"✅ GET /p/does-not-exist → 404")
-    
-    # Test EN 404
-    url_en = f"{BASE_URL}/en/p/does-not-exist"
-    response_en = requests.get(url_en)
-    assert response_en.status_code == 404, f"Expected 404 for EN, got {response_en.status_code}"
-    print(f"✅ GET /en/p/does-not-exist → 404")
-    
-    print("\n✅ TEST 5 PASSED: 404 handling working correctly")
-    return True
-
-def test_secondary_pages():
-    """Test 6: Secondary sanity checks"""
-    print("\n" + "="*80)
-    print("TEST 6: SECONDARY PAGES SANITY")
-    print("="*80)
-    
-    secondary_slugs = [
-        'professionelle-standards-noir-hamburg',
-        'so-funktioniert-eine-buchung-noir-hamburg'
+    # Check for German UI strings (excluding allowed ones)
+    forbidden_strings = [
+        'Startseite',
+        'Über uns',
+        'Häufige',
+        r'\bTermin\b',  # as standalone word
+        'Kategorien',
+        'Jetzt anfragen',
+        'Anfrage senden',
+        'Wunschtermin',
+        'Ihre Nachricht',
+        'Bitte wählen',
+        'Diskretionserklärung',
+        'Sorgfältige'
     ]
     
-    for slug in secondary_slugs:
-        # Test DE
-        url_de = f"{BASE_URL}/p/{slug}"
-        response_de = requests.get(url_de)
-        assert response_de.status_code == 200, f"Expected 200 for DE {slug}, got {response_de.status_code}"
-        
-        parser_de = parse_html(response_de.text)
-        assert len(parser_de.json_ld_blocks) == 2, f"Expected 2 JSON-LD blocks for DE {slug}, got {len(parser_de.json_ld_blocks)}"
-        assert len(parser_de.h1_texts) > 0, f"No H1 found for DE {slug}"
-        
-        print(f"✅ GET /p/{slug} → 200 (2 JSON-LD blocks, H1 present)")
-        
-        # Test EN
-        url_en = f"{BASE_URL}/en/p/{slug}"
-        response_en = requests.get(url_en)
-        assert response_en.status_code == 200, f"Expected 200 for EN {slug}, got {response_en.status_code}"
-        
-        parser_en = parse_html(response_en.text)
-        assert len(parser_en.json_ld_blocks) == 2, f"Expected 2 JSON-LD blocks for EN {slug}, got {len(parser_en.json_ld_blocks)}"
-        assert len(parser_en.h1_texts) > 0, f"No H1 found for EN {slug}"
-        
-        print(f"✅ GET /en/p/{slug} → 200 (2 JSON-LD blocks, H1 present)")
+    for forbidden in forbidden_strings:
+        if re.search(forbidden, text):
+            result['leaks'].append(f"Found forbidden string: {forbidden}")
     
-    print("\n✅ TEST 6 PASSED: Secondary pages working correctly")
-    return True
+    return result
 
-def test_sitemap_coverage():
-    """Test 7: Sitemap coverage"""
-    print("\n" + "="*80)
-    print("TEST 7: SITEMAP COVERAGE")
-    print("="*80)
+def test_contact_api():
+    """Test POST /api/contact endpoint"""
+    print("\n=== TEST 3: POST /api/contact functional tests ===")
     
-    url = f"{BASE_URL}/sitemap.xml"
-    response = requests.get(url)
+    # Get baseline count
+    admin_cookie = get_admin_cookie()
+    resp = requests.get(f"{BASE_URL}/api/contacts", cookies={'access_token': admin_cookie}, timeout=10)
+    baseline_count = len(resp.json()) if resp.status_code == 200 else 0
+    print(f"  Baseline contact count: {baseline_count}")
     
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    print("✅ Status: 200")
+    # 3a) Valid submission
+    print("\n  3a) Valid submission...")
+    valid_payload = {
+        "name": "Auto Test",
+        "email": "auto@example.com",
+        "phone": "+49 40 999999",
+        "service": "dinner-companion-hamburg",
+        "message": "This is an automated smoke test message that is comfortably longer than twenty characters.",
+        "date": "Saturday 8pm",
+        "consent": True,
+        "lang": "en"
+    }
+    resp = requests.post(f"{BASE_URL}/api/contact", json=valid_payload, timeout=10)
+    print(f"    Status: {resp.status_code}")
+    if resp.status_code != 200:
+        print(f"    ❌ Expected 200, got {resp.status_code}: {resp.text}")
+        return False
     
-    # Count /p/ entries
-    p_entries = re.findall(r'<loc>[^<]*?/p/[^<]+</loc>', response.text)
-    assert len(p_entries) >= 4, f"Expected at least 4 /p/ entries in sitemap, got {len(p_entries)}"
-    print(f"✅ Found {len(p_entries)} /p/ entries in sitemap")
+    data = resp.json()
+    if not data.get('ok'):
+        print(f"    ❌ Expected ok:true, got {data}")
+        return False
+    if 'id' not in data:
+        print(f"    ❌ Expected id field in response, got {data}")
+        return False
     
-    # Check for hreflang alternates
-    for entry_match in p_entries[:4]:  # Check first 4
-        loc_url = re.search(r'<loc>([^<]+)</loc>', entry_match).group(1)
-        # Find the corresponding xhtml:link entries
-        # Look for hreflang="en" alternate
-        en_alternate_pattern = rf'<xhtml:link[^>]*rel="alternate"[^>]*hreflang="en"[^>]*href="[^"]*?/en/p/[^"]*"'
-        assert re.search(en_alternate_pattern, response.text, re.IGNORECASE), f"Missing EN hreflang alternate for {loc_url}"
+    print(f"    ✅ Valid submission accepted, id: {data['id']}")
     
-    print("✅ All /p/ entries have hreflang='en' alternates")
+    # Check DB count increased
+    resp = requests.get(f"{BASE_URL}/api/contacts", cookies={'access_token': admin_cookie}, timeout=10)
+    new_count = len(resp.json()) if resp.status_code == 200 else 0
+    if new_count != baseline_count + 1:
+        print(f"    ❌ Expected count {baseline_count + 1}, got {new_count}")
+        return False
+    print(f"    ✅ DB count increased to {new_count}")
     
-    print("\n✅ TEST 7 PASSED: Sitemap coverage working correctly")
-    return True
-
-def test_footer_link_integrity():
-    """Test 8: Footer link integrity"""
-    print("\n" + "="*80)
-    print("TEST 8: FOOTER LINK INTEGRITY")
-    print("="*80)
+    # Check the new doc has correct fields
+    contacts = resp.json()
+    new_contact = next((c for c in contacts if c['email'] == 'auto@example.com'), None)
+    if not new_contact:
+        print(f"    ❌ Could not find new contact with email auto@example.com")
+        return False
     
-    # Fetch a DE public page (e.g., /blog)
-    url = f"{BASE_URL}/blog"
-    response = requests.get(url)
+    required_fields = {
+        'read': False,
+        'archived': False,
+        'starred': False,
+        'status': 'new',
+        'source_lang': 'en',
+        'service': 'dinner-companion-hamburg'
+    }
+    for field, expected_value in required_fields.items():
+        if new_contact.get(field) != expected_value:
+            print(f"    ❌ Field {field}: expected {expected_value}, got {new_contact.get(field)}")
+            return False
     
-    assert response.status_code == 200, f"Expected 200 for /blog, got {response.status_code}"
-    print("✅ GET /blog → 200")
+    if 'created_at' not in new_contact:
+        print(f"    ❌ Missing created_at field")
+        return False
     
-    # Check for footer link to /p/diskretion
-    parser = parse_html(response.text)
-    diskretion_links = [link for link in parser.links if '/p/diskretion' in link]
-    assert len(diskretion_links) > 0, "Footer link to /p/diskretion not found"
-    print(f"✅ Footer contains link to /p/diskretion")
+    # Check id is UUID v4 shape
+    if not re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', new_contact['id']):
+        print(f"    ❌ id is not UUID v4 shape: {new_contact['id']}")
+        return False
     
-    # Verify the link resolves to 200
-    diskretion_url = f"{BASE_URL}/p/diskretion"
-    diskretion_response = requests.get(diskretion_url)
-    assert diskretion_response.status_code == 200, f"Footer link /p/diskretion returns {diskretion_response.status_code}"
-    print(f"✅ Footer link /p/diskretion resolves to 200")
+    print(f"    ✅ New contact has all required fields")
     
-    print("\n✅ TEST 8 PASSED: Footer link integrity working correctly")
-    return True
-
-def test_regression():
-    """Test 9: Regression on prior work"""
-    print("\n" + "="*80)
-    print("TEST 9: REGRESSION ON PRIOR WORK")
-    print("="*80)
+    # 3b) Admin unread badge increments
+    print("\n  3b) Admin unread badge increments...")
+    resp = requests.get(f"{BASE_URL}/api/contacts/stats", cookies={'access_token': admin_cookie}, timeout=10)
+    if resp.status_code != 200:
+        print(f"    ❌ Stats endpoint returned {resp.status_code}")
+        return False
     
-    tests = [
-        ("/api/health", "Phase 0 health check"),
-        ("/api/pages", "Phase 2 pages API"),
-        ("/services/vip-escort-hamburg", "Phase 1 service detail"),
-        ("/models", "Phase 3 d1 models list"),
-        ("/blog", "Phase 3 d2 blog list"),
-        ("/escort/hafencity", "Phase 3 d3 area detail"),
-    ]
+    stats = resp.json()
+    if stats.get('unread', 0) < baseline_count + 1:
+        print(f"    ❌ Expected unread >= {baseline_count + 1}, got {stats.get('unread')}")
+        return False
+    print(f"    ✅ Unread count: {stats.get('unread')}")
     
-    for path, description in tests:
-        url = f"{BASE_URL}{path}"
-        response = requests.get(url)
-        assert response.status_code == 200, f"Expected 200 for {path}, got {response.status_code}"
-        print(f"✅ GET {path} → 200 ({description})")
+    # 3c) Validation errors
+    print("\n  3c) Validation errors...")
+    invalid_payload = {
+        "name": "",
+        "email": "not-an-email",
+        "message": "too short",
+        "consent": False
+    }
+    resp = requests.post(f"{BASE_URL}/api/contact", json=invalid_payload, timeout=10)
+    if resp.status_code != 400:
+        print(f"    ❌ Expected 400, got {resp.status_code}")
+        return False
     
-    # Check /api/pages returns exactly 3 items
-    pages_response = requests.get(f"{BASE_URL}/api/pages")
-    pages_data = pages_response.json()
-    assert len(pages_data) == 3, f"Expected 3 pages, got {len(pages_data)}"
-    print(f"✅ GET /api/pages returns exactly 3 items (published, non-deleted)")
+    data = resp.json()
+    if data.get('detail') != 'Validation failed':
+        print(f"    ❌ Expected 'Validation failed', got {data.get('detail')}")
+        return False
     
-    print("\n✅ TEST 9 PASSED: All regression tests passed")
+    errors = data.get('errors', {})
+    expected_errors = {
+        'name': 'required',
+        'email': 'invalid',
+        'message': 'too_short',
+        'consent': 'required'
+    }
+    for field, expected_code in expected_errors.items():
+        if errors.get(field) != expected_code:
+            print(f"    ❌ Field {field}: expected error '{expected_code}', got '{errors.get(field)}'")
+            return False
+    
+    print(f"    ✅ Validation errors correct")
+    
+    # Check DB count unchanged
+    resp = requests.get(f"{BASE_URL}/api/contacts", cookies={'access_token': admin_cookie}, timeout=10)
+    if resp.status_code != 200:
+        print(f"    ❌ Contacts endpoint returned {resp.status_code} after invalid submission")
+        print(f"    Response: {resp.text[:200]}")
+        return False
+    count_after_invalid = len(resp.json())
+    if count_after_invalid != baseline_count + 1:
+        print(f"    ❌ DB count changed after invalid submission: expected {baseline_count + 1}, got {count_after_invalid}")
+        return False
+    print(f"    ✅ DB count unchanged: {count_after_invalid}")
+    
+    # 3d) Honeypot silently discarded
+    print("\n  3d) Honeypot silently discarded...")
+    honeypot_payload = {
+        "name": "Bot",
+        "email": "bot@example.com",
+        "message": "a message that is long enough to pass validation.",
+        "consent": True,
+        "website": "http://spam.example.com"
+    }
+    resp = requests.post(f"{BASE_URL}/api/contact", json=honeypot_payload, timeout=10)
+    if resp.status_code != 200:
+        print(f"    ❌ Expected 200, got {resp.status_code}")
+        return False
+    
+    data = resp.json()
+    if not data.get('ok'):
+        print(f"    ❌ Expected ok:true, got {data}")
+        return False
+    if 'id' in data:
+        print(f"    ❌ Honeypot submission should not return id field")
+        return False
+    
+    print(f"    ✅ Honeypot returned 200 without id")
+    
+    # Check DB count unchanged
+    resp = requests.get(f"{BASE_URL}/api/contacts", cookies={'access_token': admin_cookie}, timeout=10)
+    count_after_honeypot = len(resp.json()) if resp.status_code == 200 else 0
+    if count_after_honeypot != baseline_count + 1:
+        print(f"    ❌ DB count changed after honeypot: {count_after_honeypot}")
+        return False
+    
+    # Verify no doc with bot@example.com exists
+    contacts = resp.json()
+    bot_contact = next((c for c in contacts if c['email'] == 'bot@example.com'), None)
+    if bot_contact:
+        print(f"    ❌ Found honeypot contact in DB")
+        return False
+    
+    print(f"    ✅ DB count unchanged, no bot contact found")
+    
+    # 3e) Missing consent
+    print("\n  3e) Missing consent...")
+    no_consent_payload = {
+        "name": "X",
+        "email": "x@example.com",
+        "message": "a message long enough to pass min-length validation."
+    }
+    resp = requests.post(f"{BASE_URL}/api/contact", json=no_consent_payload, timeout=10)
+    if resp.status_code != 400:
+        print(f"    ❌ Expected 400, got {resp.status_code}")
+        return False
+    
+    data = resp.json()
+    if data.get('errors', {}).get('consent') != 'required':
+        print(f"    ❌ Expected consent error 'required', got {data.get('errors', {}).get('consent')}")
+        return False
+    
+    print(f"    ✅ Missing consent rejected")
+    
+    # 3f) Existing leads still shown in admin
+    print("\n  3f) Existing leads still shown in admin...")
+    resp = requests.get(f"{BASE_URL}/api/contacts", cookies={'access_token': admin_cookie}, timeout=10)
+    if resp.status_code != 200:
+        print(f"    ❌ Contacts endpoint returned {resp.status_code}")
+        return False
+    
+    contacts = resp.json()
+    if len(contacts) < baseline_count + 1:
+        print(f"    ❌ Expected at least {baseline_count + 1} contacts, got {len(contacts)}")
+        return False
+    
+    # Verify we can access legacy contacts (spot-check one)
+    test_contact = next((c for c in contacts if c['email'] == 'test@example.com'), None)
+    if test_contact:
+        # Verify it has the expected structure
+        if not test_contact.get('id') or not test_contact.get('name') or not test_contact.get('email'):
+            print(f"    ❌ Legacy contact missing required fields")
+            return False
+        print(f"    ✅ Legacy contacts accessible (spot-checked test@example.com)")
+    
+    print(f"    ✅ All {len(contacts)} contacts returned")
+    
     return True
 
 def main():
-    """Run all tests"""
-    print("\n" + "="*80)
-    print("PHASE 3 CHUNK D4 — PUBLIC CUSTOM PAGES SSR TESTING")
-    print("Base URL:", BASE_URL)
-    print("="*80)
+    print("=" * 80)
+    print("Phase 3 d5 Backend Test Suite")
+    print("=" * 80)
     
-    tests = [
-        ("Test 1: DE detail (long slug)", test_de_detail_long_slug),
-        ("Test 2: EN detail (long slug)", test_en_detail_long_slug),
-        ("Test 3: Slug alias (DE)", test_slug_alias_de),
-        ("Test 4: Slug alias (EN)", test_slug_alias_en),
-        ("Test 5: 404 handling", test_404_handling),
-        ("Test 6: Secondary pages", test_secondary_pages),
-        ("Test 7: Sitemap coverage", test_sitemap_coverage),
-        ("Test 8: Footer link integrity", test_footer_link_integrity),
-        ("Test 9: Regression", test_regression),
+    # TEST 1: SSR smoke test for all 6 pages
+    print("\n=== TEST 1: SSR smoke test (all 6 pages, curl-based) ===")
+    
+    test_cases = [
+        {
+            'url': f"{BASE_URL}/kontakt",
+            'lang': 'de',
+            'title_contains': 'Kontakt — Diskrete Buchung',
+            'canonical_ends': '/kontakt',
+            'json_ld_types': ['ContactPage', 'BreadcrumbList']
+        },
+        {
+            'url': f"{BASE_URL}/en/contact",
+            'lang': 'en',
+            'title_contains': 'Contact — Discreet Booking',
+            'canonical_ends': '/en/contact',
+            'json_ld_types': ['ContactPage', 'BreadcrumbList']
+        },
+        {
+            'url': f"{BASE_URL}/ueber-uns",
+            'lang': 'de',
+            'title_contains': 'Über uns — Die Philosophie',
+            'canonical_ends': '/ueber-uns',
+            'json_ld_types': ['AboutPage', 'BreadcrumbList']
+        },
+        {
+            'url': f"{BASE_URL}/en/about",
+            'lang': 'en',
+            'title_contains': 'About — The philosophy',
+            'canonical_ends': '/en/about',
+            'json_ld_types': ['AboutPage', 'BreadcrumbList']
+        },
+        {
+            'url': f"{BASE_URL}/impressum",
+            'lang': 'de',
+            'title_contains': 'Impressum | Noir Hamburg',
+            'canonical_ends': '/impressum',
+            'json_ld_types': ['WebPage', 'BreadcrumbList']
+        },
+        {
+            'url': f"{BASE_URL}/en/imprint",
+            'lang': 'en',
+            'title_contains': 'Imprint | Noir Hamburg',
+            'canonical_ends': '/en/imprint',
+            'json_ld_types': ['WebPage', 'BreadcrumbList']
+        }
     ]
     
-    passed = 0
-    failed = 0
+    all_passed = True
+    for tc in test_cases:
+        result = check_ssr_page(
+            tc['url'],
+            tc['lang'],
+            tc['title_contains'],
+            tc['canonical_ends'],
+            tc['json_ld_types']
+        )
+        
+        if result['errors']:
+            print(f"    ❌ FAILED:")
+            for error in result['errors']:
+                print(f"       - {error}")
+            all_passed = False
+        else:
+            print(f"    ✅ PASSED")
     
-    for test_name, test_func in tests:
-        try:
-            test_func()
-            passed += 1
-        except AssertionError as e:
-            print(f"\n❌ {test_name} FAILED: {e}")
-            failed += 1
-        except Exception as e:
-            print(f"\n❌ {test_name} ERROR: {e}")
-            failed += 1
+    if not all_passed:
+        print("\n❌ TEST 1 FAILED")
+        return False
     
-    print("\n" + "="*80)
-    print("FINAL RESULTS")
-    print("="*80)
-    print(f"✅ Passed: {passed}/{len(tests)}")
-    print(f"❌ Failed: {failed}/{len(tests)}")
+    print("\n✅ TEST 1 PASSED - All 6 pages have correct SSR metadata")
     
-    if failed == 0:
-        print("\n🎉 ALL TESTS PASSED! Phase 3 chunk d4 is working correctly.")
-        return 0
-    else:
-        print(f"\n⚠️  {failed} test(s) failed. Please review the errors above.")
-        return 1
+    # TEST 2: EN 0-leak scan
+    print("\n=== TEST 2: EN 0-leak scan (regression on i18n hygiene) ===")
+    
+    en_pages = [
+        f"{BASE_URL}/en/contact",
+        f"{BASE_URL}/en/about",
+        f"{BASE_URL}/en/imprint"
+    ]
+    
+    all_clean = True
+    for url in en_pages:
+        result = check_en_leak(url)
+        if result['leaks']:
+            print(f"    ❌ FAILED:")
+            for leak in result['leaks']:
+                print(f"       - {leak}")
+            all_clean = False
+        else:
+            print(f"    ✅ PASSED")
+    
+    if not all_clean:
+        print("\n❌ TEST 2 FAILED")
+        return False
+    
+    print("\n✅ TEST 2 PASSED - No German UI string leaks on EN pages")
+    
+    # TEST 3: POST /api/contact functional tests
+    if not test_contact_api():
+        print("\n❌ TEST 3 FAILED")
+        return False
+    
+    print("\n✅ TEST 3 PASSED - POST /api/contact working correctly")
+    
+    # TEST 4: Sitemap coverage regression
+    print("\n=== TEST 4: Sitemap coverage regression ===")
+    resp = requests.get(f"{BASE_URL}/sitemap.xml", timeout=10)
+    if resp.status_code != 200:
+        print(f"  ❌ Sitemap returned {resp.status_code}")
+        return False
+    
+    sitemap_text = resp.text
+    all_found = True
+    
+    # Check that DE pages are in <loc> entries
+    de_entries = ['/kontakt', '/ueber-uns', '/impressum']
+    for entry in de_entries:
+        if f'<loc>{BASE_URL}{entry}</loc>' not in sitemap_text:
+            print(f"  ❌ Missing sitemap <loc> entry: {entry}")
+            all_found = False
+        else:
+            print(f"  ✅ Found <loc>: {entry}")
+    
+    # Check that EN pages are referenced as hreflang alternates
+    en_entries = [
+        ('/en/contact', 'kontakt'),
+        ('/en/about', 'ueber-uns'),
+        ('/en/imprint', 'impressum')
+    ]
+    for en_path, de_path in en_entries:
+        # Check if EN path is referenced as hreflang alternate
+        if f'href="{BASE_URL}{en_path}"' in sitemap_text:
+            print(f"  ✅ Found hreflang alternate: {en_path}")
+        else:
+            print(f"  ❌ Missing hreflang alternate: {en_path}")
+            all_found = False
+    
+    if not all_found:
+        print("\n❌ TEST 4 FAILED")
+        return False
+    
+    print("\n✅ TEST 4 PASSED - All static pages in sitemap")
+    
+    # TEST 5: Regression on prior work
+    print("\n=== TEST 5: Regression on prior work ===")
+    
+    regression_tests = [
+        (f"{BASE_URL}/api/health", 200),
+        (f"{BASE_URL}/services/vip-escort-hamburg", 200),
+        (f"{BASE_URL}/models", 200),
+        (f"{BASE_URL}/blog", 200),
+        (f"{BASE_URL}/escort/hafencity", 200),
+        (f"{BASE_URL}/p/diskretion", 200)
+    ]
+    
+    all_working = True
+    for url, expected_status in regression_tests:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code != expected_status:
+            print(f"  ❌ {url} returned {resp.status_code}, expected {expected_status}")
+            all_working = False
+        else:
+            print(f"  ✅ {url} → {resp.status_code}")
+    
+    if not all_working:
+        print("\n❌ TEST 5 FAILED")
+        return False
+    
+    print("\n✅ TEST 5 PASSED - All prior work still functional")
+    
+    print("\n" + "=" * 80)
+    print("✅ ALL TESTS PASSED")
+    print("=" * 80)
+    return True
 
-if __name__ == "__main__":
-    exit(main())
+if __name__ == '__main__':
+    try:
+        success = main()
+        exit(0 if success else 1)
+    except Exception as e:
+        print(f"\n❌ TEST SUITE FAILED WITH EXCEPTION: {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)

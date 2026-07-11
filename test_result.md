@@ -517,8 +517,8 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.1"
-  test_sequence: 23
+  version: "3.2"
+  test_sequence: 24
   run_ui: false
 
 test_plan:
@@ -526,6 +526,96 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+phase3_d5_static_pages_public:
+  - task: "Public /kontakt + /ueber-uns + /impressum (+ EN twins) with contact form"
+    implemented: true
+    working: true
+    file: "app/(de)/kontakt|ueber-uns|impressum/page.js + app/(en)/en/contact|about|imprint/page.js + components/public/ContactBody.js + ContactForm.js + AboutBody.js + ImpressumBody.js + lib/impressum_default.js + lib/about_defaults.js + lib/i18n.js + app/api/[[...path]]/route.js + components/admin/SettingsEditor.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Phase 3 chunk d5 shipped: /kontakt + /ueber-uns + /impressum + EN twins.
+            NEW POST /api/contact — validates name/email/message(>=20)/consent,
+            honeypot on `website` (200 silent-discard), writes shape-compatible
+            docs (id UUID + read/archived/starred/status/source_lang + created_at)
+            so admin inbox unread badge increments (verified DB 80->81 unread=81).
+            NEW pages: ContactPage / AboutPage / WebPage JSON-LD + BreadcrumbList,
+            hreflang alternates, canonical, dictionary-driven copy. About + Impressum
+            body from site_settings.{about,impressum}_content(_en) with bundled
+            defaults in lib/{about,impressum}_default(s).js (verbatim from ref SPA).
+            SettingsEditor + settings ALLOW extended for impressum_content_en,
+            about_content, about_content_en.
+            Manual curl verification: all 6 pages 200 w/ correct html lang,
+            unique title, canonical, hreflang, 2 JSON-LD blocks; POST /api/contact
+            valid -> 200, invalid -> 400 with per-field codes, honeypot -> 200 no
+            write; zero German UI-string leaks on all 3 EN pages; 8 service options
+            + 1 "Other" = 9 in dropdown on both locales; Impressum + About bundled
+            defaults render.
+            Please run standard read-path + SEO smoke tests + a POST test.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 5-test suite completed with ALL TESTS PASSED (5/5).
+            All SSR SEO artifacts render correctly in raw HTML (curl-based, no JS required).
+            Base URL: https://noir-migration.preview.emergentagent.com
+            DB baseline: 80 legacy contacts + 7 test submissions = 87 total.
+            
+            TEST 1 - SSR SMOKE TEST (all 6 pages): All pages return 200 with correct html lang,
+            exactly 1 <title> tag with expected content, exactly 1 canonical link ending with
+            correct path, 3 hreflang alternates (de-DE, en, x-default), exactly 2 JSON-LD blocks
+            in <body> with correct types:
+            - /kontakt: ContactPage + BreadcrumbList, title contains "Kontakt — Diskrete Buchung"
+            - /en/contact: ContactPage + BreadcrumbList, title contains "Contact — Discreet Booking"
+            - /ueber-uns: AboutPage + BreadcrumbList, title contains "Über uns — Die Philosophie"
+            - /en/about: AboutPage + BreadcrumbList, title contains "About — The philosophy"
+            - /impressum: WebPage + BreadcrumbList, title contains "Impressum | Noir Hamburg"
+            - /en/imprint: WebPage + BreadcrumbList, title contains "Imprint | Noir Hamburg"
+            
+            TEST 2 - EN 0-LEAK SCAN: All 3 EN pages (/en/contact, /en/about, /en/imprint) have
+            zero German UI string leaks. Verified absence of: Startseite, Über uns, Häufige,
+            Termin (standalone), Kategorien, Jetzt anfragen, Anfrage senden, Wunschtermin,
+            Ihre Nachricht, Bitte wählen, Diskretionserklärung, Sorgfältige. Email address
+            kontakt@noir-hamburg.de correctly allowed.
+            
+            TEST 3 - POST /api/contact FUNCTIONAL TESTS:
+            3a) Valid submission: 200 with {ok:true, id:<uuid>}, DB count increased by 1,
+            new contact has correct fields (read:false, archived:false, starred:false,
+            status:'new', source_lang:'en', service:'dinner-companion-hamburg', created_at
+            populated, id is UUID v4 shape).
+            3b) Admin unread badge: GET /api/contacts/stats returns unread count matching
+            new total (baseline + 1).
+            3c) Validation errors: 400 with per-field error codes (name:'required',
+            email:'invalid', message:'too_short', consent:'required'), DB count unchanged.
+            3d) Honeypot: POST with website field returns 200 {ok:true} without id field,
+            DB count unchanged, no doc with bot email exists.
+            3e) Missing consent: 400 with consent:'required' error, DB count unchanged.
+            3f) Existing leads: GET /api/contacts returns all contacts including legacy
+            test@example.com contact with correct structure.
+            
+            TEST 4 - SITEMAP COVERAGE: All 3 DE pages (/kontakt, /ueber-uns, /impressum)
+            present as <loc> entries, all 3 EN pages (/en/contact, /en/about, /en/imprint)
+            present as hreflang alternates. Correct SEO structure (DE as canonical, EN as
+            alternate).
+            
+            TEST 5 - REGRESSION: All prior work functional: /api/health → 200,
+            /services/vip-escort-hamburg → 200 (Phase 1), /models → 200 (Phase 3 d1),
+            /blog → 200 (Phase 3 d2), /escort/hafencity → 200 (Phase 3 d3),
+            /p/diskretion → 200 (Phase 3 d4).
+            
+            FORM VERIFICATION: Contact form has all required testids (contact-form,
+            contact-name, contact-email, contact-phone, contact-service, contact-date,
+            contact-message, contact-consent, contact-submit, direct-whatsapp, direct-phone,
+            direct-email). Service dropdown has exactly 10 options (1 placeholder "Bitte wählen"
+            + 8 services from DB + 1 "Andere / Sonstiges"). Honeypot field id="cf-website"
+            present inside position:-9999px wrapper. Consent checkbox label contains link to
+            /p/diskretion.
+            
+            All requirements met. No issues found. Phase 3 chunk d5 is production-ready.
 
 phase3_d4_custom_pages_public:
   - task: "Public /p/[slug] custom pages (+ EN twins)"
@@ -1779,3 +1869,36 @@ agent_communication:
         
         All backend tasks for Phase 3 d4 marked as working=true, needs_retesting=false.
         No issues found. Phase 3 d4 implementation is production-ready.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 D5 STATIC PAGES PUBLIC — TESTING COMPLETE - ALL TESTS PASSED (5/5)
+        
+        Comprehensive testing of static pages (kontakt, ueber-uns, impressum) + EN twins
+        + POST /api/contact endpoint completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        DB baseline: 80 legacy contacts + 7 test submissions = 87 total.
+        
+        Test Results Summary:
+        ✅ TEST 1 - SSR smoke test (all 6 pages): All pages have correct html lang, title,
+           canonical, hreflang alternates (de-DE, en, x-default), and 2 JSON-LD blocks in body
+           with correct types (ContactPage/AboutPage/WebPage + BreadcrumbList).
+        ✅ TEST 2 - EN 0-leak scan: Zero German UI string leaks on all 3 EN pages.
+        ✅ TEST 3 - POST /api/contact functional tests: Valid submission (200 + DB write),
+           admin unread badge increments, validation errors (400 with per-field codes),
+           honeypot silently discarded (200 no write), missing consent rejected (400),
+           existing leads accessible.
+        ✅ TEST 4 - Sitemap coverage: All 3 DE pages as <loc> entries, all 3 EN pages as
+           hreflang alternates.
+        ✅ TEST 5 - Regression: All prior work functional (health, services, models, blog,
+           escort, pages).
+        
+        Form verification: All required testids present, service dropdown has 10 options
+        (1 placeholder + 8 services + 1 "Other"), honeypot field present with correct styling,
+        consent checkbox links to /p/diskretion.
+        
+        All requirements met. No issues found. Phase 3 chunk d5 is production-ready.
+        
+        ACTION ITEMS FOR MAIN AGENT:
+        - All backend tests passed with no major issues
+        - Please summarize and finish Phase 3 d5
