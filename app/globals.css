@@ -145,3 +145,50 @@ html, body {
   width: 0; height: 1px; background: currentColor; transition: width 0.3s ease;
 }
 .link-underline:hover::after { width: 100%; }
+
+/* Blog article content — copied verbatim from reference. */
+.prose-noir h2 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+.prose-noir h3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-primary);
+}
+.prose-noir p {
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+}
+.prose-noir a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 500;
+}
+.prose-noir ul, .prose-noir ol {
+  margin: 1rem 0 1.5rem 1.25rem;
+  color: var(--color-text-secondary);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+}
+.prose-noir ul li { list-style: disc; margin-bottom: 0.5rem; }
+.prose-noir ol li { list-style: decimal; margin-bottom: 0.5rem; }
+.prose-noir blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1.25rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: var(--color-text-primary);
+}
+.prose-noir img { margin: 1.5rem 0; border-radius: 4px; }
+

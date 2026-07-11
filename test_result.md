@@ -358,10 +358,124 @@ backend_phase2:
           agent: "testing"
           comment: "✅ VERIFIED: Password change fully functional with all validations. Without cookie → 401 'Not authenticated'. Wrong current_password → 400 'Current password is incorrect'. Short password (<8 chars) → 400 'New password too short (min 8 chars)'. Valid rotation to TestingRotation2026! → 200 {ok:true}, login with new password successful. CRITICAL: Successfully rotated back to NoirAdmin2026! and verified login works. NOT LOCKED OUT. All destructive tests passed safely."
 
+phase3_d2_blog_public:
+  - task: "Public /blog list + detail (+ EN twins) with dynamic category chips"
+    implemented: true
+    working: true
+    file: "app/(de)/blog/page.js + [slug]/page.js + app/(en)/en/blog/page.js + [slug]/page.js + components/public/BlogListBody.js + components/public/BlogDetailBody.js + lib/i18n.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Phase 3 chunk d2 landed. Shared body components take a `lang` prop and
+            render both locales without duplication. Highlights:
+              * SSR list at /blog and /en/blog with dynamic category chips derived
+                from the published set (hides zero-count categories, no hardcoded
+                list). Filter is server-side via ?category=... — chip links stay
+                shareable/crawlable, canonical always points to bare /blog to avoid
+                filtered duplicates being indexed.
+              * Pagination intentionally omitted (only 13 posts).
+              * Detail pages render Article + BreadcrumbList JSON-LD (+ FAQPage
+                when the post has faqs). TOC is auto-built from every <h2> in the
+                content with id-slug anchors when >=3 headings.
+              * Related-services / related-locations / related-articles / featured
+                models blocks all link to the correct locale twin.
+              * enFallback banner appears only when reader is on EN and no
+                content_en exists (rule (a) fallback).
+              * date-fns replaced by native toLocaleDateString('de-DE'/'en-US').
+              * lib/i18n.js gained 25 new blog.* dictionary keys.
+              * Sitemap already covered /blog list + all 13 /blog/{slug} entries
+                (existing coverage).
+            Manual curl verification:
+              * DE list 200 → <html lang="de">, title "Magazin — Noir Hamburg…",
+                canonical /blog, hreflang de-DE + en + x-default, JSON-LD
+                BreadcrumbList + Blog, 13 cards, 11 category chips, "ALLE" active.
+              * EN list 200 → <html lang="en">, title "Magazine — Noir Hamburg…",
+                canonical /en/blog, chips render 1:1, empty state hidden.
+              * /blog?category=Fine%20Dining%20Hamburg 200 → 2 filtered cards, chip
+                highlighted.
+              * DE detail (restaurants post) 200 → title "Die 10 besten Restaurants
+                in Hamburg | Noir Hamburg Guide", canonical /blog/{slug}, 2 JSON-LD
+                blocks (Article + BreadcrumbList — no FAQ on this post), TOC hidden
+                (post has <3 h2). Related-services links → /services/*, areas → 
+                /escort/*, models → /models/*.
+              * EN detail 200 → title "The 10 Best Restaurants in Hamburg | Noir 
+                Hamburg Guide", h1 "The Ten Best Restaurants…", cross-links all use 
+                /en/* prefix. No German string leaks in visible copy.
+              * Fine-Dining category post shows 1 related-article twin.
+            Please run standard read-path + SEO smoke tests.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 9-test suite completed with ALL TESTS PASSED (9/9).
+            All SSR SEO artifacts render correctly in raw HTML (curl-based, no JS required).
+            
+            TEST 1 - DE BLOG LIST (GET /blog): 200, html lang=de, title "Magazin — Noir Hamburg | 
+            Lifestyle, Hamburg Guide & Reiseempfehlungen", meta description contains "Restaurants" 
+            and "Hotels", canonical=/blog, hreflang alternates (de-DE, en, x-default) present, 
+            JSON-LD blocks in body (BreadcrumbList + Blog), exactly 13 blog cards, 11 category 
+            chips (dynamic from DB), "Alle" chip present, no pagination controls.
+            
+            TEST 2 - EN BLOG LIST (GET /en/blog): 200, html lang=en, title "Magazine — Noir Hamburg | 
+            Lifestyle, Hamburg Guide & Travel Recommendations", canonical=/en/blog, h1 contains 
+            "Magazine" (not "Magazin"), zero German UI string leaks (verified regex check excluding 
+            kontakt@noir-hamburg.de email), 11 category chips, "All" chip present, 13 blog cards.
+            
+            TEST 3 - CATEGORY FILTER (GET /blog?category=Fine%20Dining%20Hamburg): 200, exactly 2 
+            blog cards (filtered correctly), "Fine Dining Hamburg" chip present, "Alle" chip not 
+            active (burgundy styling absent).
+            
+            TEST 4 - DE BLOG DETAIL (GET /blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner): 
+            200, html lang=de, title "Die 10 besten Restaurants in Hamburg | Noir Hamburg Guide", 
+            h1 "Die zehn besten Restaurants in Hamburg für ein unvergessliches Dinner", 
+            canonical=/blog/{slug}, hreflang en points to /en/blog/{slug}, exactly 2 JSON-LD blocks 
+            in body (Article + BreadcrumbList), Article has inLanguage="de-DE" and 
+            articleSection="Restaurants", related-services block (2+ links to /services/*), 
+            related-areas block (3+ links to /escort/*), featured models block (3+ links to /models/*), 
+            contact box footer contains "Kontakt Noir Hamburg".
+            
+            TEST 5 - EN BLOG DETAIL (GET /en/blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner): 
+            200, html lang=en, title "The 10 Best Restaurants in Hamburg | Noir Hamburg Guide", 
+            h1 "The Ten Best Restaurants in Hamburg for an Unforgettable Dinner", canonical=/en/blog/{slug}, 
+            hreflang de-DE points to /blog/{slug} (DE twin), Article JSON-LD has inLanguage="en", 
+            related-services links start with /en/services/ (2+), related-areas links start with 
+            /en/escort/ (3+), models links start with /en/models/ (3+), related-articles links start 
+            with /en/blog/, contact box footer contains "Contact Noir Hamburg" (English), zero German 
+            UI string leaks.
+            
+            TEST 6 - FINE-DINING CATEGORY CROSS-LINK (GET /blog/fine-dining-hamburg-zehn-restaurants-die-den-abend-besonders-machen): 
+            200, related-articles block includes link to /blog/fruehstueck-in-hamburg-die-zehn-schoensten-adressen-fuer-den-langsamen-morgen 
+            (same category "Fine Dining Hamburg").
+            
+            TEST 7 - 404 HANDLING: GET /blog/does-not-exist → 404, GET /en/blog/does-not-exist → 404.
+            
+            TEST 8 - SITEMAP COVERAGE (GET /sitemap.xml): 200, content-type=application/xml, exactly 
+            13 blog entries (<loc> matching .../blog/...), each blog entry has xhtml:link alternate 
+            for hreflang="en" pointing to /en/blog/{slug}.
+            
+            TEST 9 - REGRESSION: GET /api/health → 200, GET /api/blog → 200 with 13 posts, 
+            GET /models → 200 (Phase 3 d1 still works), GET /services/vip-escort-hamburg → 200 
+            (Phase 1 still works).
+            
+            CRITICAL SEO VERIFICATIONS: Every tested URL has exactly ONE <title> tag with unique 
+            non-empty title, ONE <meta name="description"> with non-empty content, ONE <link rel="canonical"> 
+            pointing to correct URL, hreflang alternates (de-DE, en, x-default) all present, 
+            <html lang="de"> for DE routes and <html lang="en"> for EN routes, ALL JSON-LD blocks 
+            appear in <body> (not <head>), each JSON-LD block parses as valid JSON.
+            
+            All 11 expected categories verified in chips: Business Travel Hamburg, Escort Advice, 
+            Escort Guides, FAQ Guides, Fine Dining Hamburg, Hamburg Lifestyle, Luxury Hotels Hamburg, 
+            Luxury Lifestyle, Nightlife Hamburg, Privacy & Discretion, Restaurants.
+            
+            No issues found. All requirements met.
+
 metadata:
   created_by: "main_agent"
-  version: "2.7"
-  test_sequence: 18
+  version: "2.9"
+  test_sequence: 20
   run_ui: false
 
 test_plan:
@@ -1335,4 +1449,89 @@ agent_communication:
         aurelia, valentina, sophia, mila, helena, lara, isabella, charlotte, anastasia, camille, beatrice, nina, marlene, elena
         
         All requirements met. No issues found. Phase 3 d1 models public implementation is production-ready.
+        Task marked as working=true, needs_retesting=false.
+
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 D2 BLOG PUBLIC — COMPREHENSIVE SSR SEO TESTING COMPLETE - ALL TESTS PASSED (9/9)
+        
+        Comprehensive 9-test suite verifying SSR SEO artifacts in raw HTML (curl-based, no JS required) completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        
+        Test Results Summary:
+        
+        SECTION 1: DE BLOG LIST (1/1 passed)
+        ✅ GET /blog → 200, html lang=de, title "Magazin — Noir Hamburg | Lifestyle, Hamburg Guide & Reiseempfehlungen"
+        ✅ Meta description contains "Restaurants" and "Hotels"
+        ✅ Canonical=/blog, hreflang alternates (de-DE, en, x-default) present
+        ✅ JSON-LD blocks in body: BreadcrumbList + Blog
+        ✅ Exactly 13 blog cards (data-testid="blog-card-*")
+        ✅ 11 category chips (data-testid="blog-cat-*") - dynamic from DB, no hardcoded list
+        ✅ "Alle" chip present, no pagination controls
+        
+        SECTION 2: EN BLOG LIST (1/1 passed)
+        ✅ GET /en/blog → 200, html lang=en, title "Magazine — Noir Hamburg | Lifestyle, Hamburg Guide & Travel Recommendations"
+        ✅ Canonical=/en/blog, h1 contains "Magazine" (not "Magazin")
+        ✅ Zero German UI string leaks (verified regex check excluding kontakt@noir-hamburg.de email)
+        ✅ 11 category chips, "All" chip present, 13 blog cards
+        
+        SECTION 3: CATEGORY FILTER (1/1 passed)
+        ✅ GET /blog?category=Fine%20Dining%20Hamburg → 200, exactly 2 blog cards (filtered correctly)
+        ✅ "Fine Dining Hamburg" chip present, "Alle" chip not active (burgundy styling absent)
+        
+        SECTION 4: DE BLOG DETAIL (1/1 passed)
+        ✅ GET /blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner → 200
+        ✅ Html lang=de, title "Die 10 besten Restaurants in Hamburg | Noir Hamburg Guide"
+        ✅ H1 "Die zehn besten Restaurants in Hamburg für ein unvergessliches Dinner"
+        ✅ Canonical=/blog/{slug}, hreflang en→/en/blog/{slug}
+        ✅ Exactly 2 JSON-LD blocks in body: Article + BreadcrumbList
+        ✅ Article has inLanguage="de-DE" and articleSection="Restaurants"
+        ✅ Related-services block (2+ links to /services/*), related-areas block (3+ links to /escort/*)
+        ✅ Featured models block (3+ links to /models/*), contact box footer contains "Kontakt Noir Hamburg"
+        
+        SECTION 5: EN BLOG DETAIL (1/1 passed)
+        ✅ GET /en/blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner → 200
+        ✅ Html lang=en, title "The 10 Best Restaurants in Hamburg | Noir Hamburg Guide"
+        ✅ H1 "The Ten Best Restaurants in Hamburg for an Unforgettable Dinner"
+        ✅ Canonical=/en/blog/{slug}, hreflang de-DE→/blog/{slug} (DE twin)
+        ✅ Article JSON-LD has inLanguage="en"
+        ✅ Related-services links start with /en/services/ (2+), related-areas links start with /en/escort/ (3+)
+        ✅ Models links start with /en/models/ (3+), related-articles links start with /en/blog/
+        ✅ Contact box footer contains "Contact Noir Hamburg" (English), zero German UI string leaks
+        
+        SECTION 6: FINE-DINING CATEGORY CROSS-LINK (1/1 passed)
+        ✅ GET /blog/fine-dining-hamburg-zehn-restaurants-die-den-abend-besonders-machen → 200
+        ✅ Related-articles block includes link to /blog/fruehstueck-in-hamburg-die-zehn-schoensten-adressen-fuer-den-langsamen-morgen (same category "Fine Dining Hamburg")
+        
+        SECTION 7: 404 HANDLING (1/1 passed)
+        ✅ GET /blog/does-not-exist → 404
+        ✅ GET /en/blog/does-not-exist → 404
+        
+        SECTION 8: SITEMAP COVERAGE (1/1 passed)
+        ✅ GET /sitemap.xml → 200, content-type=application/xml
+        ✅ Exactly 13 blog entries (<loc> matching .../blog/...)
+        ✅ Each blog entry has xhtml:link alternate for hreflang="en" pointing to /en/blog/{slug}
+        
+        SECTION 9: REGRESSION (1/1 passed)
+        ✅ GET /api/health → 200
+        ✅ GET /api/blog → 200 with 13 posts
+        ✅ GET /models → 200 (Phase 3 d1 still works)
+        ✅ GET /services/vip-escort-hamburg → 200 (Phase 1 still works)
+        
+        Critical SEO Verifications (verified on every tested URL):
+        • Exactly ONE <title> tag with unique non-empty title
+        • ONE <meta name="description"> with non-empty content
+        • ONE <link rel="canonical"> pointing to correct URL
+        • hreflang alternates (de-DE, en, x-default) all present
+        • <html lang="de"> for DE routes, <html lang="en"> for EN routes
+        • ALL JSON-LD blocks appear in <body> (not <head>)
+        • Each JSON-LD block parses as valid JSON
+        
+        Categories Verified (all 11 present in chips):
+        Business Travel Hamburg, Escort Advice, Escort Guides, FAQ Guides, Fine Dining Hamburg, 
+        Hamburg Lifestyle, Luxury Hotels Hamburg, Luxury Lifestyle, Nightlife Hamburg, 
+        Privacy & Discretion, Restaurants
+        
+        All requirements met. No issues found. Phase 3 d2 blog public implementation is production-ready.
         Task marked as working=true, needs_retesting=false.
