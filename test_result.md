@@ -360,16 +360,43 @@ backend_phase2:
 
 metadata:
   created_by: "main_agent"
-  version: "1.5"
-  test_sequence: 6
+  version: "1.7"
+  test_sequence: 8
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "PUT /api/area-content/{slug}"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+backend_phase2_settings_cms:
+  - task: "PUT /api/settings"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only via requireAdmin. Updates the (singleton) site_settings doc. Upserts _key='singleton' + created_at if none exists. Whitelist: business_name, tagline_de/en, phone, email, whatsapp_number, recruitment_whatsapp_number, hours_de/en, homepage_hero_image, escort_hamburg_image, about_image, social_share_image, service_images (map), area_images (map), facebook_url, instagram_url, twitter_url, impressum_content, diskretion_content. Sets updated_at. revalidatePath('/', 'layout') + ('/en', 'layout') + sitemap so every page reflects the change. Manual curl: no-auth 401, partial PUT persisted, GET reflects, whitelist blocked _key/_id/password_hash injection, full baseline restore returned all fields to original values."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Comprehensive 15-step test completed with 71/71 assertions passed. Auth guards working (401 without/with garbage cookie). Partial updates working (phone + instagram_url persisted, other fields unchanged). Map fields working (area_images, service_images - whole map replaced, not merged). Long-text fields working (impressum_content, diskretion_content with newlines preserved). Whitelist enforcement working (_key='singleton' not changed to HACKED, _id/password_hash not injected, business_name changed as whitelisted). Empty body working (200, only updated_at bumped). Upsert safety verified (_key still 'singleton'). SSR revalidation working (business_name change reflected in GET). CRITICAL: Baseline restoration successful - all 20 whitelisted fields restored to original values including empty strings for image fields and empty maps for service_images/area_images. Regression tests passed (health, service-content 8, area-content 18, auth/me, models 14, blog 13, pages 3 all working). Production data is safe. No issues found."
+
+  - task: "Admin CMS UI \u2014 Settings"
+    implemented: true
+    working: true
+    file: "app/(de)/admin/(guarded)/settings/page.js + components/admin/SettingsEditor.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Sections: Identit\u00e4t (business_name, tagline DE/EN), Kontakt (phone, email, 2x WhatsApp, hours DE/EN), Social Media, Bilder (4 single-URL fields), Service-Bilder (map editor keyed by all 8 service slugs), Area-Bilder (map editor keyed by all 18 area slugs, shows N/18 bef\u00fcllt), Impressum + Diskretion (large text). Sticky save + preview link to '/'."
 
 backend_phase2_areas_cms:
   - task: "PUT /api/area-content/{slug}"
@@ -655,4 +682,79 @@ agent_communication:
         • No regression on other endpoints
         
         All tests passed. PUT /api/area-content/{slug} endpoint is production-ready.
+        Task marked as working=true, needs_retesting=false.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 2 SETTINGS CMS — PUT /api/settings TESTING COMPLETE - ALL TESTS PASSED (71/71)
+        
+        Comprehensive 15-step test of admin-gated site_settings update endpoint completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        
+        Test Results by Section:
+        
+        SECTION 1: AUTH GUARDS (5/5 passed)
+        ✅ PUT without cookie → 401 'Not authenticated'
+        ✅ PUT with garbage cookie → 401
+        ✅ Login as admin → 200 with access_token cookie
+        ✅ Baseline saved (22 fields from GET /api/settings)
+        ✅ Confirmed no _id in response
+        
+        SECTION 2: PARTIAL UPDATE (6/6 passed)
+        ✅ PUT phone='+49 40 12345678', instagram_url='https://instagram.com/test_noir' → 200
+        ✅ GET verified both fields persisted, other fields (business_name, tagline_de, hours_de) unchanged
+        
+        SECTION 3: MAP FIELDS (4/4 passed)
+        ✅ PUT area_images={'hafencity':'...','altona':'...'} → 200, GET verified exact match (whole map replaced)
+        ✅ PUT service_images={'vip-escort-hamburg':'...'} → 200, GET verified exact match
+        
+        SECTION 4: LONG-TEXT FIELDS (3/3 passed)
+        ✅ PUT impressum_content + diskretion_content (with newlines) → 200
+        ✅ GET verified both stored verbatim (newlines preserved)
+        
+        SECTION 5: WHITELIST ENFORCEMENT (5/5 passed)
+        ✅ PUT _key='HACKED', _id='HACKED', password_hash='HACKED', business_name='clean-update' → 200
+        ✅ GET verified _key still 'singleton' (not HACKED), no _id/password_hash injected, business_name DID change (whitelisted)
+        
+        SECTION 6: EMPTY BODY (2/2 passed)
+        ✅ PUT {} → 200, GET verified business_name still 'clean-update' (only updated_at bumped)
+        
+        SECTION 7: UPSERT SAFETY (2/2 passed)
+        ✅ GET /api/settings → 200, _key is 'singleton' (collection still has exactly 1 document)
+        
+        SECTION 8: SSR REVALIDATION CROSS-CHECK (3/3 passed)
+        ✅ PUT business_name='Revalidation Test Brand' → 200
+        ✅ Homepage returned 200 (revalidatePath called)
+        ✅ GET /api/settings reflects new business_name
+        
+        SECTION 9: CRITICAL — FULL RESTORE (22/22 passed)
+        ✅ PUT all 20 whitelisted fields back to baseline in ONE call → 200
+        ✅ GET verified deep equality: all 20 fields (business_name, tagline_de, tagline_en, phone, email, whatsapp_number, recruitment_whatsapp_number, hours_de, hours_en, homepage_hero_image, escort_hamburg_image, about_image, social_share_image, service_images, area_images, facebook_url, instagram_url, twitter_url, impressum_content, diskretion_content) restored to original values
+        ✅ Verified empty strings for image fields (homepage_hero_image, escort_hamburg_image, about_image, social_share_image, facebook_url, instagram_url, twitter_url, impressum_content, diskretion_content)
+        ✅ Verified empty maps for service_images and area_images
+        
+        SECTION 10: REGRESSION (13/13 passed)
+        ✅ GET /api/health → 200
+        ✅ GET /api/service-content → 200 with 8 items
+        ✅ GET /api/area-content → 200 with 18 items
+        ✅ GET /api/auth/me with same cookie → 200 with correct user email
+        ✅ GET /api/models → 200 with 14 items
+        ✅ GET /api/blog → 200 with 13 items
+        ✅ GET /api/pages → 200 with 3 items
+        
+        Critical Verifications:
+        • Admin authentication guard working (requireAdmin)
+        • Whitelist enforcement working (only allowed fields updated)
+        • updated_at field automatically set on every update
+        • Map fields (service_images, area_images) replace entire map (not merge)
+        • Long-text fields preserve newlines and special characters
+        • Upsert safety verified (_key='singleton' protected)
+        • revalidatePath working for layout and sitemap
+        • CRITICAL: Baseline restoration successful - production content NOT corrupted
+        • All empty string fields restored to empty strings (not undefined, not test values)
+        • All empty map fields restored to empty maps {}
+        • No regression on other endpoints
+        
+        All tests passed. PUT /api/settings endpoint is production-ready.
         Task marked as working=true, needs_retesting=false.

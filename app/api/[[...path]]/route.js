@@ -129,6 +129,39 @@ async function route(request, ctx, method) {
       if (!doc) return j({ detail: 'Settings not found' }, { status: 404 })
       return j(cleanDoc(doc))
     }
+    // PUT /api/settings \u2014 admin only.  Updates the singleton site_settings doc.
+    if (p === '/settings' && method === 'PUT') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const body = await readJson(request)
+      const ALLOW = [
+        'business_name', 'tagline_de', 'tagline_en',
+        'phone', 'email', 'whatsapp_number', 'recruitment_whatsapp_number',
+        'hours_de', 'hours_en',
+        'homepage_hero_image', 'escort_hamburg_image', 'about_image', 'social_share_image',
+        'service_images', 'area_images',
+        'facebook_url', 'instagram_url', 'twitter_url',
+        'impressum_content', 'diskretion_content',
+      ]
+      const update = {}
+      for (const k of ALLOW) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      // Update the (single) settings doc.  If none exists, upsert one.
+      const result = await db.collection('site_settings').findOneAndUpdate(
+        {},
+        { $set: update, $setOnInsert: { _key: 'singleton', created_at: new Date() } },
+        { upsert: true, returnDocument: 'after' }
+      )
+      // Header/footer/impressum/diskretion appear on every page — revalidate
+      // the whole site including sitemap.
+      try {
+        revalidatePath('/', 'layout')
+        revalidatePath('/en', 'layout')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(result || (await db.collection('site_settings').findOne({}))))
+    }
 
     // ---------- Service content ----------
     if (p === '/service-content' && method === 'GET') return j(await listServiceContent())
