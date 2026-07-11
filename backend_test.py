@@ -1,644 +1,753 @@
 #!/usr/bin/env python3
 """
-Phase 2 Resource #7 — Contacts Inbox Backend Testing
-Comprehensive 25-step test plan for contacts CRUD + flags/notes management.
+Phase 3 d1: Public /models list + /models/{slug} detail + EN twins + sitemap updates
+Testing SSR SEO artifacts in raw HTML (not just after JS hydration)
 """
+
 import requests
 import json
-import sys
-from typing import Dict, Any, Optional
+import re
+from html.parser import HTMLParser
+from xml.etree import ElementTree as ET
 
-BASE_URL = "https://noir-migration.preview.emergentagent.com/api"
-ADMIN_EMAIL = "admin@noir-hamburg.de"
-ADMIN_PASSWORD = "NoirAdmin2026!"
+BASE_URL = "https://noir-migration.preview.emergentagent.com"
 
-class TestRunner:
+# Expected 14 model slugs
+EXPECTED_MODEL_SLUGS = [
+    'aurelia', 'valentina', 'sophia', 'mila', 'helena', 'lara', 
+    'isabella', 'charlotte', 'anastasia', 'camille', 'beatrice', 
+    'nina', 'marlene', 'elena'
+]
+
+class SEOParser(HTMLParser):
+    """Parse HTML to extract SEO elements"""
     def __init__(self):
-        self.session = requests.Session()
-        self.test_id = None
-        self.baseline_stats = None
-        self.passed = 0
-        self.failed = 0
+        super().__init__()
+        self.titles = []
+        self.meta_descriptions = []
+        self.canonicals = []
+        self.hreflangs = []
+        self.html_lang = None
+        self.json_ld_blocks = []
+        self.h1_tags = []
+        self.in_head = False
+        self.in_body = False
+        self.in_script = False
+        self.script_type = None
+        self.script_content = []
         
-    def log(self, msg: str):
-        print(f"  {msg}")
+    def handle_starttag(self, tag, attrs):
+        attrs_dict = dict(attrs)
+        
+        if tag == 'html':
+            self.html_lang = attrs_dict.get('lang')
+        elif tag == 'head':
+            self.in_head = True
+        elif tag == 'body':
+            self.in_body = True
+            self.in_head = False
+        elif tag == 'title':
+            pass  # Will capture in handle_data
+        elif tag == 'meta' and attrs_dict.get('name') == 'description':
+            self.meta_descriptions.append(attrs_dict.get('content', ''))
+        elif tag == 'link' and attrs_dict.get('rel') == 'canonical':
+            self.canonicals.append(attrs_dict.get('href', ''))
+        elif tag == 'link' and attrs_dict.get('rel') == 'alternate':
+            hreflang = attrs_dict.get('hreflang')
+            href = attrs_dict.get('href')
+            if hreflang and href:
+                self.hreflangs.append({'hreflang': hreflang, 'href': href})
+        elif tag == 'h1':
+            pass  # Will capture in handle_data
+        elif tag == 'script' and attrs_dict.get('type') == 'application/ld+json':
+            self.in_script = True
+            self.script_type = 'json-ld'
+            self.script_content = []
+            
+    def handle_endtag(self, tag):
+        if tag == 'head':
+            self.in_head = False
+        elif tag == 'body':
+            self.in_body = False
+        elif tag == 'script' and self.in_script:
+            self.in_script = False
+            if self.script_type == 'json-ld':
+                content = ''.join(self.script_content)
+                self.json_ld_blocks.append({
+                    'content': content,
+                    'in_body': self.in_body
+                })
+            self.script_type = None
+            self.script_content = []
+            
+    def handle_data(self, data):
+        # Get the last open tag from the stack
+        if self.in_script and self.script_type == 'json-ld':
+            self.script_content.append(data)
+        # We need to track what tag we're in - simplified approach
+        # This is a limitation of HTMLParser, but we'll capture via regex instead
+        
+def extract_seo_elements(html):
+    """Extract SEO elements from HTML"""
+    parser = SEOParser()
+    parser.feed(html)
     
-    def assert_eq(self, actual, expected, msg: str):
-        if actual == expected:
-            self.passed += 1
-            self.log(f"✅ {msg}")
-            return True
-        else:
-            self.failed += 1
-            self.log(f"❌ {msg}")
-            self.log(f"   Expected: {expected}")
-            self.log(f"   Actual: {actual}")
-            return False
+    # Extract titles using regex (more reliable than parser for this)
+    titles = re.findall(r'<title[^>]*>(.*?)</title>', html, re.DOTALL | re.IGNORECASE)
     
-    def assert_true(self, condition: bool, msg: str):
-        if condition:
-            self.passed += 1
-            self.log(f"✅ {msg}")
-            return True
-        else:
-            self.failed += 1
-            self.log(f"❌ {msg}")
-            return False
+    # Extract h1 tags using regex
+    h1_tags = re.findall(r'<h1[^>]*>(.*?)</h1>', html, re.DOTALL | re.IGNORECASE)
     
-    def assert_in(self, item, container, msg: str):
-        if item in container:
-            self.passed += 1
-            self.log(f"✅ {msg}")
-            return True
-        else:
-            self.failed += 1
-            self.log(f"❌ {msg}")
-            self.log(f"   Item: {item}")
-            self.log(f"   Container: {container}")
-            return False
+    # Extract JSON-LD blocks and check if they're in body
+    json_ld_blocks = []
+    # Split by </head> to check if JSON-LD is after head
+    parts = html.split('</head>', 1)
+    in_head = parts[0] if len(parts) > 1 else ''
+    in_body = parts[1] if len(parts) > 1 else html
     
-    def assert_not_in(self, item, container, msg: str):
-        if item not in container:
-            self.passed += 1
-            self.log(f"✅ {msg}")
-            return True
-        else:
-            self.failed += 1
-            self.log(f"❌ {msg}")
-            return False
+    # Find all JSON-LD blocks
+    json_ld_pattern = r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>'
+    for match in re.finditer(json_ld_pattern, html, re.DOTALL | re.IGNORECASE):
+        content = match.group(1).strip()
+        # Check if this block is in body
+        is_in_body = match.start() > len(in_head) if len(parts) > 1 else False
+        json_ld_blocks.append({
+            'content': content,
+            'in_body': is_in_body
+        })
+    
+    return {
+        'titles': titles,
+        'meta_descriptions': parser.meta_descriptions,
+        'canonicals': parser.canonicals,
+        'hreflangs': parser.hreflangs,
+        'html_lang': parser.html_lang,
+        'json_ld_blocks': json_ld_blocks,
+        'h1_tags': h1_tags
+    }
 
-    def run_all_tests(self):
-        print("\n" + "="*80)
-        print("PHASE 2 CONTACTS INBOX — COMPREHENSIVE BACKEND TESTING")
-        print("="*80 + "\n")
+def test_url(url, expected_status=200, expected_lang='de', test_name=''):
+    """Test a URL and return SEO analysis"""
+    print(f"\n{'='*80}")
+    print(f"TEST: {test_name}")
+    print(f"URL: {url}")
+    print(f"{'='*80}")
+    
+    try:
+        response = requests.get(url, timeout=30)
+        print(f"✓ HTTP Status: {response.status_code}")
         
+        if response.status_code != expected_status:
+            print(f"✗ FAIL: Expected {expected_status}, got {response.status_code}")
+            return False
+        
+        if expected_status == 404:
+            print(f"✓ PASS: Correctly returns 404")
+            return True
+            
+        html = response.text
+        seo = extract_seo_elements(html)
+        
+        # Check title
+        if len(seo['titles']) == 0:
+            print(f"✗ FAIL: No <title> tag found")
+            return False
+        elif len(seo['titles']) > 1:
+            print(f"✗ FAIL: Multiple <title> tags found: {len(seo['titles'])}")
+            return False
+        else:
+            title = seo['titles'][0].strip()
+            if not title:
+                print(f"✗ FAIL: <title> tag is empty")
+                return False
+            print(f"✓ Title: {title[:80]}...")
+        
+        # Check meta description
+        if len(seo['meta_descriptions']) == 0:
+            print(f"✗ FAIL: No meta description found")
+            return False
+        elif len(seo['meta_descriptions']) > 1:
+            print(f"✗ FAIL: Multiple meta descriptions found: {len(seo['meta_descriptions'])}")
+            return False
+        else:
+            desc = seo['meta_descriptions'][0].strip()
+            if not desc:
+                print(f"✗ FAIL: Meta description is empty")
+                return False
+            print(f"✓ Meta description: {desc[:80]}...")
+        
+        # Check canonical
+        if len(seo['canonicals']) == 0:
+            print(f"✗ FAIL: No canonical link found")
+            return False
+        elif len(seo['canonicals']) > 1:
+            print(f"✗ FAIL: Multiple canonical links found: {len(seo['canonicals'])}")
+            return False
+        else:
+            print(f"✓ Canonical: {seo['canonicals'][0]}")
+        
+        # Check hreflang
+        hreflang_de = [h for h in seo['hreflangs'] if h['hreflang'] == 'de-DE']
+        hreflang_en = [h for h in seo['hreflangs'] if h['hreflang'] == 'en']
+        hreflang_default = [h for h in seo['hreflangs'] if h['hreflang'] == 'x-default']
+        
+        if not hreflang_de:
+            print(f"✗ FAIL: No hreflang de-DE found")
+            return False
+        if not hreflang_en:
+            print(f"✗ FAIL: No hreflang en found")
+            return False
+        if not hreflang_default:
+            print(f"✗ FAIL: No hreflang x-default found")
+            return False
+        
+        print(f"✓ Hreflang de-DE: {hreflang_de[0]['href']}")
+        print(f"✓ Hreflang en: {hreflang_en[0]['href']}")
+        print(f"✓ Hreflang x-default: {hreflang_default[0]['href']}")
+        
+        # Check html lang
+        if seo['html_lang'] != expected_lang:
+            print(f"✗ FAIL: Expected html lang='{expected_lang}', got '{seo['html_lang']}'")
+            return False
+        print(f"✓ HTML lang: {seo['html_lang']}")
+        
+        # Check JSON-LD blocks
+        if len(seo['json_ld_blocks']) == 0:
+            print(f"✗ FAIL: No JSON-LD blocks found")
+            return False
+        
+        print(f"✓ Found {len(seo['json_ld_blocks'])} JSON-LD block(s)")
+        
+        # Check all JSON-LD blocks are in body
+        blocks_in_head = [b for b in seo['json_ld_blocks'] if not b['in_body']]
+        if blocks_in_head:
+            print(f"✗ FAIL: {len(blocks_in_head)} JSON-LD block(s) found in <head> (should be in <body>)")
+            return False
+        print(f"✓ All JSON-LD blocks are in <body>")
+        
+        # Validate JSON-LD blocks parse as valid JSON
+        for i, block in enumerate(seo['json_ld_blocks']):
+            try:
+                data = json.loads(block['content'])
+                print(f"✓ JSON-LD block {i+1} is valid JSON (@type: {data.get('@type', 'unknown')})")
+            except json.JSONDecodeError as e:
+                print(f"✗ FAIL: JSON-LD block {i+1} is invalid JSON: {e}")
+                return False
+        
+        # Check H1
+        if len(seo['h1_tags']) == 0:
+            print(f"✗ FAIL: No <h1> tag found")
+            return False
+        print(f"✓ H1 found: {len(seo['h1_tags'])} tag(s)")
+        
+        return True
+        
+    except Exception as e:
+        print(f"✗ EXCEPTION: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def test_models_list_de():
+    """Test 1: GET /models"""
+    url = f"{BASE_URL}/models"
+    result = test_url(url, expected_lang='de', test_name='GET /models (DE)')
+    
+    if not result:
+        return False
+    
+    # Additional checks for models list
+    response = requests.get(url, timeout=30)
+    html = response.text
+    seo = extract_seo_elements(html)
+    
+    # Check for ItemList JSON-LD
+    item_list_found = False
+    breadcrumb_found = False
+    
+    for block in seo['json_ld_blocks']:
         try:
-            # ===== Auth =====
-            print("SECTION 1: AUTH GUARDS (5 tests)")
-            print("-" * 80)
-            self.test_01_get_contacts_no_auth()
-            self.test_02_get_stats_no_auth()
-            self.test_03_get_contact_detail_no_auth()
-            self.test_04_patch_contact_no_auth()
-            self.test_05_login_admin()
-            
-            # ===== Read =====
-            print("\nSECTION 2: READ PATH (4 tests)")
-            print("-" * 80)
-            self.test_06_get_contacts_list()
-            self.test_07_get_contacts_stats()
-            self.test_08_get_contact_detail()
-            self.test_09_get_contact_404()
-            
-            # ===== PATCH — mark as read =====
-            print("\nSECTION 3: PATCH — MARK AS READ (3 tests)")
-            print("-" * 80)
-            self.test_10_patch_mark_read()
-            self.test_11_verify_unread_decreased()
-            self.test_12_patch_mark_unread()
-            
-            # ===== PATCH — starred / archived / notes =====
-            print("\nSECTION 4: PATCH — STARRED / ARCHIVED / NOTES (5 tests)")
-            print("-" * 80)
-            self.test_13_patch_starred()
-            self.test_14_patch_archived()
-            self.test_15_verify_archived_filter()
-            self.test_16_verify_starred_count()
-            self.test_17_patch_notes_and_unarchive()
-            
-            # ===== Whitelist enforcement =====
-            print("\nSECTION 5: WHITELIST ENFORCEMENT (2 tests)")
-            print("-" * 80)
-            self.test_18_whitelist_enforcement()
-            self.test_19_no_password_hash()
-            
-            # ===== PUT alias =====
-            print("\nSECTION 6: PUT ALIAS (1 test)")
-            print("-" * 80)
-            self.test_20_put_alias()
-            
-            # ===== 404 on PATCH =====
-            print("\nSECTION 7: 404 HANDLING (1 test)")
-            print("-" * 80)
-            self.test_21_patch_404()
-            
-            # ===== CRITICAL — restore baseline =====
-            print("\nSECTION 8: CRITICAL — RESTORE BASELINE (2 tests)")
-            print("-" * 80)
-            self.test_22_restore_baseline()
-            self.test_23_verify_baseline_stats()
-            
-            # ===== Regression =====
-            print("\nSECTION 9: REGRESSION CHECKS (2 tests)")
-            print("-" * 80)
-            self.test_24_regression_endpoints()
-            self.test_25_verify_other_contacts_untouched()
-            
-        except Exception as e:
-            print(f"\n❌ FATAL ERROR: {e}")
-            import traceback
-            traceback.print_exc()
-            self.failed += 1
-        
-        # Summary
-        print("\n" + "="*80)
-        print("TEST SUMMARY")
-        print("="*80)
-        print(f"✅ Passed: {self.passed}")
-        print(f"❌ Failed: {self.failed}")
-        print(f"Total: {self.passed + self.failed}")
-        
-        if self.failed == 0:
-            print("\n🎉 ALL TESTS PASSED!")
-            return 0
-        else:
-            print(f"\n⚠️  {self.failed} TEST(S) FAILED")
-            return 1
-    
-    # ===== SECTION 1: AUTH GUARDS =====
-    
-    def test_01_get_contacts_no_auth(self):
-        """Step 1: GET /api/contacts without cookie → 401"""
-        print("\n[Step 1] GET /api/contacts without cookie")
-        r = requests.get(f"{BASE_URL}/contacts")
-        self.assert_eq(r.status_code, 401, "Status 401 without auth")
-        if r.status_code == 401:
-            data = r.json()
-            self.assert_in("detail", data, "Response has 'detail' field")
-    
-    def test_02_get_stats_no_auth(self):
-        """Step 2: GET /api/contacts/stats without cookie → 401"""
-        print("\n[Step 2] GET /api/contacts/stats without cookie")
-        r = requests.get(f"{BASE_URL}/contacts/stats")
-        self.assert_eq(r.status_code, 401, "Status 401 without auth")
-    
-    def test_03_get_contact_detail_no_auth(self):
-        """Step 3: GET /api/contacts/{any-id} without cookie → 401"""
-        print("\n[Step 3] GET /api/contacts/fake-id without cookie")
-        r = requests.get(f"{BASE_URL}/contacts/fake-id")
-        self.assert_eq(r.status_code, 401, "Status 401 without auth")
-    
-    def test_04_patch_contact_no_auth(self):
-        """Step 4: PATCH /api/contacts/{any-id} without cookie → 401"""
-        print("\n[Step 4] PATCH /api/contacts/fake-id without cookie")
-        r = requests.patch(f"{BASE_URL}/contacts/fake-id", json={"read": True})
-        self.assert_eq(r.status_code, 401, "Status 401 without auth")
-    
-    def test_05_login_admin(self):
-        """Step 5: Login admin → cookie"""
-        print("\n[Step 5] POST /api/auth/login with admin credentials")
-        r = self.session.post(f"{BASE_URL}/auth/login", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD
-        })
-        self.assert_eq(r.status_code, 200, "Login successful (200)")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_in("user", data, "Response has 'user' field")
-            self.assert_true("access_token" in r.cookies or "Set-Cookie" in r.headers, 
-                           "access_token cookie set")
-    
-    # ===== SECTION 2: READ PATH =====
-    
-    def test_06_get_contacts_list(self):
-        """Step 6: GET /api/contacts → 200 with array of exactly 80 items"""
-        print("\n[Step 6] GET /api/contacts (authenticated)")
-        r = self.session.get(f"{BASE_URL}/contacts")
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_true(isinstance(data, list), "Response is array")
-            self.assert_eq(len(data), 80, "Exactly 80 contacts returned")
-            if len(data) > 0:
-                first = data[0]
-                self.assert_in("id", first, "Contact has 'id' field")
-                self.assert_in("name", first, "Contact has 'name' field")
-                self.assert_in("email", first, "Contact has 'email' field")
-                self.assert_in("message", first, "Contact has 'message' field")
-                self.assert_in("created_at", first, "Contact has 'created_at' field")
-                self.assert_not_in("_id", first, "No '_id' field in response")
-                # Save first contact ID for later tests
-                self.test_id = first["id"]
-                self.log(f"   TEST_ID saved: {self.test_id}")
-                # Verify sorted by created_at desc (newest first)
-                if len(data) > 1:
-                    first_date = first.get("created_at", "")
-                    second_date = data[1].get("created_at", "")
-                    self.assert_true(first_date >= second_date, 
-                                   "Sorted by created_at desc (newest first)")
-    
-    def test_07_get_contacts_stats(self):
-        """Step 7: GET /api/contacts/stats → 200 with {unread, total, archived, starred}"""
-        print("\n[Step 7] GET /api/contacts/stats")
-        r = self.session.get(f"{BASE_URL}/contacts/stats")
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_in("unread", data, "Has 'unread' field")
-            self.assert_in("total", data, "Has 'total' field")
-            self.assert_in("archived", data, "Has 'archived' field")
-            self.assert_in("starred", data, "Has 'starred' field")
-            # At the start: unread=80, total=80, archived=0, starred=0
-            self.assert_eq(data["unread"], 80, "unread=80 (baseline)")
-            self.assert_eq(data["total"], 80, "total=80 (baseline)")
-            self.assert_eq(data["archived"], 0, "archived=0 (baseline)")
-            self.assert_eq(data["starred"], 0, "starred=0 (baseline)")
-            # Save baseline for later comparison
-            self.baseline_stats = data
-            self.log(f"   Baseline stats saved: {data}")
-    
-    def test_08_get_contact_detail(self):
-        """Step 8: GET /api/contacts/{TEST_ID} → 200 with full doc"""
-        print(f"\n[Step 8] GET /api/contacts/{self.test_id}")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("id"), self.test_id, f"id matches {self.test_id}")
-            self.assert_not_in("_id", data, "No '_id' field in response")
-    
-    def test_09_get_contact_404(self):
-        """Step 9: GET /api/contacts/not-a-real-uuid → 404"""
-        print("\n[Step 9] GET /api/contacts/not-a-real-uuid")
-        r = self.session.get(f"{BASE_URL}/contacts/not-a-real-uuid")
-        self.assert_eq(r.status_code, 404, "Status 404")
-        if r.status_code == 404:
-            data = r.json()
-            self.assert_eq(data.get("detail"), "Contact not found", 
-                         "Error message: 'Contact not found'")
-    
-    # ===== SECTION 3: PATCH — MARK AS READ =====
-    
-    def test_10_patch_mark_read(self):
-        """Step 10: PATCH /api/contacts/{TEST_ID} body {"read":true} → 200"""
-        print(f"\n[Step 10] PATCH /api/contacts/{self.test_id} mark as read")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"read": True})
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("read"), True, "read=true in response")
-            self.assert_in("updated_at", data, "Has 'updated_at' field")
-            self.assert_not_in("_id", data, "No '_id' field in response")
-    
-    def test_11_verify_unread_decreased(self):
-        """Step 11: GET /api/contacts/stats → unread is now 79"""
-        print("\n[Step 11] GET /api/contacts/stats (verify unread decreased)")
-        r = self.session.get(f"{BASE_URL}/contacts/stats")
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data["unread"], 79, "unread=79 (one dropped)")
-            self.assert_eq(data["total"], 80, "total still 80")
-    
-    def test_12_patch_mark_unread(self):
-        """Step 12: PATCH again with {"read":false} → 200, stats back to 80 unread"""
-        print(f"\n[Step 12] PATCH /api/contacts/{self.test_id} mark as unread")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"read": False})
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("read"), False, "read=false in response")
-        # Verify stats
-        r2 = self.session.get(f"{BASE_URL}/contacts/stats")
-        if r2.status_code == 200:
-            stats = r2.json()
-            self.assert_eq(stats["unread"], 80, "unread back to 80")
-    
-    # ===== SECTION 4: PATCH — STARRED / ARCHIVED / NOTES =====
-    
-    def test_13_patch_starred(self):
-        """Step 13: PATCH {"starred":true} → 200, stats starred:1"""
-        print(f"\n[Step 13] PATCH /api/contacts/{self.test_id} starred=true")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"starred": True})
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("starred"), True, "starred=true in response")
-        # Verify stats
-        r2 = self.session.get(f"{BASE_URL}/contacts/stats")
-        if r2.status_code == 200:
-            stats = r2.json()
-            self.assert_eq(stats["starred"], 1, "starred=1 in stats")
-    
-    def test_14_patch_archived(self):
-        """Step 14: PATCH {"archived":true} → 200"""
-        print(f"\n[Step 14] PATCH /api/contacts/{self.test_id} archived=true")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"archived": True})
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("archived"), True, "archived=true in response")
-    
-    def test_15_verify_archived_filter(self):
-        """Step 15: GET /api/contacts → 79 items, GET /api/contacts?archived=1 → 1 item"""
-        print("\n[Step 15] Verify archived filter")
-        # Default list (archived hidden)
-        r1 = self.session.get(f"{BASE_URL}/contacts")
-        self.assert_eq(r1.status_code, 200, "Status 200 for default list")
-        if r1.status_code == 200:
-            data1 = r1.json()
-            self.assert_eq(len(data1), 79, "79 items (archived hidden from default view)")
-        # Archived list
-        r2 = self.session.get(f"{BASE_URL}/contacts?archived=1")
-        self.assert_eq(r2.status_code, 200, "Status 200 for archived list")
-        if r2.status_code == 200:
-            data2 = r2.json()
-            self.assert_eq(len(data2), 1, "1 item (the archived one)")
-            if len(data2) > 0:
-                self.assert_eq(data2[0].get("id"), self.test_id, 
-                             "Archived item is TEST_ID")
-    
-    def test_16_verify_starred_count(self):
-        """Step 16: GET /api/contacts/stats → archived:1, starred:0 or 1"""
-        print("\n[Step 16] GET /api/contacts/stats (verify archived and starred)")
-        r = self.session.get(f"{BASE_URL}/contacts/stats")
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            stats = r.json()
-            self.assert_eq(stats["archived"], 1, "archived=1")
-            # starred count filters archived != true, so should be 0
-            # (starred=true AND archived=true is excluded from starred count)
-            self.assert_eq(stats["starred"], 0, 
-                         "starred=0 (starred+archived excluded from starred count)")
-    
-    def test_17_patch_notes_and_unarchive(self):
-        """Step 17: PATCH notes + archived=false + starred=false → 200"""
-        print(f"\n[Step 17] PATCH /api/contacts/{self.test_id} notes + unarchive + unstar")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        notes_text = "Called 12.02 — booking Fri dinner"
-        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={
-            "notes": notes_text,
-            "archived": False,
-            "starred": False
-        })
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("notes"), notes_text, f"notes='{notes_text}'")
-            self.assert_eq(data.get("archived"), False, "archived=false")
-            self.assert_eq(data.get("starred"), False, "starred=false")
-        # Verify via GET
-        r2 = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
-        if r2.status_code == 200:
-            data2 = r2.json()
-            self.assert_eq(data2.get("notes"), notes_text, 
-                         f"GET confirms notes='{notes_text}'")
-            self.assert_eq(data2.get("archived"), False, "GET confirms archived=false")
-            self.assert_eq(data2.get("starred"), False, "GET confirms starred=false")
-    
-    # ===== SECTION 5: WHITELIST ENFORCEMENT =====
-    
-    def test_18_whitelist_enforcement(self):
-        """Step 18: PATCH with non-whitelisted fields → 200, fields ignored"""
-        print(f"\n[Step 18] PATCH /api/contacts/{self.test_id} with forbidden fields")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        # Get current state
-        r_before = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
-        if r_before.status_code != 200:
-            self.log("❌ Failed to get contact before PATCH")
-            self.failed += 1
-            return
-        before = r_before.json()
-        original_email = before.get("email")
-        original_message = before.get("message")
-        original_name = before.get("name")
-        original_id = before.get("id")
-        original_phone = before.get("phone")
-        original_status = before.get("status")
-        original_created_at = before.get("created_at")
-        
-        # Try to PATCH forbidden fields
-        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={
-            "email": "HACK@example.com",
-            "message": "HACK content",
-            "name": "HACK NAME",
-            "_id": "HACK",
-            "id": "HACK",
-            "phone": "HACK",
-            "status": "HACK",
-            "created_at": "1970-01-01"
-        })
-        self.assert_eq(r.status_code, 200, "Status 200 (ignored forbidden fields)")
-        
-        # Verify nothing changed
-        r_after = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
-        if r_after.status_code == 200:
-            after = r_after.json()
-            self.assert_eq(after.get("email"), original_email, 
-                         "email UNCHANGED (not in whitelist)")
-            self.assert_eq(after.get("message"), original_message, 
-                         "message UNCHANGED (not in whitelist)")
-            self.assert_eq(after.get("name"), original_name, 
-                         "name UNCHANGED (not in whitelist)")
-            self.assert_eq(after.get("id"), original_id, 
-                         "id UNCHANGED (not in whitelist)")
-            self.assert_eq(after.get("phone"), original_phone, 
-                         "phone UNCHANGED (not in whitelist)")
-            self.assert_eq(after.get("status"), original_status, 
-                         "status UNCHANGED (not in whitelist)")
-            self.assert_eq(after.get("created_at"), original_created_at, 
-                         "created_at UNCHANGED (not in whitelist)")
-    
-    def test_19_no_password_hash(self):
-        """Step 19: Verify no password_hash field appears in response"""
-        print(f"\n[Step 19] Verify no password_hash in response")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_not_in("password_hash", data, "No 'password_hash' field")
-    
-    # ===== SECTION 6: PUT ALIAS =====
-    
-    def test_20_put_alias(self):
-        """Step 20: PUT /api/contacts/{TEST_ID} {"read":true} → 200"""
-        print(f"\n[Step 20] PUT /api/contacts/{self.test_id} (PUT also works)")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.put(f"{BASE_URL}/contacts/{self.test_id}", json={"read": True})
-        self.assert_eq(r.status_code, 200, "Status 200 (PUT works)")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("read"), True, "read=true")
-        # Verify via GET
-        r2 = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
-        if r2.status_code == 200:
-            data2 = r2.json()
-            self.assert_eq(data2.get("read"), True, "GET confirms read=true")
-    
-    # ===== SECTION 7: 404 HANDLING =====
-    
-    def test_21_patch_404(self):
-        """Step 21: PATCH /api/contacts/does-not-exist → 404"""
-        print("\n[Step 21] PATCH /api/contacts/does-not-exist")
-        r = self.session.patch(f"{BASE_URL}/contacts/does-not-exist", json={"read": True})
-        self.assert_eq(r.status_code, 404, "Status 404")
-        if r.status_code == 404:
-            data = r.json()
-            self.assert_eq(data.get("detail"), "Contact not found", 
-                         "Error message: 'Contact not found'")
-    
-    # ===== SECTION 8: CRITICAL — RESTORE BASELINE =====
-    
-    def test_22_restore_baseline(self):
-        """Step 22: PATCH restore all flags to baseline → 200"""
-        print(f"\n[Step 22] PATCH /api/contacts/{self.test_id} restore baseline")
-        if not self.test_id:
-            self.log("❌ TEST_ID not set, skipping")
-            self.failed += 1
-            return
-        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={
-            "read": False,
-            "starred": False,
-            "archived": False,
-            "notes": ""
-        })
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            data = r.json()
-            self.assert_eq(data.get("read"), False, "read=false")
-            self.assert_eq(data.get("starred"), False, "starred=false")
-            self.assert_eq(data.get("archived"), False, "archived=false")
-            self.assert_eq(data.get("notes"), "", "notes='' (empty)")
-    
-    def test_23_verify_baseline_stats(self):
-        """Step 23: GET /api/contacts/stats → all back to baseline"""
-        print("\n[Step 23] GET /api/contacts/stats (verify baseline restored)")
-        r = self.session.get(f"{BASE_URL}/contacts/stats")
-        self.assert_eq(r.status_code, 200, "Status 200")
-        if r.status_code == 200:
-            stats = r.json()
-            self.assert_eq(stats["unread"], 80, "CRITICAL: unread=80 (baseline)")
-            self.assert_eq(stats["total"], 80, "CRITICAL: total=80 (baseline)")
-            self.assert_eq(stats["archived"], 0, "CRITICAL: archived=0 (baseline)")
-            self.assert_eq(stats["starred"], 0, "CRITICAL: starred=0 (baseline)")
-            if stats != self.baseline_stats:
-                self.log("⚠️  CRITICAL: Stats differ from baseline!")
-                self.log(f"   Baseline: {self.baseline_stats}")
-                self.log(f"   Current:  {stats}")
-    
-    # ===== SECTION 9: REGRESSION =====
-    
-    def test_24_regression_endpoints(self):
-        """Step 24: Verify other endpoints still work"""
-        print("\n[Step 24] Regression checks on other endpoints")
-        
-        # GET /api/health
-        r1 = self.session.get(f"{BASE_URL}/health")
-        self.assert_eq(r1.status_code, 200, "GET /api/health → 200")
-        
-        # GET /api/auth/me
-        r2 = self.session.get(f"{BASE_URL}/auth/me")
-        self.assert_eq(r2.status_code, 200, "GET /api/auth/me → 200")
-        
-        # GET /api/service-content
-        r3 = self.session.get(f"{BASE_URL}/service-content")
-        self.assert_eq(r3.status_code, 200, "GET /api/service-content → 200")
-        if r3.status_code == 200:
-            data3 = r3.json()
-            self.assert_eq(len(data3), 8, "8 service items")
-        
-        # GET /api/area-content
-        r4 = self.session.get(f"{BASE_URL}/area-content")
-        self.assert_eq(r4.status_code, 200, "GET /api/area-content → 200")
-        if r4.status_code == 200:
-            data4 = r4.json()
-            self.assert_eq(len(data4), 18, "18 area items")
-        
-        # GET /api/models
-        r5 = self.session.get(f"{BASE_URL}/models")
-        self.assert_eq(r5.status_code, 200, "GET /api/models → 200")
-        if r5.status_code == 200:
-            data5 = r5.json()
-            self.assert_eq(len(data5), 14, "14 models")
-        
-        # GET /api/blog
-        r6 = self.session.get(f"{BASE_URL}/blog")
-        self.assert_eq(r6.status_code, 200, "GET /api/blog → 200")
-        if r6.status_code == 200:
-            data6 = r6.json()
-            self.assert_eq(len(data6), 13, "13 blog posts")
-        
-        # GET /api/pages
-        r7 = self.session.get(f"{BASE_URL}/pages")
-        self.assert_eq(r7.status_code, 200, "GET /api/pages → 200")
-        if r7.status_code == 200:
-            data7 = r7.json()
-            self.assert_eq(len(data7), 3, "3 pages")
-        
-        # GET /api/settings
-        r8 = self.session.get(f"{BASE_URL}/settings")
-        self.assert_eq(r8.status_code, 200, "GET /api/settings → 200")
-    
-    def test_25_verify_other_contacts_untouched(self):
-        """Step 25: Random-sample 5 other contacts, verify no flags set"""
-        print("\n[Step 25] Verify other contacts untouched")
-        # Get all contacts
-        r = self.session.get(f"{BASE_URL}/contacts")
-        if r.status_code != 200:
-            self.log("❌ Failed to get contacts list")
-            self.failed += 1
-            return
-        contacts = r.json()
-        # Filter out TEST_ID
-        other_contacts = [c for c in contacts if c.get("id") != self.test_id]
-        # Sample 5 (or fewer if less than 5)
-        import random
-        sample_size = min(5, len(other_contacts))
-        sample = random.sample(other_contacts, sample_size)
-        
-        self.log(f"   Sampling {sample_size} other contacts...")
-        for contact in sample:
-            contact_id = contact.get("id")
-            r2 = self.session.get(f"{BASE_URL}/contacts/{contact_id}")
-            if r2.status_code == 200:
-                data = r2.json()
-                # These fields should be absent or falsy (production hasn't touched them)
-                read_val = data.get("read")
-                starred_val = data.get("starred")
-                archived_val = data.get("archived")
-                notes_val = data.get("notes")
+            data = json.loads(block['content'])
+            if data.get('@type') == 'ItemList':
+                item_list_found = True
+                items = data.get('itemListElement', [])
+                print(f"✓ ItemList JSON-LD found with {len(items)} items")
                 
-                # All should be falsy or absent
-                is_clean = (not read_val) and (not starred_val) and (not archived_val) and (not notes_val)
-                self.assert_true(is_clean, 
-                               f"Contact {contact_id[:8]}... has no flags set")
-            else:
-                self.log(f"❌ Failed to GET contact {contact_id}")
-                self.failed += 1
+                # Check if it references at least 14 model URLs
+                if len(items) < 14:
+                    print(f"✗ FAIL: ItemList has {len(items)} items, expected at least 14")
+                    return False
+                print(f"✓ ItemList references at least 14 model URLs")
+                
+            elif data.get('@type') == 'BreadcrumbList':
+                breadcrumb_found = True
+                print(f"✓ BreadcrumbList JSON-LD found")
+        except:
+            pass
+    
+    if not item_list_found:
+        print(f"✗ FAIL: No ItemList JSON-LD found")
+        return False
+    
+    if not breadcrumb_found:
+        print(f"✗ FAIL: No BreadcrumbList JSON-LD found")
+        return False
+    
+    # Check that all 14 model slugs appear in href attributes
+    missing_slugs = []
+    for slug in EXPECTED_MODEL_SLUGS:
+        if f'/models/{slug}' not in html:
+            missing_slugs.append(slug)
+    
+    if missing_slugs:
+        print(f"✗ FAIL: Missing model slugs in HTML: {missing_slugs}")
+        return False
+    print(f"✓ All 14 model slugs found in href attributes")
+    
+    # Check canonical
+    if seo['canonicals'][0] != f"{BASE_URL}/models":
+        print(f"✗ FAIL: Canonical should be {BASE_URL}/models, got {seo['canonicals'][0]}")
+        return False
+    print(f"✓ Canonical is /models")
+    
+    print(f"\n✓✓✓ PASS: GET /models (DE)")
+    return True
 
-if __name__ == "__main__":
-    runner = TestRunner()
-    exit_code = runner.run_all_tests()
-    sys.exit(exit_code)
+def test_models_detail_de():
+    """Test 2: GET /models/aurelia"""
+    url = f"{BASE_URL}/models/aurelia"
+    result = test_url(url, expected_lang='de', test_name='GET /models/aurelia (DE)')
+    
+    if not result:
+        return False
+    
+    # Additional checks for model detail
+    response = requests.get(url, timeout=30)
+    html = response.text
+    seo = extract_seo_elements(html)
+    
+    # Check for Person JSON-LD with name="Aurelia" and nationality
+    person_found = False
+    breadcrumb_found = False
+    
+    for block in seo['json_ld_blocks']:
+        try:
+            data = json.loads(block['content'])
+            if data.get('@type') == 'Person':
+                person_found = True
+                name = data.get('name', '')
+                nationality = data.get('nationality')
+                
+                if name != 'Aurelia':
+                    print(f"✗ FAIL: Person JSON-LD name should be 'Aurelia', got '{name}'")
+                    return False
+                print(f"✓ Person JSON-LD found with name='Aurelia'")
+                
+                if nationality:
+                    print(f"✓ Person JSON-LD has nationality field: {nationality}")
+                else:
+                    print(f"⚠ WARNING: Person JSON-LD missing nationality field")
+                
+            elif data.get('@type') == 'BreadcrumbList':
+                breadcrumb_found = True
+                print(f"✓ BreadcrumbList JSON-LD found")
+        except:
+            pass
+    
+    if not person_found:
+        print(f"✗ FAIL: No Person JSON-LD found")
+        return False
+    
+    if not breadcrumb_found:
+        print(f"✗ FAIL: No BreadcrumbList JSON-LD found")
+        return False
+    
+    # Check canonical
+    if seo['canonicals'][0] != f"{BASE_URL}/models/aurelia":
+        print(f"✗ FAIL: Canonical should be {BASE_URL}/models/aurelia, got {seo['canonicals'][0]}")
+        return False
+    print(f"✓ Canonical is /models/aurelia")
+    
+    # Check hreflang en points to /en/models/aurelia
+    hreflang_en = [h for h in seo['hreflangs'] if h['hreflang'] == 'en']
+    if not hreflang_en or '/en/models/aurelia' not in hreflang_en[0]['href']:
+        print(f"✗ FAIL: Hreflang en should point to /en/models/aurelia")
+        return False
+    print(f"✓ Hreflang en points to /en/models/aurelia")
+    
+    # Check meta description contains Aurelia bio text
+    meta_desc = seo['meta_descriptions'][0]
+    if 'Aurelia' not in meta_desc and 'Hanseatisch' not in meta_desc:
+        print(f"⚠ WARNING: Meta description doesn't contain 'Aurelia' or 'Hanseatisch'")
+    else:
+        print(f"✓ Meta description contains Aurelia bio text")
+    
+    print(f"\n✓✓✓ PASS: GET /models/aurelia (DE)")
+    return True
+
+def test_models_404_de():
+    """Test 3: GET /models/does-not-exist"""
+    url = f"{BASE_URL}/models/does-not-exist"
+    result = test_url(url, expected_status=404, test_name='GET /models/does-not-exist (404)')
+    
+    if result:
+        print(f"\n✓✓✓ PASS: GET /models/does-not-exist returns 404")
+    return result
+
+def test_models_list_en():
+    """Test 4: GET /en/models"""
+    url = f"{BASE_URL}/en/models"
+    result = test_url(url, expected_lang='en', test_name='GET /en/models (EN)')
+    
+    if not result:
+        return False
+    
+    # Additional checks
+    response = requests.get(url, timeout=30)
+    html = response.text
+    seo = extract_seo_elements(html)
+    
+    # Check for ItemList JSON-LD with /en/models/ URLs
+    item_list_found = False
+    
+    for block in seo['json_ld_blocks']:
+        try:
+            data = json.loads(block['content'])
+            if data.get('@type') == 'ItemList':
+                item_list_found = True
+                items = data.get('itemListElement', [])
+                
+                # Check if URLs contain /en/models/
+                sample_url = items[0].get('url', '') if items else ''
+                if '/en/models/' not in sample_url:
+                    print(f"✗ FAIL: ItemList URLs should contain /en/models/, got {sample_url}")
+                    return False
+                print(f"✓ ItemList references /en/models/ URLs")
+        except:
+            pass
+    
+    if not item_list_found:
+        print(f"✗ FAIL: No ItemList JSON-LD found")
+        return False
+    
+    # Check canonical
+    if seo['canonicals'][0] != f"{BASE_URL}/en/models":
+        print(f"✗ FAIL: Canonical should be {BASE_URL}/en/models, got {seo['canonicals'][0]}")
+        return False
+    print(f"✓ Canonical is /en/models")
+    
+    print(f"\n✓✓✓ PASS: GET /en/models (EN)")
+    return True
+
+def test_models_detail_en():
+    """Test 5: GET /en/models/aurelia"""
+    url = f"{BASE_URL}/en/models/aurelia"
+    result = test_url(url, expected_lang='en', test_name='GET /en/models/aurelia (EN)')
+    
+    if not result:
+        return False
+    
+    # Additional checks
+    response = requests.get(url, timeout=30)
+    html = response.text
+    seo = extract_seo_elements(html)
+    
+    # Check for Person JSON-LD
+    person_found = False
+    
+    for block in seo['json_ld_blocks']:
+        try:
+            data = json.loads(block['content'])
+            if data.get('@type') == 'Person':
+                person_found = True
+                print(f"✓ Person JSON-LD found")
+        except:
+            pass
+    
+    if not person_found:
+        print(f"✗ FAIL: No Person JSON-LD found")
+        return False
+    
+    # Check canonical
+    if seo['canonicals'][0] != f"{BASE_URL}/en/models/aurelia":
+        print(f"✗ FAIL: Canonical should be {BASE_URL}/en/models/aurelia, got {seo['canonicals'][0]}")
+        return False
+    print(f"✓ Canonical is /en/models/aurelia")
+    
+    # Check hreflang de-DE points to /models/aurelia
+    hreflang_de = [h for h in seo['hreflangs'] if h['hreflang'] == 'de-DE']
+    if not hreflang_de or '/models/aurelia' not in hreflang_de[0]['href']:
+        print(f"✗ FAIL: Hreflang de-DE should point to /models/aurelia")
+        return False
+    print(f"✓ Hreflang de-DE points to /models/aurelia")
+    
+    print(f"\n✓✓✓ PASS: GET /en/models/aurelia (EN)")
+    return True
+
+def test_models_404_en():
+    """Test 6: GET /en/models/does-not-exist"""
+    url = f"{BASE_URL}/en/models/does-not-exist"
+    result = test_url(url, expected_status=404, test_name='GET /en/models/does-not-exist (404)')
+    
+    if result:
+        print(f"\n✓✓✓ PASS: GET /en/models/does-not-exist returns 404")
+    return result
+
+def test_sitemap():
+    """Test 7: GET /sitemap.xml"""
+    url = f"{BASE_URL}/sitemap.xml"
+    print(f"\n{'='*80}")
+    print(f"TEST: GET /sitemap.xml")
+    print(f"URL: {url}")
+    print(f"{'='*80}")
+    
+    try:
+        response = requests.get(url, timeout=30)
+        print(f"✓ HTTP Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"✗ FAIL: Expected 200, got {response.status_code}")
+            return False
+        
+        # Check content-type
+        content_type = response.headers.get('content-type', '')
+        if 'xml' not in content_type.lower():
+            print(f"✗ FAIL: Content-Type should include 'xml', got '{content_type}'")
+            return False
+        print(f"✓ Content-Type includes 'xml': {content_type}")
+        
+        # Parse XML
+        xml_text = response.text
+        root = ET.fromstring(xml_text)
+        
+        # Define namespace
+        ns = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9',
+              'xhtml': 'http://www.w3.org/1999/xhtml'}
+        
+        # Count total <loc> entries
+        locs = root.findall('.//ns:loc', ns)
+        total_locs = len(locs)
+        print(f"✓ Total <loc> entries: {total_locs}")
+        
+        if total_locs != 67:
+            print(f"✗ FAIL: Expected 67 <loc> entries, got {total_locs}")
+            return False
+        print(f"✓ Total <loc> count is 67")
+        
+        # Count by resource type
+        services_count = sum(1 for loc in locs if '/services/' in loc.text and '/en/services/' not in loc.text)
+        models_count = sum(1 for loc in locs if '/models/' in loc.text and '/en/models/' not in loc.text)
+        blog_count = sum(1 for loc in locs if '/blog/' in loc.text and '/en/blog/' not in loc.text)
+        pages_count = sum(1 for loc in locs if '/p/' in loc.text and '/en/p/' not in loc.text)
+        areas_count = sum(1 for loc in locs if '/escort/' in loc.text and '/en/escort/' not in loc.text)
+        
+        # Count static entries (those not in the above categories)
+        static_count = total_locs - services_count - models_count - blog_count - pages_count - areas_count
+        
+        print(f"\nBreakdown by resource type:")
+        print(f"  Services: {services_count}")
+        print(f"  Models: {models_count}")
+        print(f"  Blog: {blog_count}")
+        print(f"  Pages: {pages_count}")
+        print(f"  Areas: {areas_count}")
+        print(f"  Static: {static_count}")
+        
+        # Verify expected counts
+        if services_count != 8:
+            print(f"✗ FAIL: Expected 8 services, got {services_count}")
+            return False
+        print(f"✓ Services count is 8")
+        
+        if models_count != 14:
+            print(f"✗ FAIL: Expected 14 models, got {models_count}")
+            return False
+        print(f"✓ Models count is 14")
+        
+        if blog_count != 13:
+            print(f"✗ FAIL: Expected 13 blog posts, got {blog_count}")
+            return False
+        print(f"✓ Blog count is 13")
+        
+        if pages_count != 4:
+            print(f"✗ FAIL: Expected 4 pages, got {pages_count}")
+            return False
+        print(f"✓ Pages count is 4")
+        
+        if areas_count != 18:
+            print(f"✗ FAIL: Expected 18 areas, got {areas_count}")
+            return False
+        print(f"✓ Areas count is 18")
+        
+        # Static should be 10 (but let's verify the actual count)
+        print(f"✓ Static count is {static_count}")
+        
+        # Verify each model entry has hreflang="en" pointing to /en/models/{slug}
+        model_urls = root.findall('.//ns:url', ns)
+        model_entries_checked = 0
+        
+        for url_elem in model_urls:
+            loc_elem = url_elem.find('ns:loc', ns)
+            if loc_elem is not None and '/models/' in loc_elem.text and '/en/models/' not in loc_elem.text:
+                # This is a DE model entry, check for EN hreflang
+                alternates = url_elem.findall('.//xhtml:link[@rel="alternate"]', ns)
+                en_alternate = None
+                
+                for alt in alternates:
+                    if alt.get('hreflang') == 'en':
+                        en_alternate = alt.get('href')
+                        break
+                
+                if not en_alternate:
+                    print(f"✗ FAIL: Model entry {loc_elem.text} missing hreflang='en' alternate")
+                    return False
+                
+                if '/en/models/' not in en_alternate:
+                    print(f"✗ FAIL: Model entry {loc_elem.text} hreflang='en' should point to /en/models/, got {en_alternate}")
+                    return False
+                
+                model_entries_checked += 1
+        
+        if model_entries_checked != 14:
+            print(f"✗ FAIL: Expected to check 14 model entries, checked {model_entries_checked}")
+            return False
+        print(f"✓ All 14 model entries have hreflang='en' pointing to /en/models/{{slug}}")
+        
+        print(f"\n✓✓✓ PASS: GET /sitemap.xml")
+        return True
+        
+    except Exception as e:
+        print(f"✗ EXCEPTION: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def test_regression():
+    """Test 8-11: Regression tests"""
+    print(f"\n{'='*80}")
+    print(f"REGRESSION TESTS")
+    print(f"{'='*80}")
+    
+    results = []
+    
+    # Test 8: GET /services/vip-escort-hamburg
+    url = f"{BASE_URL}/services/vip-escort-hamburg"
+    try:
+        response = requests.get(url, timeout=30)
+        if response.status_code == 200:
+            print(f"✓ GET /services/vip-escort-hamburg → 200")
+            results.append(True)
+        else:
+            print(f"✗ GET /services/vip-escort-hamburg → {response.status_code}")
+            results.append(False)
+    except Exception as e:
+        print(f"✗ GET /services/vip-escort-hamburg → EXCEPTION: {e}")
+        results.append(False)
+    
+    # Test 9: GET /api/health
+    url = f"{BASE_URL}/api/health"
+    try:
+        response = requests.get(url, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'ok':
+                print(f"✓ GET /api/health → 200 with status='ok'")
+                results.append(True)
+            else:
+                print(f"✗ GET /api/health → 200 but status != 'ok'")
+                results.append(False)
+        else:
+            print(f"✗ GET /api/health → {response.status_code}")
+            results.append(False)
+    except Exception as e:
+        print(f"✗ GET /api/health → EXCEPTION: {e}")
+        results.append(False)
+    
+    # Test 10: GET /api/models
+    url = f"{BASE_URL}/api/models"
+    try:
+        response = requests.get(url, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            if len(data) == 14:
+                print(f"✓ GET /api/models → 200 with 14 items")
+                results.append(True)
+            else:
+                print(f"✗ GET /api/models → 200 but {len(data)} items (expected 14)")
+                results.append(False)
+        else:
+            print(f"✗ GET /api/models → {response.status_code}")
+            results.append(False)
+    except Exception as e:
+        print(f"✗ GET /api/models → EXCEPTION: {e}")
+        results.append(False)
+    
+    # Test 11: GET /robots.txt
+    url = f"{BASE_URL}/robots.txt"
+    try:
+        response = requests.get(url, timeout=30)
+        if response.status_code == 200:
+            text = response.text
+            # Case-insensitive check for sitemap
+            if 'sitemap' in text.lower() and '.xml' in text.lower():
+                print(f"✓ GET /robots.txt → 200 and lists sitemap.xml")
+                results.append(True)
+            else:
+                print(f"✗ GET /robots.txt → 200 but doesn't list sitemap.xml")
+                print(f"  Content preview: {text[:200]}")
+                results.append(False)
+        else:
+            print(f"✗ GET /robots.txt → {response.status_code}")
+            results.append(False)
+    except Exception as e:
+        print(f"✗ GET /robots.txt → EXCEPTION: {e}")
+        results.append(False)
+    
+    if all(results):
+        print(f"\n✓✓✓ PASS: All regression tests passed")
+        return True
+    else:
+        print(f"\n✗ FAIL: Some regression tests failed")
+        return False
+
+def main():
+    """Run all tests"""
+    print(f"\n{'#'*80}")
+    print(f"# Phase 3 d1: Public /models SSR + EN twins + sitemap")
+    print(f"# Base URL: {BASE_URL}")
+    print(f"{'#'*80}\n")
+    
+    results = {
+        'test_1_models_list_de': test_models_list_de(),
+        'test_2_models_detail_de': test_models_detail_de(),
+        'test_3_models_404_de': test_models_404_de(),
+        'test_4_models_list_en': test_models_list_en(),
+        'test_5_models_detail_en': test_models_detail_en(),
+        'test_6_models_404_en': test_models_404_en(),
+        'test_7_sitemap': test_sitemap(),
+        'test_8_11_regression': test_regression(),
+    }
+    
+    print(f"\n{'#'*80}")
+    print(f"# FINAL RESULTS")
+    print(f"{'#'*80}\n")
+    
+    passed = sum(1 for v in results.values() if v)
+    total = len(results)
+    
+    for test_name, result in results.items():
+        status = "✓ PASS" if result else "✗ FAIL"
+        print(f"{status}: {test_name}")
+    
+    print(f"\n{'='*80}")
+    print(f"TOTAL: {passed}/{total} tests passed")
+    print(f"{'='*80}\n")
+    
+    if passed == total:
+        print("✓✓✓ ALL TESTS PASSED ✓✓✓")
+        return 0
+    else:
+        print("✗✗✗ SOME TESTS FAILED ✗✗✗")
+        return 1
+
+if __name__ == '__main__':
+    exit(main())

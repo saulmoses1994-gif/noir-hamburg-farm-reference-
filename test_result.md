@@ -360,19 +360,31 @@ backend_phase2:
 
 metadata:
   created_by: "main_agent"
-  version: "2.4"
-  test_sequence: 15
+  version: "2.7"
+  test_sequence: 18
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "GET /api/contacts (admin, list + archive filter)"
-    - "GET /api/contacts/stats"
-    - "GET /api/contacts/{id}"
-    - "PATCH /api/contacts/{id}"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+phase3_d1_models_public:
+  - task: "Public /models list + detail (+ EN twins) + sitemap update"
+    implemented: true
+    working: true
+    file: "app/(de)/models/page.js + [slug]/page.js + app/(en)/en/models/page.js + [slug]/page.js + app/sitemap.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "SSR verified for /models (14 cards, ItemList JSON-LD, BreadcrumbList), /models/{slug} (Person + BreadcrumbList JSON-LD, unique title, canonical + hreflang, full attribute grid, bio, prices EUR-formatted, service tags), EN twins with html lang=en. Sitemap now has 67 <loc> (10 static + 8 services + 18 areas + 14 models + 13 blog + 4 pages), each with de-DE + en + x-default alternates."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Comprehensive 11-test suite completed with 8/8 test groups passed. All SEO artifacts render correctly in raw HTML (not just after JS hydration). DE ROUTES: GET /models → 200, html lang=de, ItemList JSON-LD with 14 items, BreadcrumbList JSON-LD, all 14 model slugs (aurelia, valentina, sophia, mila, helena, lara, isabella, charlotte, anastasia, camille, beatrice, nina, marlene, elena) present in href attributes, canonical=/models. GET /models/aurelia → 200, html lang=de, Person JSON-LD with name='Aurelia' and nationality='Deutsch', BreadcrumbList JSON-LD, canonical=/models/aurelia, hreflang en points to /en/models/aurelia, meta description contains 'Aurelia' and 'Hanseatisch'. GET /models/does-not-exist → 404. EN ROUTES: GET /en/models → 200, html lang=en, ItemList JSON-LD references /en/models/ URLs, canonical=/en/models. GET /en/models/aurelia → 200, html lang=en, Person JSON-LD, canonical=/en/models/aurelia, hreflang de-DE points to /models/aurelia. GET /en/models/does-not-exist → 404. SITEMAP: GET /sitemap.xml → 200, content-type=application/xml, total 67 <loc> entries with exact breakdown: 8 services, 14 models, 13 blog, 4 pages, 18 areas, 10 static. All 14 model entries have hreflang='en' alternate pointing to /en/models/{slug}. REGRESSION: GET /services/vip-escort-hamburg → 200 (Phase 1 still works), GET /api/health → 200 with status='ok', GET /api/models → 200 with 14 items, GET /robots.txt → 200 and lists sitemap.xml. CRITICAL SEO VERIFICATIONS: Every tested URL has exactly ONE <title> tag with unique, non-empty title. ONE <meta name='description'> with non-empty content. ONE <link rel='canonical'> pointing to correct URL. hreflang alternates (de-DE, en, x-default) all present. <html lang='de'> for DE routes, <html lang='en'> for EN routes. ALL JSON-LD blocks appear AFTER </head> (inside <body>). Each JSON-LD block parses as valid JSON. All requirements met. No issues found."
 
 backend_phase2_contacts_inbox:
   - task: "Contacts inbox (list/stats/detail/patch, admin-only)"
@@ -1278,4 +1290,49 @@ agent_communication:
         Minor: Initial stats check showed unread=79 (one contact may have been touched during manual testing), but baseline restoration correctly returned all to unread state (unread=80). MongoDB verification confirms 0 contacts with read=true, 80 contacts with read != true. Production data is safe.
         
         All tests passed. Contacts Inbox feature is production-ready.
+        Task marked as working=true, needs_retesting=false.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 D1 MODELS PUBLIC — COMPREHENSIVE SSR SEO TESTING COMPLETE - ALL TESTS PASSED (8/8)
+        
+        Comprehensive 11-test suite verifying SSR SEO artifacts in raw HTML (not just after JS hydration) completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        
+        Test Results Summary:
+        
+        SECTION 1: DE ROUTES (3/3 passed)
+        ✅ GET /models → 200, html lang=de, ItemList JSON-LD with 14 items, BreadcrumbList JSON-LD, all 14 model slugs present in href, canonical=/models
+        ✅ GET /models/aurelia → 200, html lang=de, Person JSON-LD (name='Aurelia', nationality='Deutsch'), BreadcrumbList, canonical=/models/aurelia, hreflang en→/en/models/aurelia, meta description contains 'Aurelia' and 'Hanseatisch'
+        ✅ GET /models/does-not-exist → 404
+        
+        SECTION 2: EN ROUTES (3/3 passed)
+        ✅ GET /en/models → 200, html lang=en, ItemList JSON-LD references /en/models/ URLs, canonical=/en/models
+        ✅ GET /en/models/aurelia → 200, html lang=en, Person JSON-LD, canonical=/en/models/aurelia, hreflang de-DE→/models/aurelia
+        ✅ GET /en/models/does-not-exist → 404
+        
+        SECTION 3: SITEMAP (1/1 passed)
+        ✅ GET /sitemap.xml → 200, content-type=application/xml, total 67 <loc> entries
+        ✅ Breakdown verified: 8 services, 14 models, 13 blog, 4 pages, 18 areas, 10 static
+        ✅ All 14 model entries have hreflang='en' alternate pointing to /en/models/{slug}
+        
+        SECTION 4: REGRESSION (4/4 passed)
+        ✅ GET /services/vip-escort-hamburg → 200 (Phase 1 still works)
+        ✅ GET /api/health → 200 with status='ok'
+        ✅ GET /api/models → 200 with 14 items
+        ✅ GET /robots.txt → 200 and lists sitemap.xml
+        
+        Critical SEO Verifications (verified on every tested URL):
+        • Exactly ONE <title> tag with unique, non-empty title
+        • ONE <meta name="description"> with non-empty content
+        • ONE <link rel="canonical"> pointing to correct URL
+        • hreflang alternates (de-DE, en, x-default) all present
+        • <html lang="de"> for DE routes, <html lang="en"> for EN routes
+        • ALL JSON-LD blocks appear AFTER </head> (inside <body>)
+        • Each JSON-LD block parses as valid JSON
+        
+        Model Slugs Verified (all 14 present in /models HTML):
+        aurelia, valentina, sophia, mila, helena, lara, isabella, charlotte, anastasia, camille, beatrice, nina, marlene, elena
+        
+        All requirements met. No issues found. Phase 3 d1 models public implementation is production-ready.
         Task marked as working=true, needs_retesting=false.

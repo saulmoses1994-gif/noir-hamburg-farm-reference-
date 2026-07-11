@@ -1,11 +1,17 @@
 import { listServiceContent, listAreaContent } from '@/lib/service-content'
+import { listPublicModels } from '@/lib/models'
+import { listPublicBlog } from '@/lib/blog'
+import { listPublicPages } from '@/lib/pages'
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.de'
 
 export default async function sitemap() {
-  const [services, areas] = await Promise.all([
+  const [services, areas, models, blog, pages] = await Promise.all([
     listServiceContent().catch(() => []),
     listAreaContent().catch(() => []),
+    listPublicModels().catch(() => []),
+    listPublicBlog().catch(() => []),
+    listPublicPages().catch(() => []),
   ])
 
   const staticDE = [
@@ -64,5 +70,47 @@ export default async function sitemap() {
     },
   }))
 
-  return [...staticEntries, ...serviceEntries, ...areaEntries]
+  const modelEntries = models.map((m) => ({
+    url: `${BASE}/models/${m.slug}`,
+    lastModified: m.updated_at ? new Date(m.updated_at) : new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+    alternates: {
+      languages: {
+        'de-DE': `${BASE}/models/${m.slug}`,
+        en: `${BASE}/en/models/${m.slug}`,
+        'x-default': `${BASE}/models/${m.slug}`,
+      },
+    },
+  }))
+
+  const blogEntries = blog.map((b) => ({
+    url: `${BASE}/blog/${b.slug}`,
+    lastModified: b.updated_at ? new Date(b.updated_at) : new Date(),
+    changeFrequency: 'monthly',
+    priority: 0.6,
+    alternates: {
+      languages: {
+        'de-DE': `${BASE}/blog/${b.slug}`,
+        en: `${BASE}/en/blog/${b.slug}`,
+        'x-default': `${BASE}/blog/${b.slug}`,
+      },
+    },
+  }))
+
+  const pageEntries = pages.map((p) => ({
+    url: `${BASE}/p/${p.slug}`,
+    lastModified: p.updated_at ? new Date(p.updated_at) : new Date(),
+    changeFrequency: 'monthly',
+    priority: 0.5,
+    alternates: {
+      languages: {
+        'de-DE': `${BASE}/p/${p.slug}`,
+        en: `${BASE}/en/p/${p.slug}`,
+        'x-default': `${BASE}/p/${p.slug}`,
+      },
+    },
+  }))
+
+  return [...staticEntries, ...serviceEntries, ...areaEntries, ...modelEntries, ...blogEntries, ...pageEntries]
 }
