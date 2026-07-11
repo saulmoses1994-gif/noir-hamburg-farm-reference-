@@ -267,14 +267,110 @@ frontend:
           agent: "main"
           comment: "Minimal but on-brand. Full home hero + models grid + blog etc will be built in Phase 2."
 
+backend_phase2:
+  - task: "MongoDB restored from production dump"
+    implemented: true
+    working: true
+    file: "db_export/noir_hamburg/*.bson (restored via mongorestore)"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Restored 212 documents. Counts match: users=1, models=14, blog=13, pages=3, service_content=8, area_content=18, site_settings=1, contacts=80, files=72, content_migrations=2. Real admin bcrypt hash ($2b$12$...) present."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Production dump successfully loaded. GET /api/settings returns real production data (email=kontakt@noir-hamburg.de). GET /api/models returns exactly 14 models including 'aurelia'. GET /api/blog returns exactly 13 posts. GET /api/pages returns exactly 3 pages with expected slugs. All data accessible via API with no _id fields in responses."
+
+  - task: "Collection name fix (settings->site_settings, blog_posts->blog, media->files)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "GET /api/settings now reads from site_settings (returns real business_name, phone, email, images). GET /api/blog returns 13 real posts. GET /api/pages returns 3 real pages. GET /api/models returns 14 real models."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Collection name mappings working correctly. GET /api/settings reads from site_settings collection and returns all required fields. GET /api/blog reads from blog collection (13 posts). GET /api/pages reads from pages collection (3 pages). GET /api/models reads from models collection (14 models). All endpoints return correct data with no _id fields."
+
+  - task: "POST /api/auth/login"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + lib/auth.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Manual curl verified: correct creds -> 200 + Set-Cookie access_token (JWT, HS256, 7-day exp). Wrong creds -> 401. Unknown email -> 401 (no user enumeration). Missing fields -> 400. Password_hash never returned in body."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: All login scenarios working correctly. Correct credentials (admin@noir-hamburg.de / NoirAdmin2026!) → 200 with user object (email, role=admin, name) and Set-Cookie access_token (HttpOnly, Path=/, Max-Age). Wrong password → 401 'Invalid credentials'. Unknown email → 401 'Invalid credentials' (no user enumeration). Missing fields → 400 'Email and password required'. password_hash never exposed in response."
+
+  - task: "GET /api/auth/me"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + lib/auth.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "With cookie -> 200 {user:{...}} minus password_hash. Without cookie -> 401. Invalid/tampered JWT -> 401."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Session verification working correctly. With valid access_token cookie → 200 with user object (email=admin@noir-hamburg.de, role=admin) without password_hash. Without cookie → 401 'Not authenticated'. With garbage/tampered JWT → 401. Cookie-based authentication fully functional."
+
+  - task: "POST /api/auth/logout"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + lib/auth.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Clears the access_token cookie (Max-Age=0). Subsequent /me returns 401."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Logout working correctly. POST /api/auth/logout → 200 {ok:true} with Set-Cookie clearing access_token (Max-Age=0). After logout, GET /api/auth/me returns 401 'Not authenticated'. Session properly terminated."
+
+  - task: "POST /api/auth/change-password"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + lib/auth.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Requires auth (401 without cookie). Wrong current -> 400. Short new (<8 chars) -> 400. Valid rotation -> 200 {ok:true} + login works with new pw. Verified round-trip: rotated to temp, logged in, rotated back to NoirAdmin2026!, login works."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Password change fully functional with all validations. Without cookie → 401 'Not authenticated'. Wrong current_password → 400 'Current password is incorrect'. Short password (<8 chars) → 400 'New password too short (min 8 chars)'. Valid rotation to TestingRotation2026! → 200 {ok:true}, login with new password successful. CRITICAL: Successfully rotated back to NoirAdmin2026! and verified login works. NOT LOCKED OUT. All destructive tests passed safely."
+
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 2
+  version: "1.3"
+  test_sequence: 4
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "POST /api/auth/login"
+    - "GET /api/auth/me"
+    - "POST /api/auth/logout"
+    - "POST /api/auth/change-password"
+    - "Collection name fix (settings->site_settings, blog_posts->blog, media->files)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -332,3 +428,62 @@ agent_communication:
         
         All backend tasks marked as working=true, needs_retesting=false.
         No issues found. Phase 1 backend implementation is production-ready.
+    - agent: "testing"
+      message: |
+        ✅ PHASE 2 CHUNK A BACKEND TESTING COMPLETE - ALL TESTS PASSED (25/25)
+        
+        Comprehensive testing of JWT auth + production data parity completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Admin credentials verified: admin@noir-hamburg.de / NoirAdmin2026!
+        
+        Test Results by Section:
+        
+        SECTION 1: DATA-PARITY (5/5 passed)
+        ✅ GET /api/settings → 200 with real production fields (email=kontakt@noir-hamburg.de)
+        ✅ GET /api/models → 200 with exactly 14 models (including 'aurelia')
+        ✅ GET /api/blog → 200 with exactly 13 posts (all published=true)
+        ✅ GET /api/pages → 200 with exactly 3 pages (all expected slugs present)
+        ✅ GET /api/service-content + /api/area-content → 8 and 18 respectively
+        
+        SECTION 2: AUTH HAPPY PATH (4/4 passed)
+        ✅ POST /api/auth/login with correct credentials → 200 + Set-Cookie access_token (HttpOnly, Path=/, Max-Age)
+        ✅ GET /api/auth/me with cookie → 200 with user object (no password_hash)
+        ✅ POST /api/auth/logout → 200 {ok:true} + cookie cleared (Max-Age=0)
+        ✅ GET /api/auth/me after logout → 401 'Not authenticated'
+        
+        SECTION 3: AUTH FAILURES (5/5 passed)
+        ✅ POST /api/auth/login with wrong password → 401 'Invalid credentials'
+        ✅ POST /api/auth/login with unknown email → 401 'Invalid credentials' (no user enumeration)
+        ✅ POST /api/auth/login with missing fields → 400 'Email and password required'
+        ✅ GET /api/auth/me without cookie → 401
+        ✅ GET /api/auth/me with garbage cookie → 401
+        
+        SECTION 4: CHANGE-PASSWORD (8/8 passed)
+        ✅ Login again (fresh cookie) → 200
+        ✅ POST /api/auth/change-password without cookie → 401 'Not authenticated'
+        ✅ POST /api/auth/change-password with wrong current_password → 400 'Current password is incorrect'
+        ✅ POST /api/auth/change-password with short password → 400 'New password too short (min 8 chars)'
+        ✅ POST /api/auth/change-password valid rotation to TestingRotation2026! → 200 {ok:true}
+        ✅ POST /api/auth/login with TestingRotation2026! → 200 (rotation persisted)
+        ✅ CRITICAL: Rotate back to NoirAdmin2026! → 200 {ok:true}
+        ✅ CRITICAL: Final verification login with NoirAdmin2026! → 200 (NOT LOCKED OUT)
+        
+        SECTION 5: REGRESSION ON PHASE 1 (3/3 passed)
+        ✅ GET /api/health, /api/service-content, /api/service-content/vip-escort-hamburg → all 200
+        ✅ GET /sitemap.xml and /robots.txt → still valid
+        ✅ GET /api/sitemap/status → correct counts (services:8, areas:18, models:14, blog:13, pages:3)
+        
+        Critical Verifications:
+        • Production MongoDB dump successfully loaded and accessible via API
+        • Collection name mappings working (site_settings, blog, pages, models)
+        • JWT authentication fully functional with HttpOnly cookies
+        • Password hashing with bcrypt working correctly
+        • No password_hash exposure in any response
+        • No user enumeration (same error message for wrong password and unknown email)
+        • Password change with full validation (auth required, current password check, length validation)
+        • Destructive password rotation test passed safely (rotated and restored)
+        • All Phase 1 endpoints still working (no regression)
+        • No _id fields in any response (cleanDoc working correctly)
+        
+        All Phase 2 Chunk A backend tasks marked as working=true, needs_retesting=false.
+        No issues found. Phase 2 Chunk A backend implementation is production-ready.
