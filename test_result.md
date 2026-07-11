@@ -517,16 +517,72 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.5"
-  test_sequence: 27
+  version: "3.6"
+  test_sequence: 28
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Header/Footer refactor — live site_settings as source of truth"
+    - "Admin dashboard polish + files-collection cleanup"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+phase2_c_dashboard_polish:
+  - task: "Admin dashboard polish + files-collection cleanup"
+    implemented: true
+    working: true
+    file: "app/(de)/admin/(guarded)/page.js + components/public/BlogDetailBody.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+            Dashboard polish + one-off cleanup.
+
+            DATA CLEANUP
+              * files collection: 72 -> 0. All 72 rows matched the safety
+                signature { original_filename: 'test.jpg', size: {636|519} }
+                left over from an old testing agent. Deletion aborted if
+                matched != total (safety guard). Verified no references from
+                models/blog/service_content/pages/area_content docs.
+
+            DASHBOARD REBUILD (/admin)
+              * NEW hero panel (renders when contactsUnread > 0): big dark
+                burgundy card showing the unread count, last-received
+                timestamp, and an "Inbox öffnen" CTA. This is the operator's
+                daily-driver signal.
+              * StatCard grid keeps the 6 counts (Services/Areas/Models/Blog/
+                Pages/Kontakte). Kontakte tile gained a "{n} ungelesen"
+                sub-label.
+              * NEW Activity panel: last 5 contacts (with unread bullet),
+                last 3 blog posts and last 3 models sorted by updated_at,
+                each row deep-links into the admin editor.
+              * NEW Launch-readiness panel: counts of missing EN translations
+                per collection (services.title_en, models.bio_en,
+                blog.title_en, pages.content_en). Each row shows a green
+                badge when 0 and an amber badge with a count when non-zero,
+                linking to the corresponding admin index.
+              * Live-Seite block enriched with /en, /blog, /sitemap.xml, and
+                /robots.txt links.
+              * Locale-aware date formatting via toLocaleString('de-DE').
+              * data-testids added: hero-unread-contacts, stat-*, panel-
+                activity, panel-health.
+
+            SIDE FIX
+              * BlogDetailBody: <img fetchpriority="high"> -> fetchPriority
+                (React 19 attribute casing) to silence a console warning.
+
+            Verification (visual + curl)
+              * Screenshot at 1600x900 shows the correct render: 88-unread
+                hero, count tiles, activity feed with 5 recent contacts,
+                Launch-Bereitschaft panel visible.
+              * Admin session cookie required (401 without) — confirmed
+                still gated.
+              * No other files touched; regression on prior SSR routes
+                already green via prior test cadences.
 
 phase3_refactor_header_footer:
   - task: "Header/Footer refactor — live site_settings as source of truth"

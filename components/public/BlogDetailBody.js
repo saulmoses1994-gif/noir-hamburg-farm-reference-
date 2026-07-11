@@ -138,7 +138,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
 
           {post.cover_image && (
             <div className="editorial-image h-[60vh] mb-16 max-w-6xl mx-auto">
-              <img src={post.cover_image} alt={title} loading="eager" fetchpriority="high" className="w-full h-full object-cover" />
+              <img src={post.cover_image} alt={title} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
             </div>
           )}
 
