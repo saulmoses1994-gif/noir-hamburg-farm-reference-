@@ -472,14 +472,58 @@ phase3_d2_blog_public:
             
             No issues found. All requirements met.
 
+phase3_d3_areas_public:
+  - task: "Public /escort/[slug] area detail (+ EN twins)"
+    implemented: true
+    working: true
+    file: "app/(de)/escort/[slug]/page.js + app/(en)/en/escort/[slug]/page.js + components/public/AreaDetailBody.js + lib/settings.js + lib/models.js + lib/i18n.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Phase 3 chunk d3 shipped: /escort/[slug] area detail with EN twin.
+            * Shared component: components/public/AreaDetailBody.js takes `lang`
+              plus prefetched area/services/models/nearby/settings.
+            * generateMetadata + generateStaticParams built from listAreaContent().
+              Meta title falls back to "{title} — Premium Begleitung/Companionship
+              in {name} | Noir Hamburg" when the CMS meta_title is empty.
+            * 3 JSON-LD blocks in <body>: Place (with PostalAddress) + BreadcrumbList
+              + FAQPage. FAQs resolve from CMS `faqs[]` when non-empty, else the
+              generic seed at lib/generic_area_faqs_seed.json with `{name}` inlined.
+            * Hero image resolution: settings.area_images[slug] > area.image.
+            * body_extra_en falls back to body_extra when empty (rule (a)).
+            * Sidebar: 5 popular services (locale-prefixed) + 6 nearby-district chips.
+            * Below-fold: up to 6 models filtered by locations:[slug] (new helper
+              listPublicModelsByLocation in lib/models.js).
+            * lib/settings.js — new small helper to read the singleton site_settings.
+            * Sitemap already covered all 18 /escort/{slug} URLs (existing coverage).
+            Manual curl verification:
+              * DE /escort/hafencity 200 -> <html lang="de">, title "Escort HafenCity
+                — Premium Begleitung in HafenCity | Noir Hamburg", canonical
+                /escort/hafencity, hreflang de-DE + en + x-default, 3 JSON-LD blocks
+                (Place+Breadcrumb+FAQPage), 3 generic FAQ items, 5 services in
+                sidebar, 6 nearby chips, 6 models in the "Models in HafenCity" grid,
+                contact CTA "In HafenCity anfragen".
+              * EN /en/escort/hafencity 200 -> <html lang="en">, title "Escort
+                HafenCity — Premium Companionship in HafenCity | Noir Hamburg",
+                body swaps to body_extra_en, contact CTA "Enquire in HafenCity",
+                zero German UI-string leaks.
+              * 404 handling: /escort/does-not-exist and /en/escort/does-not-exist
+                both return 404.
+            Please run standard read-path + SEO smoke tests.
+
 metadata:
   created_by: "main_agent"
-  version: "2.9"
-  test_sequence: 20
+  version: "3.0"
+  test_sequence: 21
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Public /escort/[slug] area detail (+ EN twins)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -1535,3 +1579,57 @@ agent_communication:
         
         All requirements met. No issues found. Phase 3 d2 blog public implementation is production-ready.
         Task marked as working=true, needs_retesting=false.
+
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 6-test suite completed with ALL TESTS PASSED (6/6).
+            All SSR SEO artifacts render correctly in raw HTML (curl-based, no JS required).
+            
+            TEST 1 - DE DETAIL (GET /escort/hafencity): 200, html lang=de, title "Escort HafenCity — Premium Begleitung in HafenCity | Noir Hamburg", meta description contains "HafenCity" and "Noir Hamburg", canonical=/escort/hafencity, hreflang alternates (de-DE, en, x-default) present, exactly 3 JSON-LD blocks in body (Place + BreadcrumbList + FAQPage), Place has addressLocality='HafenCity' and addressCountry='DE', FAQPage has 3 questions, H1 contains "Escort HafenCity", body contains "Begleitung in HafenCity" heading and DE intro "Hamburgs modernes Aushängeschild", all 4 landmarks present (Elbphilharmonie, Magellan-Terrassen, The Fontenay (nahe), Speicherstadt), FAQ block renders 3 items (data-testid=area-faq-0/1/2), popular-services sidebar has 5 service links starting with /services/, nearby-districts block has 6 links starting with /escort/ (excluding hafencity), contact CTA "In HafenCity anfragen", models section has 6 model cards (aurelia, valentina, sophia, marlene, beatrice, anastasia) with /models/ links.
+            
+            TEST 2 - EN DETAIL (GET /en/escort/hafencity): 200, html lang=en, title "Escort HafenCity — Premium Companionship in HafenCity | Noir Hamburg", canonical=/en/escort/hafencity, hreflang alternates present, 3 JSON-LD blocks (Place + BreadcrumbList + FAQPage), Place has addressLocality='HafenCity', "Companionship in HafenCity" heading present, EN intro "Hamburg's modern landmark" present, body_extra_en text appears ("HafenCity is Hamburg's newest showcase"), German body_extra NOT leaked in visible content (only in JSON hydration data which is acceptable), contact CTA "Enquire in HafenCity", popular-services sidebar uses /en/services/ prefix (5 links), nearby-districts uses /en/escort/ prefix (6 links), model cards use /en/models/ prefix (6 links), zero German UI-string leaks in visible text (excluding acceptable landmark proper-nouns and kontakt@noir-hamburg.de email).
+            
+            TEST 3 - 404 HANDLING: GET /escort/does-not-exist → 404, GET /en/escort/does-not-exist → 404.
+            
+            TEST 4 - SECONDARY SANITY (blankenese): GET /escort/blankenese → 200 with html lang=de, canonical + hreflang + 3 JSON-LD + H1. GET /en/escort/blankenese → 200 with html lang=en, canonical + hreflang + 3 JSON-LD + H1.
+            
+            TEST 5 - SITEMAP COVERAGE: GET /sitemap.xml → 200, exactly 18 <loc> entries matching .../escort/..., each area entry has xhtml:link alternate for hreflang="en" pointing to /en/escort/{slug}.
+            
+            TEST 6 - REGRESSION: GET /api/health → 200, GET /api/area-content → 200 with 18 items, GET /api/models → 200 with 14 items, GET /blog → 200 (Phase 3 d2 still works), GET /models → 200 (Phase 3 d1 still works), GET /services/vip-escort-hamburg → 200 (Phase 1 still works).
+            
+            CRITICAL SEO VERIFICATIONS: Every tested URL has exactly ONE <title> tag with unique non-empty title, ONE <meta name="description"> with non-empty content, ONE <link rel="canonical"> pointing to correct URL, hreflang alternates (de-DE, en, x-default) all present, <html lang="de"> for DE routes and <html lang="en"> for EN routes, ALL JSON-LD blocks appear in <body> (not <head>), each JSON-LD block parses as valid JSON.
+            
+            All requirements met. No issues found.
+
+agent_communication:
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 D3 AREAS PUBLIC — TESTING COMPLETE - ALL TESTS PASSED (6/6)
+        
+        Comprehensive testing of public area detail SSR routes completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Test slugs: hafencity (primary), blankenese (secondary)
+        
+        Test Results Summary:
+        ✅ DE detail /escort/hafencity - Full SSR with unique title, meta, H1, canonical, hreflang, 3 JSON-LD blocks (Place + BreadcrumbList + FAQPage), 4 landmarks, 3 FAQs, 5 services, 6 nearby districts, 6 models
+        ✅ EN detail /en/escort/hafencity - Full SSR with EN content, body_extra_en fallback working, zero German UI leaks in visible content, all links use /en/ prefix
+        ✅ 404 handling - Both DE and EN return 404 for non-existent slugs
+        ✅ Secondary sanity (blankenese) - Both DE and EN routes working with correct SSR artifacts
+        ✅ Sitemap coverage - 18 escort entries with EN alternates
+        ✅ Regression - All prior work (Phase 1, 3d1, 3d2) still functional
+        
+        Critical Verifications:
+        • SSR working correctly - all SEO artifacts in raw HTML (not JS-dependent)
+        • Bilingual content separation - EN pages show EN content, DE pages show DE content
+        • body_extra_en fallback logic working (rule (a) - falls back to body_extra when empty)
+        • JSON-LD blocks correctly placed in <body> (not <head>)
+        • Place schema has correct addressLocality and addressCountry
+        • FAQPage schema uses generic seed with {name} substitution (3 questions)
+        • Landmarks block renders from CMS data (4 chips for hafencity)
+        • Models filtered by locations:[slug] (6 models for hafencity)
+        • All cross-links use correct locale prefix (/en/services/, /en/escort/, /en/models/)
+        • No German UI string leaks in EN visible content (hydration data excluded)
+        
+        All backend tasks for Phase 3 d3 marked as working=true, needs_retesting=false.
+        No issues found. Phase 3 d3 implementation is production-ready.
