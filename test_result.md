@@ -517,15 +517,90 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.2"
-  test_sequence: 24
+  version: "3.3"
+  test_sequence: 25
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Public /faq (+ EN twin) with FAQPage JSON-LD"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+phase3_d6_faq_public:
+  - task: "Public /faq (+ EN twin) with FAQPage JSON-LD"
+    implemented: true
+    working: true
+    file: "app/(de)/faq/page.js + app/(en)/en/faq/page.js + components/public/FaqBody.js + lib/faqs_default.js + lib/i18n.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Phase 3 chunk d6 shipped: /faq (+ /en/faq).
+            Shared FaqBody + bundled 6-item DE/EN Q&A list at lib/faqs_default.js
+            (verbatim from reference SPA, not CMS-managed by design).
+            FAQPage + BreadcrumbList JSON-LD in <body>; inLanguage matches the
+            locale; all 6 Questions emitted in mainEntity. Native <details>
+            accordion, first item open by default. Bottom CTA cross-links to
+            /kontakt or /en/contact.
+            Manual curl: both pages 200 w/ correct <html lang>, unique title,
+            canonical, hreflang de-DE/en/x-default, 2 JSON-LD blocks (FAQPage
+            with 6 questions + BreadcrumbList), 6 data-testid="faq-item-*"
+            rendered; zero German UI leaks on EN; sitemap already covers /faq
+            with EN hreflang alternate.
+            Please run standard SSR + SEO smoke tests.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 5-test suite completed with ALL TESTS PASSED (5/5).
+            All SSR SEO artifacts render correctly in raw HTML (curl-based, no JS required).
+            Base URL: https://noir-migration.preview.emergentagent.com
+            
+            TEST 1 - DE FAQ PAGE (GET /faq): 200, exactly one <html lang="de">, title "FAQ — Häufige 
+            Fragen | Noir Hamburg Premium Escort" (em dash correctly rendered), exactly one <meta 
+            name="description"> containing "Noir Hamburg", exactly one <link rel="canonical" 
+            href=".../faq">, three hreflang alternates (de-DE, en, x-default) present, exactly 2 
+            <script type="application/ld+json"> blocks in <body> both parse as valid JSON. FAQPage 
+            schema: @type="FAQPage", inLanguage="de-DE", mainEntity array with exactly 6 Question 
+            items, each with @type="Question", non-empty name, and acceptedAnswer with @type="Answer" 
+            and non-empty text. All 6 questions contain expected DE keywords (Diskretion, Buchung, 
+            Sprachen, reisen, voraus, Zahlungs). BreadcrumbList schema: 2 items, second name="FAQ". 
+            Body contains exactly 6 <details> elements with data-testid="faq-item-0" through 
+            "faq-item-5". First <details> element has open attribute, other 5 do not. Bottom CTA 
+            (data-testid="faq-cta") href="/kontakt". H1 contains "Häufige" and "Fragen".
+            
+            TEST 2 - EN FAQ PAGE (GET /en/faq): 200, <html lang="en">, title "FAQ — Frequently Asked 
+            Questions | Noir Hamburg Premium Escort", canonical=".../en/faq", hreflang alternates 
+            present (de-DE, en, x-default), 2 JSON-LD blocks in <body> (FAQPage with inLanguage="en" 
+            + BreadcrumbList). FAQPage mainEntity has 6 Questions in EN (verified keywords: discretion, 
+            booking, languages, travel, advance, payment). 6 <details> items, first is open. CTA 
+            href="/en/contact". H1 contains "Frequently" and "Asked".
+            
+            TEST 3 - EN 0-LEAK SCAN: Stripped <script> and all tags from /en/faq HTML. Visible text 
+            does NOT contain any forbidden German strings: Startseite, Über uns, Häufige, Wissenswertes, 
+            Termin (standalone), Kategorien, Anfrage senden, Kontakt aufnehmen, Verfügbarkeit, 
+            Buchungsprozess, persönlich, pünktlich. Email address "kontakt@noir-hamburg.de" correctly 
+            allowed and present.
+            
+            TEST 4 - SITEMAP REGRESSION: GET /sitemap.xml → 200. Contains <loc> for .../faq (DE) and 
+            xhtml:link hreflang="en" alternate pointing to .../en/faq.
+            
+            TEST 5 - REGRESSION ON PRIOR WORK: All endpoints return 200: GET /api/health (Phase 0), 
+            GET /services/vip-escort-hamburg (Phase 1), GET /models (Phase 3 d1), GET /blog (Phase 3 d2), 
+            GET /escort/hafencity (Phase 3 d3), GET /p/diskretion (Phase 3 d4), GET /kontakt (Phase 3 d5), 
+            GET /ueber-uns (Phase 3 d5), GET /impressum (Phase 3 d5).
+            
+            CRITICAL SEO VERIFICATIONS: Both /faq and /en/faq have exactly ONE <title> tag with correct 
+            content, ONE <meta name="description"> with non-empty content containing "Noir Hamburg", 
+            ONE <link rel="canonical"> pointing to correct URL, three hreflang alternates (de-DE, en, 
+            x-default) all present, correct <html lang> attribute, ALL JSON-LD blocks appear in <body> 
+            (not <head>), each JSON-LD block parses as valid JSON.
+            
+            All requirements met. No issues found. Phase 3 chunk d6 is production-ready.
 
 phase3_d5_static_pages_public:
   - task: "Public /kontakt + /ueber-uns + /impressum (+ EN twins) with contact form"
@@ -1902,3 +1977,50 @@ agent_communication:
         ACTION ITEMS FOR MAIN AGENT:
         - All backend tests passed with no major issues
         - Please summarize and finish Phase 3 d5
+
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 D6 FAQ PUBLIC — TESTING COMPLETE - ALL TESTS PASSED (5/5)
+        
+        Comprehensive testing of public FAQ pages (/faq + /en/faq) with FAQPage JSON-LD completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        
+        Test Results Summary:
+        ✅ TEST 1 - DE FAQ page (/faq): Full SSR with correct html lang="de", title with em dash,
+           meta description, canonical, 3 hreflang alternates (de-DE, en, x-default), 2 JSON-LD
+           blocks in <body> (FAQPage with inLanguage="de-DE" + 6 DE Questions + BreadcrumbList),
+           6 <details> elements (first open), CTA href="/kontakt", H1 contains "Häufige" and "Fragen".
+        ✅ TEST 2 - EN FAQ page (/en/faq): Full SSR with html lang="en", correct title, canonical,
+           hreflang alternates, 2 JSON-LD blocks (FAQPage with inLanguage="en" + 6 EN Questions +
+           BreadcrumbList), 6 <details> elements (first open), CTA href="/en/contact", H1 contains
+           "Frequently" and "Asked".
+        ✅ TEST 3 - EN 0-leak scan: Zero German UI string leaks in visible text (Startseite, Über uns,
+           Häufige, Wissenswertes, Termin, Kategorien, Anfrage senden, Kontakt aufnehmen, Verfügbarkeit,
+           Buchungsprozess, persönlich, pünktlich all absent). Email "kontakt@noir-hamburg.de" correctly
+           allowed.
+        ✅ TEST 4 - Sitemap regression: /sitemap.xml contains <loc> for /faq and xhtml:link hreflang="en"
+           alternate pointing to /en/faq.
+        ✅ TEST 5 - Regression on prior work: All endpoints return 200 (health, services, models, blog,
+           escort, pages, kontakt, ueber-uns, impressum).
+        
+        Critical Verifications:
+        • SSR working correctly - all SEO artifacts in raw HTML (not JS-dependent)
+        • FAQPage schema has correct structure: @type="FAQPage", inLanguage matches locale (de-DE/en),
+          mainEntity array with 6 Question items, each with name and acceptedAnswer
+        • All 6 DE questions contain expected keywords (Diskretion, Buchung, Sprachen, reisen, voraus, Zahlungs)
+        • All 6 EN questions contain expected keywords (discretion, booking, languages, travel, advance, payment)
+        • BreadcrumbList schema has 2 items, second name="FAQ"
+        • Native <details> accordion with 6 items (data-testid="faq-item-0" through "faq-item-5")
+        • First <details> element has open attribute, other 5 do not
+        • Bottom CTA links to correct locale contact page (/kontakt for DE, /en/contact for EN)
+        • JSON-LD blocks correctly placed in <body> (not <head>)
+        • Both pages have exactly ONE <title>, ONE <meta name="description">, ONE canonical link
+        • hreflang alternates present for de-DE, en, and x-default
+        • No German UI string leaks in EN page visible text
+        
+        All requirements met. No issues found. Phase 3 chunk d6 is production-ready.
+        
+        ACTION ITEMS FOR MAIN AGENT:
+        - All backend tests passed with no major issues
+        - Please summarize and finish Phase 3 d6
