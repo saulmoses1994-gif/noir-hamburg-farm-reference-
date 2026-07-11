@@ -145,6 +145,43 @@ async function route(request, ctx, method) {
       if (!a) return j({ detail: 'Area content not found' }, { status: 404 })
       return j(a)
     }
+    // PUT /api/area-content/:slug \u2014 admin only.
+    if (parts[0] === 'area-content' && parts.length === 2 && method === 'PUT') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[1]
+      const body = await readJson(request)
+      const ALLOW = [
+        'title', 'name',
+        'intro', 'intro_en',
+        'description', 'description_en',
+        'long_copy', 'long_copy_en',
+        'meta_title', 'meta_title_en',
+        'meta_description', 'meta_description_en',
+        'image', 'image_alt', 'image_alt_en',
+        'landmarks',
+        'body_extra', 'body_extra_en',
+        'faqs',
+      ]
+      const update = {}
+      for (const k of ALLOW) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      const result = await db.collection('area_content').findOneAndUpdate(
+        { slug },
+        { $set: update },
+        { returnDocument: 'after' }
+      )
+      if (!result) return j({ detail: 'Area not found' }, { status: 404 })
+      try {
+        revalidatePath(`/escort/${slug}`)
+        revalidatePath(`/en/escort/${slug}`)
+        revalidatePath('/areas')
+        revalidatePath('/en/areas')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(result))
+    }
 
     // ---------- Models ----------
     if (p === '/models' && method === 'GET') {
