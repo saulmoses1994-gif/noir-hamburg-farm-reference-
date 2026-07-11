@@ -35,6 +35,15 @@ const MODEL_FIELDS = [
   'featured', 'available',
 ]
 
+// Editable page fields.
+const PAGE_FIELDS = [
+  'title', 'h1', 'intro', 'content',
+  'hero_image',
+  'meta_title', 'meta_description',
+  'related_services', 'related_locations',
+  'published',
+]
+
 // Editable blog fields.
 const BLOG_FIELDS = [
   'title', 'title_en',
@@ -413,15 +422,65 @@ async function route(request, ctx, method) {
 
     // ---------- Pages ----------
     if (p === '/pages' && method === 'GET') {
-      const db = await getDb()
-      const docs = await db.collection('pages').find({ published: { $ne: false } }).toArray()
-      return j(docs.map(cleanDoc))
+      const { listPublicPages } = await import('@/lib/pages')
+      return j(await listPublicPages())
     }
     if (parts[0] === 'pages' && parts.length === 2 && method === 'GET') {
-      const db = await getDb()
-      const doc = await db.collection('pages').findOne({ slug: parts[1] })
+      const { getPublicPage } = await import('@/lib/pages')
+      const doc = await getPublicPage(parts[1])
       if (!doc) return j({ detail: 'Page not found' }, { status: 404 })
-      return j(cleanDoc(doc))
+      return j(doc)
+    }
+
+    // Admin \u2014 create.
+    if (p === '/pages' && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const body = await readJson(request)
+      if (!body.slug || !body.title) return j({ detail: 'slug and title are required' }, { status: 400 })
+      const slug = String(body.slug).toLowerCase().trim()
+      if (!/^[a-z0-9-]+$/.test(slug)) return j({ detail: 'slug may only contain a-z, 0-9 and hyphens' }, { status: 400 })
+      const db = await getDb()
+      const existing = await db.collection('pages').findOne({ slug })
+      if (existing) return j({ detail: 'A page with that slug already exists (including soft-deleted).' }, { status: 409 })
+      const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
+      for (const k of PAGE_FIELDS) if (k in body) doc[k] = body[k]
+      doc.published = doc.published ?? false
+      await db.collection('pages').insertOne(doc)
+      try { revalidatePath(`/p/${slug}`); revalidatePath('/sitemap.xml') } catch {}
+      return j(cleanDoc(doc), { status: 201 })
+    }
+
+    // Admin \u2014 edit.
+    if (parts[0] === 'pages' && parts.length === 2 && method === 'PUT') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[1]
+      const body = await readJson(request)
+      const update = {}
+      for (const k of PAGE_FIELDS) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      const result = await db.collection('pages').findOneAndUpdate({ slug }, { $set: update }, { returnDocument: 'after' })
+      if (!result) return j({ detail: 'Page not found' }, { status: 404 })
+      try { revalidatePath(`/p/${slug}`); revalidatePath('/sitemap.xml') } catch {}
+      return j(cleanDoc(result))
+    }
+
+    // Admin \u2014 soft delete.
+    if (parts[0] === 'pages' && parts.length === 2 && method === 'DELETE') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[1]
+      const db = await getDb()
+      const result = await db.collection('pages').findOneAndUpdate(
+        { slug, deleted_at: { $in: [null, undefined] } },
+        { $set: { deleted_at: new Date(), updated_at: new Date() } },
+        { returnDocument: 'after' }
+      )
+      if (!result) return j({ detail: 'Page not found or already deleted' }, { status: 404 })
+      try { revalidatePath(`/p/${slug}`); revalidatePath('/sitemap.xml') } catch {}
+      return j({ ok: true, slug, deleted_at: result.deleted_at })
     }
 
     // ---------- Sitemap status ----------

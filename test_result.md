@@ -360,8 +360,8 @@ backend_phase2:
 
 metadata:
   created_by: "main_agent"
-  version: "2.0"
-  test_sequence: 12
+  version: "2.3"
+  test_sequence: 14
   run_ui: false
 
 test_plan:
@@ -369,6 +369,22 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+backend_phase2_pages_cms:
+  - task: "Pages CRUD (list, create, update, soft-delete)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + lib/pages.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Full CRUD mirrors blog pattern. Public GET filters draft + deleted_at. POST validates slug + uniqueness, defaults published=false, assigns UUID. PUT slug-immutable, whitelist. DELETE soft-sets deleted_at, second DELETE returns 404. Manual curl round-trip verified: create draft (hidden), publish (visible in list of 4), delete (back to 3), second delete -> 404. Hard-deleted test doc for cleanup."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Comprehensive 30-step test completed with 30/30 assertions passed. READ PATH: GET /api/pages returns exactly 3 production pages (all published=true, no _id, no deleted_at). GET /api/pages/diskretion-und-datenschutz-noir-hamburg returns 200 with correct meta_title and long HTML content. GET /api/pages/does-not-exist returns 404 'Page not found'. AUTH GUARDS: POST/PUT/DELETE without cookie all return 401. POST VALIDATION: Missing slug/title → 400 'slug and title are required'. Invalid slug pattern → 400 'may only contain a-z, 0-9 and hyphens'. Existing slug → 409 conflict. POST + PUT + DELETE FLOW: Created draft (published=false) → 201 with UUID id, hidden from public list (still 3 items). Created published page → 201, appears in list (4 items). PUT draft published=true → list grows to 5. PUT published page published=false → list shrinks to 4. Partial update (title, h1, meta_title) → 200, all fields persisted. WHITELIST: PUT with slug/_id/deleted_at → 200, all ignored (slug unchanged). 404 HANDLING: PUT non-existent slug → 404. SOFT-DELETE: DELETE qa-page-draft → 200 {ok:true, slug, deleted_at}, hidden from public (404). DELETE already-deleted → 404 'Page not found or already deleted'. DELETE qa-page-live → 200. List back to 3 (production baseline). CLEANUP: Hard-deleted 2 test pages from MongoDB, count verified as 3. REGRESSION: All endpoints working (health, auth/me, service-content 8, area-content 18, models 14, blog 13, settings). All 3 production pages accessible with correct titles, no deleted_at field. CRITICAL: Production data safe, no pages affected by testing. No issues found."
 
 backend_phase2_blog_cms:
   - task: "GET /api/blog (public filters draft + soft-deleted)"
@@ -1066,3 +1082,87 @@ agent_communication:
         
         All 4 Blog CMS tasks marked as working=true, needs_retesting=false.
         No issues found. Phase 2 Blog CMS implementation is production-ready.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 2 PAGES CMS — COMPREHENSIVE CRUD + DRAFT/PUBLISH + SOFT-DELETE TESTING COMPLETE - ALL TESTS PASSED (30/30)
+        
+        Comprehensive 30-step test of Pages CMS CRUD operations with draft/publish semantics and soft-delete completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Test slugs: qa-page-draft, qa-page-live (hard-deleted after tests)
+        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        
+        Test Results by Section:
+        
+        SECTION 1: READ PATH (3/3 passed)
+        ✅ GET /api/pages → 200 with exactly 3 production pages
+        ✅ All pages have slug, title, h1, intro, content, published=true, no _id, no deleted_at
+        ✅ GET /api/pages/diskretion-und-datenschutz-noir-hamburg → 200 with correct meta_title and long HTML content
+        ✅ GET /api/pages/does-not-exist → 404 'Page not found'
+        
+        SECTION 2: AUTH GUARDS (4/4 passed)
+        ✅ POST /api/pages without cookie → 401 'Not authenticated'
+        ✅ PUT /api/pages/{slug} without cookie → 401
+        ✅ DELETE /api/pages/{slug} without cookie → 401
+        ✅ Admin login successful → access_token cookie
+        
+        SECTION 3: POST VALIDATION (4/4 passed)
+        ✅ POST missing slug → 400 'slug and title are required'
+        ✅ POST missing title → 400 'slug and title are required'
+        ✅ POST invalid slug pattern (Has Spaces) → 400 'may only contain a-z, 0-9 and hyphens'
+        ✅ POST existing slug (diskretion-und-datenschutz-noir-hamburg) → 409 conflict
+        
+        SECTION 4: POST + PUT + DELETE FLOW (16/16 passed)
+        ✅ POST qa-page-draft with published=false → 201 with UUID id, timestamps, all sent fields present, no _id
+        ✅ GET /api/pages → count STILL 3 (draft hidden from public list)
+        ✅ GET /api/pages/qa-page-draft → 404 (drafts hidden from public detail too)
+        ✅ POST qa-page-live with published=true → 201
+        ✅ GET /api/pages → count now 4 (qa-page-live IS in the list)
+        ✅ GET /api/pages/qa-page-live → 200
+        ✅ PUT qa-page-draft published=true → 200, GET /api/pages → 5 items, qa-page-draft now visible
+        ✅ PUT qa-page-live published=false → 200, GET /api/pages → 4 items, qa-page-live hidden
+        ✅ PUT qa-page-draft (update title, h1, meta_title) → 200, all three fields persisted
+        
+        SECTION 5: WHITELIST ENFORCEMENT (1/1 passed)
+        ✅ PUT qa-page-draft with slug='HACK'/_id='HACK'/deleted_at='1970-01-01' → 200, all ignored (slug still qa-page-draft)
+        
+        SECTION 6: 404 HANDLING (1/1 passed)
+        ✅ PUT /api/pages/does-not-exist → 404 'Page not found'
+        
+        SECTION 7: DELETE (SOFT-DELETE) (5/5 passed)
+        ✅ DELETE qa-page-draft → 200 {ok:true, slug, deleted_at} with valid ISO timestamp
+        ✅ GET /api/pages/qa-page-draft after delete → 404
+        ✅ DELETE qa-page-draft again → 404 'Page not found or already deleted'
+        ✅ DELETE qa-page-live → 200
+        ✅ GET /api/pages → exactly 3 items (production baseline restored)
+        
+        SECTION 8: CLEANUP (HARD-DELETE) (1/1 passed)
+        ✅ Hard-deleted qa-page-draft and qa-page-live from MongoDB via mongosh
+        ✅ MongoDB pages collection count: 3
+        
+        SECTION 9: REGRESSION CHECKS (2/2 passed)
+        ✅ GET /api/health → 200
+        ✅ GET /api/auth/me (with cookie) → 200
+        ✅ GET /api/service-content → 200 with 8 items
+        ✅ GET /api/area-content → 200 with 18 items
+        ✅ GET /api/models → 200 with 14 items
+        ✅ GET /api/blog → 200 with 13 items
+        ✅ GET /api/settings → 200
+        ✅ All 3 production pages accessible with correct titles, no deleted_at field
+        
+        Critical Verifications:
+        • Public list correctly filters drafts (published=false) AND soft-deleted pages (deleted_at not null)
+        • Public detail GET correctly returns 404 for drafts and soft-deleted pages
+        • Auth guards working on all write endpoints (requireAdmin)
+        • POST validation working: slug/title required, slug pattern ^[a-z0-9-]+$, uniqueness check includes soft-deleted
+        • POST create working: assigns UUID id, timestamps, defaults published=false (drafts by default)
+        • Draft ↔ publish workflow working: can toggle published status via PUT
+        • Whitelist enforcement working: PAGE_FIELDS whitelist excludes slug (cannot change via PUT), _id, deleted_at, password_hash
+        • PUT update working: partial updates, whitelist enforcement, 404 on unknown slug
+        • DELETE soft-delete working: sets deleted_at + updated_at, hides from public list, 404 on already-deleted
+        • Hard-delete cleanup successful: test pages removed from MongoDB, production baseline restored
+        • Regression checks passed: all Phase 1 and Phase 2 endpoints still working
+        • CRITICAL: Production data safe - all 3 production pages present, no deleted_at set
+        
+        All Pages CMS tasks marked as working=true, needs_retesting=false.
+        No issues found. Phase 2 Pages CMS implementation is production-ready.
