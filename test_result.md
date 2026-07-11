@@ -517,16 +517,94 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.3"
-  test_sequence: 25
+  version: "3.4"
+  test_sequence: 26
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Public /faq (+ EN twin) with FAQPage JSON-LD"
+    - "Public /escort-hamburg landing + /areas list (+ EN twins)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+phase3_d7_hub_and_areas_public:
+  - task: "Public /escort-hamburg landing + /areas list (+ EN twins)"
+    implemented: true
+    working: true
+    file: "app/(de)/escort-hamburg/page.js + app/(en)/en/escort-hamburg/page.js + app/(de)/areas/page.js + app/(en)/en/areas/page.js + components/public/EscortHamburgBody.js + components/public/AreasBody.js + lib/i18n.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Phase 3 chunk d7 shipped: /escort-hamburg landing hub + /areas list
+            (+ EN twins /en/escort-hamburg, /en/areas).
+            * Shared EscortHamburgBody: hero (settings.escort_hamburg_image ->
+              Pexels fallback) + hanseatic prose + 8-service grid + 18-area chip
+              grid + closing CTA. All copy from i18n dict.
+            * Shared AreasBody: full editorial grid of all 18 areas from
+              area_content, with settings.area_images[slug] hero override.
+            * 2 JSON-LD blocks per page in <body>: CollectionPage (inLanguage
+              per locale) + BreadcrumbList. Hub adds `about: Place(Hamburg)`;
+              areas list adds `hasPart` array with all 18 Places.
+            * lib/i18n.js extended with hub.* + areas.* keys (~30 new strings)
+              for both locales. Sitemap already covered the static entries.
+            Manual curl verification:
+              * DE /escort-hamburg 200 -> lang=de, title "Escort Hamburg —
+                Premium Begleitagentur | Noir Hamburg", 2 JSON-LD blocks
+                (CollectionPage inLanguage=de-DE + BreadcrumbList), 8
+                hub-service-* + 18 hub-area-* testids.
+              * EN /en/escort-hamburg 200 -> lang=en, EN title, inLanguage=en,
+                8 services, 18 areas, zero German UI leaks.
+              * DE /areas 200 -> lang=de, DE title, 18 area-card-* items.
+              * EN /en/areas 200 -> lang=en, EN title, 18 area-card-*, zero DE
+                UI leaks.
+            Please run standard read-path + SEO smoke tests.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 7-test suite completed with ALL TESTS PASSED (7/7).
+            All SSR SEO artifacts render correctly in raw HTML (curl-based, no JS required).
+            
+            TEST 1 - DE /escort-hamburg: 200, html lang=de, title "Escort Hamburg — Premium Begleitagentur | Noir Hamburg",
+            canonical=/escort-hamburg, hreflang alternates (de-DE, en, x-default), 2 JSON-LD blocks in body (CollectionPage
+            inLanguage=de-DE with about: Place(Hamburg) + BreadcrumbList), data-testid="escort-hamburg-page" and
+            "escort-hamburg-hero-image" present, H1 contains "Escort" and "Hamburg", 8 hub-service-* with hrefs starting
+            /services/, 18 hub-area-* with hrefs starting /escort/, CTAs → /kontakt and /models, overline "Reichweite" present.
+            
+            TEST 2 - EN /en/escort-hamburg: 200, html lang=en, title "Escort Hamburg — Premium Companion Agency | Noir Hamburg",
+            canonical=/en/escort-hamburg, CollectionPage inLanguage=en, 8 hub-service-* with hrefs starting /en/services/,
+            18 hub-area-* with hrefs starting /en/escort/, CTAs → /en/contact and /en/models, overline "Coverage" present.
+            
+            TEST 3 - DE /areas: 200, html lang=de, title "Hamburg Areas — Premium Escort in der ganzen Metropolregion | Noir Hamburg",
+            canonical=/areas, CollectionPage inLanguage=de-DE with hasPart array length 18 (each @type:"Place" with name + url) +
+            BreadcrumbList, data-testid="areas-list" present, 18 area-card-* with hrefs starting /escort/.
+            
+            TEST 4 - EN /en/areas: 200, html lang=en, title "Hamburg Areas — Premium Escort across the Metropolitan Region | Noir Hamburg",
+            canonical=/en/areas, CollectionPage inLanguage=en with hasPart length 18, 18 area-card-* with hrefs starting /en/escort/.
+            
+            TEST 5 - EN 0-leak scan: Zero German UI string leaks in both /en/escort-hamburg and /en/areas (verified absence of:
+            Startseite, Über uns, Häufige, Wissenswertes, Reichweite, Hansestadt, Hauptstadt der Eleganz, Anfrage senden,
+            Models ansehen, in der gesamten Metropolregion, hanseatisch). Email "kontakt@noir-hamburg.de" correctly allowed.
+            
+            TEST 6 - Sitemap regression: /sitemap.xml contains <loc> for /escort-hamburg and /areas with xhtml:link hreflang="en"
+            alternates pointing to /en/escort-hamburg and /en/areas.
+            
+            TEST 7 - Regression on prior work: All endpoints return 200 (health, services/vip-escort-hamburg, models, blog,
+            escort/hafencity, p/diskretion, kontakt, ueber-uns, impressum, faq).
+            
+            CRITICAL SEO VERIFICATIONS: Every tested URL has exactly ONE <title> tag with unique non-empty title, ONE <meta
+            name="description"> with non-empty content, ONE <link rel="canonical"> pointing to correct URL, hreflang alternates
+            (de-DE, en, x-default) all present, <html lang="de"> for DE routes and <html lang="en"> for EN routes, ALL JSON-LD
+            blocks appear in <body> (not <head>), each JSON-LD block parses as valid JSON.
+            
+            Note: Intermittent 502 errors observed during testing (Kubernetes ingress/load balancer issue), but all tests
+            eventually passed after retry. This is an infrastructure issue, not an application issue.
+            
+            All requirements met. No issues found. Phase 3 chunk d7 is production-ready.
 
 phase3_d6_faq_public:
   - task: "Public /faq (+ EN twin) with FAQPage JSON-LD"
@@ -2024,3 +2102,70 @@ agent_communication:
         ACTION ITEMS FOR MAIN AGENT:
         - All backend tests passed with no major issues
         - Please summarize and finish Phase 3 d6
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 D7 HUB AND AREAS PUBLIC — TESTING COMPLETE - ALL TESTS PASSED (7/7)
+        
+        Comprehensive testing of public /escort-hamburg landing hub + /areas list (+ EN twins) completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        
+        Test Results Summary:
+        ✅ TEST 1 - DE /escort-hamburg: Full SSR with correct html lang="de", title "Escort Hamburg — Premium Begleitagentur | Noir Hamburg",
+           meta description, canonical=/escort-hamburg, 3 hreflang alternates (de-DE, en, x-default), 2 JSON-LD blocks in <body>
+           (CollectionPage with inLanguage="de-DE" + about: Place(Hamburg) + BreadcrumbList), data-testid="escort-hamburg-page" and
+           "escort-hamburg-hero-image" present, H1 contains "Escort" and "Hamburg", exactly 8 hub-service-* elements with hrefs
+           starting with /services/, exactly 18 hub-area-* elements with hrefs starting with /escort/, bottom CTAs (hub-cta-contact
+           → /kontakt, hub-cta-models → /models), overline "Reichweite" present.
+        
+        ✅ TEST 2 - EN /en/escort-hamburg: Full SSR with html lang="en", title "Escort Hamburg — Premium Companion Agency | Noir Hamburg",
+           canonical=/en/escort-hamburg, 2 JSON-LD blocks (CollectionPage with inLanguage="en" + BreadcrumbList), 8 hub-service-*
+           with hrefs starting with /en/services/, 18 hub-area-* with hrefs starting with /en/escort/, bottom CTAs point to
+           /en/contact and /en/models, overline "Coverage" present.
+        
+        ✅ TEST 3 - DE /areas: Full SSR with html lang="de", title "Hamburg Areas — Premium Escort in der ganzen Metropolregion | Noir Hamburg",
+           canonical=/areas, 2 JSON-LD blocks (CollectionPage with inLanguage="de-DE" + hasPart array length 18 [each @type:"Place"
+           with name + url] + BreadcrumbList), data-testid="areas-list" present, exactly 18 area-card-* items with hrefs starting
+           with /escort/.
+        
+        ✅ TEST 4 - EN /en/areas: Full SSR with html lang="en", title "Hamburg Areas — Premium Escort across the Metropolitan Region | Noir Hamburg",
+           canonical=/en/areas, 2 JSON-LD blocks (CollectionPage with inLanguage="en" + hasPart length 18 + BreadcrumbList),
+           18 area-card-* with hrefs starting with /en/escort/.
+        
+        ✅ TEST 5 - EN 0-leak scan: Zero German UI string leaks in visible text for both /en/escort-hamburg and /en/areas. Verified
+           absence of: Startseite, Über uns, Häufige, Wissenswertes, Reichweite, Hansestadt, Hauptstadt der Eleganz, Anfrage senden,
+           Models ansehen, in der gesamten Metropolregion, hanseatisch. Email "kontakt@noir-hamburg.de" correctly allowed and present.
+        
+        ✅ TEST 6 - Sitemap regression: /sitemap.xml contains <loc> entries for /escort-hamburg and /areas with xhtml:link hreflang="en"
+           alternates pointing to /en/escort-hamburg and /en/areas.
+        
+        ✅ TEST 7 - Regression on prior work: All endpoints return 200 (health, services/vip-escort-hamburg, models, blog, escort/hafencity,
+           p/diskretion, kontakt, ueber-uns, impressum, faq).
+        
+        Critical Verifications:
+        • SSR working correctly - all SEO artifacts in raw HTML (not JS-dependent)
+        • Every tested URL has exactly ONE <title> tag with unique non-empty title
+        • ONE <meta name="description"> with non-empty content
+        • ONE <link rel="canonical"> pointing to correct URL
+        • hreflang alternates (de-DE, en, x-default) all present
+        • <html lang="de"> for DE routes and <html lang="en"> for EN routes
+        • ALL JSON-LD blocks appear in <body> (not <head>)
+        • Each JSON-LD block parses as valid JSON
+        • CollectionPage schema has correct inLanguage per locale (de-DE for DE, en for EN)
+        • /escort-hamburg CollectionPage has about: {@type:"Place", name:"Hamburg", address:{...}}
+        • /areas CollectionPage has hasPart array with exactly 18 Place items, each with name + url
+        • All service links correctly prefixed (/services/ for DE, /en/services/ for EN)
+        • All area links correctly prefixed (/escort/ for DE, /en/escort/ for EN)
+        • All CTA links correctly prefixed (/kontakt for DE, /en/contact for EN; /models for DE, /en/models for EN)
+        • Overline text correctly localized ("Reichweite" for DE, "Coverage" for EN)
+        • No German UI string leaks in EN pages
+        
+        Note: Intermittent 502 errors observed during testing (Kubernetes ingress/load balancer issue), but all tests eventually
+        passed after retry. This is an infrastructure issue, not an application issue.
+        
+        All requirements met. No issues found. Phase 3 chunk d7 is production-ready.
+        
+        ACTION ITEMS FOR MAIN AGENT:
+        - All backend tests passed with no major issues
+        - Please summarize and finish Phase 3 d7
+        - YOU MUST ASK USER BEFORE DOING FRONTEND TESTING

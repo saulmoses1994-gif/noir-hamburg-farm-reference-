@@ -1,520 +1,740 @@
 #!/usr/bin/env python3
 """
-Phase 3 chunk d6 — Public /faq (+ /en/faq) SSR read-path smoke test.
-Curl-based, NO writes, NO auth.
+Phase 3 chunk d7 (FINAL PUBLIC CHUNK) — Public /escort-hamburg landing + /areas list, plus EN twins.
+Curl-based SSR + SEO smoke test. NO writes, NO auth.
 """
 
 import requests
 import json
 import re
 from html.parser import HTMLParser
-from urllib.parse import urljoin
 
-# Base URL from env
 BASE_URL = "https://noir-migration.preview.emergentagent.com"
 
 class MetaExtractor(HTMLParser):
-    """Extract meta tags, title, canonical, hreflang, JSON-LD, and other elements."""
+    """Extract meta tags, title, canonical, hreflang, and JSON-LD from HTML"""
     def __init__(self):
         super().__init__()
         self.title = None
         self.meta_description = None
         self.canonical = None
         self.hreflang = []
-        self.json_ld_blocks = []
         self.html_lang = None
-        self.details_elements = []
-        self.h1_text = ""
-        self.cta_href = None
-        self.in_h1 = False
+        self.jsonld_blocks = []
         self.in_body = False
-        self.visible_text = []
         self.in_script = False
-        self.in_style = False
+        self.current_script_type = None
+        self.script_content = []
         
     def handle_starttag(self, tag, attrs):
         attrs_dict = dict(attrs)
         
         if tag == 'html':
             self.html_lang = attrs_dict.get('lang')
-        elif tag == 'title':
-            self.title = ""
-        elif tag == 'meta':
+        
+        if tag == 'body':
+            self.in_body = True
+            
+        if tag == 'title':
+            self.title = ''
+            
+        if tag == 'meta':
             if attrs_dict.get('name') == 'description':
                 self.meta_description = attrs_dict.get('content', '')
-        elif tag == 'link':
+                
+        if tag == 'link':
             if attrs_dict.get('rel') == 'canonical':
-                self.canonical = attrs_dict.get('href')
-            elif attrs_dict.get('rel') == 'alternate':
+                self.canonical = attrs_dict.get('href', '')
+            if attrs_dict.get('rel') == 'alternate':
                 hreflang = attrs_dict.get('hreflang')
                 href = attrs_dict.get('href')
-                if hreflang:
+                if hreflang and href:
                     self.hreflang.append({'hreflang': hreflang, 'href': href})
-        elif tag == 'script':
-            if attrs_dict.get('type') == 'application/ld+json':
-                self.json_ld_blocks.append("")
-            else:
+                    
+        if tag == 'script':
+            script_type = attrs_dict.get('type')
+            if script_type == 'application/ld+json':
                 self.in_script = True
-        elif tag == 'style':
-            self.in_style = True
-        elif tag == 'body':
-            self.in_body = True
-        elif tag == 'h1':
-            self.in_h1 = True
-        elif tag == 'details':
-            testid = attrs_dict.get('data-testid', '')
-            open_attr = 'open' in [a[0] for a in attrs]
-            self.details_elements.append({'testid': testid, 'open': open_attr})
-        elif tag == 'a':
-            testid = attrs_dict.get('data-testid', '')
-            if testid == 'faq-cta':
-                self.cta_href = attrs_dict.get('href')
+                self.current_script_type = script_type
+                self.script_content = []
     
     def handle_endtag(self, tag):
-        if tag == 'h1':
-            self.in_h1 = False
-        elif tag == 'script':
+        if tag == 'script' and self.in_script:
+            content = ''.join(self.script_content).strip()
+            if content and self.in_body:
+                self.jsonld_blocks.append(content)
             self.in_script = False
-        elif tag == 'style':
-            self.in_style = False
-    
+            self.current_script_type = None
+            self.script_content = []
+            
     def handle_data(self, data):
-        if self.title is not None and not isinstance(self.title, str):
-            pass
-        elif hasattr(self, '_current_tag') and self._current_tag == 'title':
+        if self.title == '':
             self.title = data
-        elif self.json_ld_blocks and isinstance(self.json_ld_blocks[-1], str) and self.json_ld_blocks[-1] == "":
-            self.json_ld_blocks[-1] = data
-        elif self.in_h1:
-            self.h1_text += data
-        
-        # Collect visible text (excluding scripts and styles)
-        if self.in_body and not self.in_script and not self.in_style:
-            self.visible_text.append(data)
-    
-    def handle_startendtag(self, tag, attrs):
-        self.handle_starttag(tag, attrs)
+        if self.in_script and self.current_script_type == 'application/ld+json':
+            self.script_content.append(data)
 
-def extract_html_metadata(html):
-    """Parse HTML and extract metadata."""
+def extract_meta(html):
+    """Extract all meta information from HTML"""
     parser = MetaExtractor()
-    
-    # Extract title manually (HTMLParser can be tricky with title)
-    title_match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
-    if title_match:
-        # Decode HTML entities
-        title_text = title_match.group(1).strip()
-        title_text = title_text.replace('&mdash;', '—').replace('&#x2014;', '—')
-        title_text = title_text.replace('&auml;', 'ä').replace('&#228;', 'ä')
-        title_text = title_text.replace('&uuml;', 'ü').replace('&#252;', 'ü')
-        parser.title = title_text
-    
-    # Extract meta description
-    meta_desc_match = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\']([^"\']*)["\']', html, re.IGNORECASE)
-    if meta_desc_match:
-        parser.meta_description = meta_desc_match.group(1)
-    
-    # Extract canonical
-    canonical_match = re.search(r'<link[^>]*rel=["\']canonical["\'][^>]*href=["\']([^"\']*)["\']', html, re.IGNORECASE)
-    if canonical_match:
-        parser.canonical = canonical_match.group(1)
-    
-    # Extract hreflang
-    hreflang_pattern = r'<link[^>]*rel=["\']alternate["\'][^>]*hreflang=["\']([^"\']*)["\'][^>]*href=["\']([^"\']*)["\']'
-    hreflang_matches = re.findall(hreflang_pattern, html, re.IGNORECASE)
-    parser.hreflang = [{'hreflang': h[0], 'href': h[1]} for h in hreflang_matches]
-    
-    # Extract JSON-LD blocks manually
-    json_ld_pattern = r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>'
-    json_ld_matches = re.findall(json_ld_pattern, html, re.IGNORECASE | re.DOTALL)
-    parser.json_ld_blocks = [m.strip() for m in json_ld_matches]
-    
-    return parser
+    parser.feed(html)
+    return {
+        'html_lang': parser.html_lang,
+        'title': parser.title,
+        'meta_description': parser.meta_description,
+        'canonical': parser.canonical,
+        'hreflang': parser.hreflang,
+        'jsonld_blocks': parser.jsonld_blocks
+    }
 
-def count_occurrences(html, pattern):
-    """Count occurrences of a pattern in HTML."""
+def count_elements(html, pattern):
+    """Count occurrences of a pattern in HTML"""
     return len(re.findall(pattern, html, re.IGNORECASE))
 
-def test_faq_de():
-    """Test 1: GET /faq (DE)"""
-    print("\n" + "="*80)
-    print("TEST 1: GET /faq (DE) — SSR + SEO checks")
-    print("="*80)
-    
-    url = f"{BASE_URL}/faq"
-    resp = requests.get(url, timeout=30)
-    
-    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
-    print(f"✓ Status: {resp.status_code}")
-    
-    html = resp.text
-    
-    # Check exactly one <html lang="de">
-    html_lang_count = count_occurrences(html, r'<html[^>]*lang=["\']de["\']')
-    assert html_lang_count == 1, f"Expected exactly 1 <html lang='de'>, found {html_lang_count}"
-    print(f"✓ Exactly one <html lang='de'>")
-    
-    # Extract metadata
-    meta = extract_html_metadata(html)
-    
-    # Check title
-    expected_title = "FAQ — Häufige Fragen | Noir Hamburg Premium Escort"
-    # Allow HTML entities
-    title_normalized = meta.title.replace('&#x2014;', '—').replace('&mdash;', '—')
-    assert expected_title in title_normalized or meta.title == expected_title, \
-        f"Expected title '{expected_title}', got '{meta.title}'"
-    print(f"✓ Title: {meta.title}")
-    
-    # Check meta description
-    assert meta.meta_description, "Meta description is empty"
-    assert "Noir Hamburg" in meta.meta_description, "Meta description doesn't contain 'Noir Hamburg'"
-    print(f"✓ Meta description: {meta.meta_description[:80]}...")
-    
-    # Check canonical
-    assert meta.canonical, "No canonical link found"
-    assert meta.canonical.endswith('/faq'), f"Canonical should end with /faq, got {meta.canonical}"
-    print(f"✓ Canonical: {meta.canonical}")
-    
-    # Check hreflang alternates (3 expected: de-DE, en, x-default)
-    hreflang_values = [h['hreflang'].lower() for h in meta.hreflang]
-    assert 'de-de' in hreflang_values or 'de' in hreflang_values, "Missing de-DE hreflang"
-    assert 'en' in hreflang_values, "Missing en hreflang"
-    assert 'x-default' in hreflang_values, "Missing x-default hreflang"
-    print(f"✓ hreflang alternates: {', '.join(hreflang_values)}")
-    
-    # Check JSON-LD blocks (exactly 2 in <body>)
-    # First, check they're in body
-    body_match = re.search(r'<body[^>]*>(.*)</body>', html, re.IGNORECASE | re.DOTALL)
-    assert body_match, "No <body> tag found"
-    body_html = body_match.group(1)
-    
-    json_ld_in_body = re.findall(r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', 
-                                   body_html, re.IGNORECASE | re.DOTALL)
-    assert len(json_ld_in_body) == 2, f"Expected exactly 2 JSON-LD blocks in <body>, found {len(json_ld_in_body)}"
-    print(f"✓ Exactly 2 JSON-LD blocks in <body>")
-    
-    # Parse and validate JSON-LD blocks
-    schemas = []
-    for i, block in enumerate(json_ld_in_body):
-        try:
-            schema = json.loads(block.strip())
-            schemas.append(schema)
-            print(f"  ✓ JSON-LD block {i+1} parses as valid JSON")
-        except json.JSONDecodeError as e:
-            raise AssertionError(f"JSON-LD block {i+1} is not valid JSON: {e}")
-    
-    # Check FAQPage schema
-    faq_schema = next((s for s in schemas if s.get('@type') == 'FAQPage'), None)
-    assert faq_schema, "No FAQPage schema found"
-    assert faq_schema.get('inLanguage') == 'de-DE', f"FAQPage inLanguage should be 'de-DE', got {faq_schema.get('inLanguage')}"
-    
-    main_entity = faq_schema.get('mainEntity', [])
-    assert isinstance(main_entity, list), "mainEntity should be an array"
-    assert len(main_entity) == 6, f"Expected 6 questions in mainEntity, got {len(main_entity)}"
-    
-    # Check each question
-    de_keywords = ["Diskretion", "Buchung", "Sprachen", "reisen", "voraus", "Zahlungs"]
-    for i, q in enumerate(main_entity):
-        assert q.get('@type') == 'Question', f"Question {i} should have @type='Question'"
-        assert q.get('name'), f"Question {i} has empty name"
-        
-        answer = q.get('acceptedAnswer', {})
-        assert answer.get('@type') == 'Answer', f"Question {i} answer should have @type='Answer'"
-        assert answer.get('text'), f"Question {i} answer has empty text"
-        
-        # Check for DE keywords
-        name_text = q.get('name', '') + answer.get('text', '')
-        has_keyword = any(kw in name_text for kw in de_keywords)
-        if not has_keyword:
-            print(f"  Warning: Question {i} doesn't contain expected DE keywords: {name_text[:50]}...")
-    
-    print(f"✓ FAQPage schema: @type='FAQPage', inLanguage='de-DE', 6 Questions with DE content")
-    
-    # Check BreadcrumbList schema
-    breadcrumb_schema = next((s for s in schemas if s.get('@type') == 'BreadcrumbList'), None)
-    assert breadcrumb_schema, "No BreadcrumbList schema found"
-    items = breadcrumb_schema.get('itemListElement', [])
-    assert len(items) == 2, f"Expected 2 breadcrumb items, got {len(items)}"
-    assert items[1].get('name') == 'FAQ', f"Second breadcrumb should be 'FAQ', got {items[1].get('name')}"
-    print(f"✓ BreadcrumbList schema: 2 items, second name='FAQ'")
-    
-    # Check <details> elements (6 expected, first open)
-    details_pattern = r'<details[^>]*data-testid=["\']faq-item-(\d+)["\'][^>]*>'
-    details_matches = re.findall(details_pattern, html)
-    assert len(details_matches) == 6, f"Expected 6 <details> elements, found {len(details_matches)}"
-    
-    # Check first is open
-    first_details = re.search(r'<details[^>]*data-testid=["\']faq-item-0["\'][^>]*>', html)
-    assert first_details, "First <details> element not found"
-    assert 'open' in first_details.group(0), "First <details> should have 'open' attribute"
-    print(f"✓ 6 <details> elements (faq-item-0 through faq-item-5), first is open")
-    
-    # Check CTA href
-    cta_match = re.search(r'<a[^>]*data-testid=["\']faq-cta["\'][^>]*href=["\']([^"\']+)["\']', html)
-    assert cta_match, "CTA link not found"
-    cta_href = cta_match.group(1)
-    assert cta_href == '/kontakt', f"CTA href should be '/kontakt', got '{cta_href}'"
-    print(f"✓ Bottom CTA href='/kontakt'")
-    
-    # Check H1 contains German words
-    h1_match = re.search(r'<h1[^>]*>(.*?)</h1>', html, re.IGNORECASE | re.DOTALL)
-    assert h1_match, "No H1 found"
-    h1_text = h1_match.group(1)
-    assert "Häufige" in h1_text or "H&auml;ufige" in h1_text, "H1 should contain 'Häufige'"
-    assert "Fragen" in h1_text, "H1 should contain 'Fragen'"
-    print(f"✓ H1 contains 'Häufige' and 'Fragen'")
-    
-    print("\n✅ TEST 1 PASSED: /faq (DE) SSR + SEO checks complete")
-    return True
+def check_testid(html, testid):
+    """Check if a data-testid exists in HTML"""
+    return f'data-testid="{testid}"' in html
 
-def test_faq_en():
-    """Test 2: GET /en/faq (EN)"""
-    print("\n" + "="*80)
-    print("TEST 2: GET /en/faq (EN) — SSR + SEO checks")
-    print("="*80)
-    
-    url = f"{BASE_URL}/en/faq"
-    resp = requests.get(url, timeout=30)
-    
-    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
-    print(f"✓ Status: {resp.status_code}")
-    
-    html = resp.text
-    
-    # Check <html lang="en">
-    html_lang_count = count_occurrences(html, r'<html[^>]*lang=["\']en["\']')
-    assert html_lang_count == 1, f"Expected exactly 1 <html lang='en'>, found {html_lang_count}"
-    print(f"✓ <html lang='en'>")
-    
-    # Extract metadata
-    meta = extract_html_metadata(html)
-    
-    # Check title
-    expected_title = "FAQ — Frequently Asked Questions | Noir Hamburg Premium Escort"
-    title_normalized = meta.title.replace('&#x2014;', '—').replace('&mdash;', '—')
-    assert expected_title in title_normalized or meta.title == expected_title, \
-        f"Expected title '{expected_title}', got '{meta.title}'"
-    print(f"✓ Title: {meta.title}")
-    
-    # Check canonical
-    assert meta.canonical, "No canonical link found"
-    assert meta.canonical.endswith('/en/faq'), f"Canonical should end with /en/faq, got {meta.canonical}"
-    print(f"✓ Canonical: {meta.canonical}")
-    
-    # Check hreflang alternates
-    hreflang_values = [h['hreflang'].lower() for h in meta.hreflang]
-    assert 'de-de' in hreflang_values or 'de' in hreflang_values, "Missing de-DE hreflang"
-    assert 'en' in hreflang_values, "Missing en hreflang"
-    assert 'x-default' in hreflang_values, "Missing x-default hreflang"
-    print(f"✓ hreflang alternates present")
-    
-    # Check JSON-LD blocks (2 in body)
-    body_match = re.search(r'<body[^>]*>(.*)</body>', html, re.IGNORECASE | re.DOTALL)
-    assert body_match, "No <body> tag found"
-    body_html = body_match.group(1)
-    
-    json_ld_in_body = re.findall(r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', 
-                                   body_html, re.IGNORECASE | re.DOTALL)
-    assert len(json_ld_in_body) == 2, f"Expected exactly 2 JSON-LD blocks in <body>, found {len(json_ld_in_body)}"
-    print(f"✓ 2 JSON-LD blocks in <body>")
-    
-    # Parse and validate JSON-LD blocks
-    schemas = []
-    for i, block in enumerate(json_ld_in_body):
-        try:
-            schema = json.loads(block.strip())
-            schemas.append(schema)
-        except json.JSONDecodeError as e:
-            raise AssertionError(f"JSON-LD block {i+1} is not valid JSON: {e}")
-    
-    # Check FAQPage schema with EN content
-    faq_schema = next((s for s in schemas if s.get('@type') == 'FAQPage'), None)
-    assert faq_schema, "No FAQPage schema found"
-    assert faq_schema.get('inLanguage') == 'en', f"FAQPage inLanguage should be 'en', got {faq_schema.get('inLanguage')}"
-    
-    main_entity = faq_schema.get('mainEntity', [])
-    assert len(main_entity) == 6, f"Expected 6 questions in mainEntity, got {len(main_entity)}"
-    
-    # Check for EN keywords
-    en_keywords = ["discretion", "booking", "languages", "travel", "advance", "payment"]
-    for i, q in enumerate(main_entity):
-        name_text = (q.get('name', '') + q.get('acceptedAnswer', {}).get('text', '')).lower()
-        has_keyword = any(kw in name_text for kw in en_keywords)
-        if not has_keyword:
-            print(f"  Warning: Question {i} doesn't contain expected EN keywords: {name_text[:50]}...")
-    
-    print(f"✓ FAQPage schema: inLanguage='en', 6 Questions with EN content")
-    
-    # Check BreadcrumbList
-    breadcrumb_schema = next((s for s in schemas if s.get('@type') == 'BreadcrumbList'), None)
-    assert breadcrumb_schema, "No BreadcrumbList schema found"
-    print(f"✓ BreadcrumbList schema present")
-    
-    # Check 6 <details> elements, first open
-    details_pattern = r'<details[^>]*data-testid=["\']faq-item-(\d+)["\'][^>]*>'
-    details_matches = re.findall(details_pattern, html)
-    assert len(details_matches) == 6, f"Expected 6 <details> elements, found {len(details_matches)}"
-    
-    first_details = re.search(r'<details[^>]*data-testid=["\']faq-item-0["\'][^>]*>', html)
-    assert first_details and 'open' in first_details.group(0), "First <details> should be open"
-    print(f"✓ 6 <details> elements, first is open")
-    
-    # Check CTA href
-    cta_match = re.search(r'<a[^>]*data-testid=["\']faq-cta["\'][^>]*href=["\']([^"\']+)["\']', html)
-    assert cta_match, "CTA link not found"
-    cta_href = cta_match.group(1)
-    assert cta_href == '/en/contact', f"CTA href should be '/en/contact', got '{cta_href}'"
-    print(f"✓ CTA href='/en/contact'")
-    
-    # Check H1 contains English words
-    h1_match = re.search(r'<h1[^>]*>(.*?)</h1>', html, re.IGNORECASE | re.DOTALL)
-    assert h1_match, "No H1 found"
-    h1_text = h1_match.group(1)
-    assert "Frequently" in h1_text, "H1 should contain 'Frequently'"
-    assert "Asked" in h1_text, "H1 should contain 'Asked'"
-    print(f"✓ H1 contains 'Frequently' and 'Asked'")
-    
-    print("\n✅ TEST 2 PASSED: /en/faq (EN) SSR + SEO checks complete")
-    return True
+def strip_scripts_and_tags(html):
+    """Remove all <script> blocks and HTML tags, return visible text"""
+    # Remove script blocks
+    html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    # Remove all HTML tags
+    html = re.sub(r'<[^>]+>', ' ', html)
+    # Normalize whitespace
+    html = re.sub(r'\s+', ' ', html)
+    return html.strip()
 
-def test_en_zero_leak():
-    """Test 3: EN 0-leak scan"""
-    print("\n" + "="*80)
-    print("TEST 3: EN 0-leak scan — /en/faq should not contain German UI strings")
-    print("="*80)
-    
-    url = f"{BASE_URL}/en/faq"
-    resp = requests.get(url, timeout=30)
-    html = resp.text
-    
-    # Strip all <script> and <style> tags
-    html_no_script = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.IGNORECASE | re.DOTALL)
-    html_no_style = re.sub(r'<style[^>]*>.*?</style>', '', html_no_script, flags=re.IGNORECASE | re.DOTALL)
-    
-    # Strip all HTML tags to get visible text
-    visible_text = re.sub(r'<[^>]+>', ' ', html_no_style)
-    
-    # German strings that should NOT appear (standalone)
-    forbidden_strings = [
-        "Startseite",
-        "Über uns",
-        "Häufige",
-        "Wissenswertes",
-        r"\bTermin\b",  # standalone
-        "Kategorien",
-        "Anfrage senden",
-        "Kontakt aufnehmen",
-        "Verfügbarkeit",
-        "Buchungsprozess",
-        "persönlich",
-        "pünktlich",
-    ]
-    
-    found_leaks = []
-    for forbidden in forbidden_strings:
-        # Use word boundary for standalone check
-        if r"\b" in forbidden:
-            pattern = forbidden
-        else:
-            pattern = re.escape(forbidden)
-        
-        if re.search(pattern, visible_text, re.IGNORECASE):
-            found_leaks.append(forbidden)
-    
-    # Check that email is allowed
-    assert "kontakt@noir-hamburg.de" in visible_text or "kontakt@noir-hamburg.de" in html, \
-        "Email address should be present"
-    print(f"✓ Email address 'kontakt@noir-hamburg.de' is allowed and present")
-    
-    if found_leaks:
-        raise AssertionError(f"Found German UI string leaks in EN page: {', '.join(found_leaks)}")
-    
-    print(f"✓ No German UI string leaks found in visible text")
-    print("\n✅ TEST 3 PASSED: EN 0-leak scan complete")
-    return True
-
-def test_sitemap_regression():
-    """Test 4: Sitemap regression"""
-    print("\n" + "="*80)
-    print("TEST 4: Sitemap regression — /sitemap.xml should include /faq entries")
-    print("="*80)
-    
-    url = f"{BASE_URL}/sitemap.xml"
-    resp = requests.get(url, timeout=30)
-    
-    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
-    print(f"✓ Status: {resp.status_code}")
-    
-    xml = resp.text
-    
-    # Check for /faq <loc>
-    faq_loc_pattern = r'<loc>[^<]*\/faq</loc>'
-    faq_loc_matches = re.findall(faq_loc_pattern, xml)
-    assert len(faq_loc_matches) >= 1, f"Expected at least 1 <loc> for /faq, found {len(faq_loc_matches)}"
-    print(f"✓ Found <loc> for /faq")
-    
-    # Check for EN hreflang alternate
-    en_faq_pattern = r'<xhtml:link[^>]*hreflang=["\']en["\'][^>]*href=["\'][^"\']*\/en\/faq["\']'
-    en_faq_matches = re.findall(en_faq_pattern, xml, re.IGNORECASE)
-    assert len(en_faq_matches) >= 1, f"Expected at least 1 hreflang='en' alternate for /en/faq, found {len(en_faq_matches)}"
-    print(f"✓ Found xhtml:link hreflang='en' alternate pointing to /en/faq")
-    
-    print("\n✅ TEST 4 PASSED: Sitemap regression complete")
-    return True
-
-def test_regression_prior_work():
-    """Test 5: Regression on prior work"""
-    print("\n" + "="*80)
-    print("TEST 5: Regression on prior work — All previous endpoints should still work")
-    print("="*80)
-    
-    endpoints = [
-        ("/api/health", "Phase 0"),
-        ("/services/vip-escort-hamburg", "Phase 1"),
-        ("/models", "Phase 3 d1"),
-        ("/blog", "Phase 3 d2"),
-        ("/escort/hafencity", "Phase 3 d3"),
-        ("/p/diskretion", "Phase 3 d4"),
-        ("/kontakt", "Phase 3 d5"),
-        ("/ueber-uns", "Phase 3 d5"),
-        ("/impressum", "Phase 3 d5"),
-    ]
-    
-    for path, phase in endpoints:
-        url = f"{BASE_URL}{path}"
-        resp = requests.get(url, timeout=30)
-        assert resp.status_code == 200, f"{path} returned {resp.status_code}, expected 200"
-        print(f"✓ GET {path} → 200 ({phase})")
-    
-    print("\n✅ TEST 5 PASSED: All prior work still functional")
-    return True
-
-def main():
-    """Run all tests."""
-    print("\n" + "="*80)
-    print("Phase 3 chunk d6 — Public /faq (+ /en/faq) SSR read-path smoke test")
-    print("Base URL:", BASE_URL)
-    print("="*80)
+def test_ssr_seo(url, expected_title_fragment, expected_canonical_path, expected_lang, expected_inlanguage, test_name):
+    """Test SSR + SEO requirements for a single URL"""
+    print(f"\n{'='*80}")
+    print(f"TEST: {test_name}")
+    print(f"URL: {url}")
+    print(f"{'='*80}")
     
     try:
-        test_faq_de()
-        test_faq_en()
-        test_en_zero_leak()
-        test_sitemap_regression()
-        test_regression_prior_work()
+        resp = requests.get(url, timeout=30)
+        print(f"✓ Status: {resp.status_code}")
         
-        print("\n" + "="*80)
-        print("🎉 ALL TESTS PASSED (5/5)")
-        print("="*80)
-        return 0
-    except AssertionError as e:
-        print(f"\n❌ TEST FAILED: {e}")
-        return 1
+        if resp.status_code != 200:
+            print(f"✗ FAIL: Expected 200, got {resp.status_code}")
+            return False
+            
+        html = resp.text
+        meta = extract_meta(html)
+        
+        # Check html lang
+        html_lang_count = count_elements(html, r'<html[^>]+lang=')
+        print(f"✓ HTML lang count: {html_lang_count} (expected: 1)")
+        if html_lang_count != 1:
+            print(f"✗ FAIL: Expected exactly 1 <html lang>, found {html_lang_count}")
+            return False
+            
+        if meta['html_lang'] != expected_lang:
+            print(f"✗ FAIL: Expected html lang='{expected_lang}', got '{meta['html_lang']}'")
+            return False
+        print(f"✓ HTML lang: {meta['html_lang']}")
+        
+        # Check title
+        title_count = count_elements(html, r'<title>')
+        print(f"✓ Title count: {title_count} (expected: 1)")
+        if title_count != 1:
+            print(f"✗ FAIL: Expected exactly 1 <title>, found {title_count}")
+            return False
+            
+        if not meta['title'] or expected_title_fragment not in meta['title']:
+            print(f"✗ FAIL: Title '{meta['title']}' does not contain '{expected_title_fragment}'")
+            return False
+        print(f"✓ Title: {meta['title']}")
+        
+        # Check meta description
+        meta_desc_count = count_elements(html, r'<meta[^>]+name=["\']description["\']')
+        print(f"✓ Meta description count: {meta_desc_count} (expected: 1)")
+        if meta_desc_count != 1:
+            print(f"✗ FAIL: Expected exactly 1 meta description, found {meta_desc_count}")
+            return False
+            
+        if not meta['meta_description']:
+            print(f"✗ FAIL: Meta description is empty")
+            return False
+        print(f"✓ Meta description: {meta['meta_description'][:80]}...")
+        
+        # Check canonical
+        canonical_count = count_elements(html, r'<link[^>]+rel=["\']canonical["\']')
+        print(f"✓ Canonical count: {canonical_count} (expected: 1)")
+        if canonical_count != 1:
+            print(f"✗ FAIL: Expected exactly 1 canonical link, found {canonical_count}")
+            return False
+            
+        if not meta['canonical'] or not meta['canonical'].endswith(expected_canonical_path):
+            print(f"✗ FAIL: Canonical '{meta['canonical']}' does not end with '{expected_canonical_path}'")
+            return False
+        print(f"✓ Canonical: {meta['canonical']}")
+        
+        # Check hreflang alternates (should have de-DE, en, x-default)
+        hreflang_langs = [h['hreflang'] for h in meta['hreflang']]
+        print(f"✓ Hreflang alternates: {hreflang_langs}")
+        if len(hreflang_langs) < 3:
+            print(f"✗ FAIL: Expected at least 3 hreflang alternates, found {len(hreflang_langs)}")
+            return False
+        if 'de-DE' not in hreflang_langs or 'en' not in hreflang_langs or 'x-default' not in hreflang_langs:
+            print(f"✗ FAIL: Missing required hreflang alternates (de-DE, en, x-default)")
+            return False
+        
+        # Check JSON-LD blocks in body
+        jsonld_count = len(meta['jsonld_blocks'])
+        print(f"✓ JSON-LD blocks in body: {jsonld_count} (expected: 2)")
+        if jsonld_count != 2:
+            print(f"✗ FAIL: Expected exactly 2 JSON-LD blocks in body, found {jsonld_count}")
+            return False
+            
+        # Parse and validate JSON-LD
+        for i, block in enumerate(meta['jsonld_blocks']):
+            try:
+                data = json.loads(block)
+                jsonld_type = data.get('@type')
+                print(f"  ✓ JSON-LD block {i+1}: @type={jsonld_type}")
+                
+                # Check inLanguage for CollectionPage
+                if jsonld_type == 'CollectionPage':
+                    inlang = data.get('inLanguage')
+                    if inlang != expected_inlanguage:
+                        print(f"  ✗ FAIL: CollectionPage inLanguage '{inlang}' != '{expected_inlanguage}'")
+                        return False
+                    print(f"  ✓ CollectionPage inLanguage: {inlang}")
+                    
+            except json.JSONDecodeError as e:
+                print(f"  ✗ FAIL: JSON-LD block {i+1} is not valid JSON: {e}")
+                return False
+        
+        print(f"\n✅ {test_name} PASSED")
+        return True
+        
     except Exception as e:
-        print(f"\n❌ UNEXPECTED ERROR: {e}")
+        print(f"✗ FAIL: Exception during test: {e}")
         import traceback
         traceback.print_exc()
+        return False
+
+def test_escort_hamburg_de():
+    """Test GET /escort-hamburg (DE)"""
+    url = f"{BASE_URL}/escort-hamburg"
+    result = test_ssr_seo(
+        url,
+        "Escort Hamburg — Premium Begleitagentur",
+        "/escort-hamburg",
+        "de",
+        "de-DE",
+        "GET /escort-hamburg (DE)"
+    )
+    
+    if not result:
+        return False
+        
+    # Additional checks specific to escort-hamburg
+    print("\nAdditional checks for /escort-hamburg:")
+    resp = requests.get(url, timeout=30)
+    html = resp.text
+    
+    # Check for specific testids
+    if not check_testid(html, "escort-hamburg-page"):
+        print("✗ FAIL: Missing data-testid='escort-hamburg-page'")
+        return False
+    print("✓ data-testid='escort-hamburg-page' present")
+    
+    if not check_testid(html, "escort-hamburg-hero-image"):
+        print("✗ FAIL: Missing data-testid='escort-hamburg-hero-image'")
+        return False
+    print("✓ data-testid='escort-hamburg-hero-image' present")
+    
+    # Check H1 contains "Escort" and "Hamburg"
+    h1_match = re.search(r'<h1[^>]*>(.*?)</h1>', html, re.DOTALL | re.IGNORECASE)
+    if not h1_match:
+        print("✗ FAIL: No H1 found")
+        return False
+    h1_text = re.sub(r'<[^>]+>', '', h1_match.group(1))
+    if 'Escort' not in h1_text or 'Hamburg' not in h1_text:
+        print(f"✗ FAIL: H1 '{h1_text}' does not contain 'Escort' and 'Hamburg'")
+        return False
+    print(f"✓ H1 contains 'Escort' and 'Hamburg': {h1_text[:80]}")
+    
+    # Check services grid: exactly 8 elements with hub-service-*
+    service_count = len(re.findall(r'data-testid="hub-service-[^"]*"', html))
+    if service_count != 8:
+        print(f"✗ FAIL: Expected 8 hub-service-* elements, found {service_count}")
+        return False
+    print(f"✓ Services grid: {service_count} elements")
+    
+    # Check each service href starts with /services/
+    service_hrefs = re.findall(r'data-testid="hub-service-[^"]*"[^>]*href="([^"]*)"', html)
+    if not service_hrefs:
+        service_hrefs = re.findall(r'href="([^"]*)"[^>]*data-testid="hub-service-[^"]*"', html)
+    for href in service_hrefs:
+        if not href.startswith('/services/'):
+            print(f"✗ FAIL: Service href '{href}' does not start with '/services/'")
+            return False
+    print(f"✓ All service hrefs start with '/services/'")
+    
+    # Check reach grid: exactly 18 elements with hub-area-*
+    area_count = len(re.findall(r'data-testid="hub-area-[^"]*"', html))
+    if area_count != 18:
+        print(f"✗ FAIL: Expected 18 hub-area-* elements, found {area_count}")
+        return False
+    print(f"✓ Reach grid: {area_count} elements")
+    
+    # Check each area href starts with /escort/
+    area_hrefs = re.findall(r'data-testid="hub-area-[^"]*"[^>]*href="([^"]*)"', html)
+    if not area_hrefs:
+        area_hrefs = re.findall(r'href="([^"]*)"[^>]*data-testid="hub-area-[^"]*"', html)
+    for href in area_hrefs:
+        if not href.startswith('/escort/'):
+            print(f"✗ FAIL: Area href '{href}' does not start with '/escort/'")
+            return False
+    print(f"✓ All area hrefs start with '/escort/'")
+    
+    # Check bottom CTAs
+    if not check_testid(html, "hub-cta-contact"):
+        print("✗ FAIL: Missing data-testid='hub-cta-contact'")
+        return False
+    if not check_testid(html, "hub-cta-models"):
+        print("✗ FAIL: Missing data-testid='hub-cta-models'")
+        return False
+    
+    # Check CTA hrefs
+    contact_cta = re.search(r'data-testid="hub-cta-contact"[^>]*href="([^"]*)"', html)
+    if not contact_cta:
+        contact_cta = re.search(r'href="([^"]*)"[^>]*data-testid="hub-cta-contact"', html)
+    if not contact_cta or contact_cta.group(1) != '/kontakt':
+        print(f"✗ FAIL: hub-cta-contact href is not '/kontakt'")
+        return False
+    print("✓ hub-cta-contact → /kontakt")
+    
+    models_cta = re.search(r'data-testid="hub-cta-models"[^>]*href="([^"]*)"', html)
+    if not models_cta:
+        models_cta = re.search(r'href="([^"]*)"[^>]*data-testid="hub-cta-models"', html)
+    if not models_cta or models_cta.group(1) != '/models':
+        print(f"✗ FAIL: hub-cta-models href is not '/models'")
+        return False
+    print("✓ hub-cta-models → /models")
+    
+    # Check overline "Reichweite" (DE) present
+    if 'Reichweite' not in html:
+        print("✗ FAIL: Overline 'Reichweite' not found")
+        return False
+    print("✓ Overline 'Reichweite' present")
+    
+    # Check JSON-LD for CollectionPage with about: Place(Hamburg)
+    meta = extract_meta(html)
+    for block in meta['jsonld_blocks']:
+        data = json.loads(block)
+        if data.get('@type') == 'CollectionPage':
+            about = data.get('about')
+            if not about or about.get('@type') != 'Place' or about.get('name') != 'Hamburg':
+                print(f"✗ FAIL: CollectionPage missing correct 'about' Place(Hamburg)")
+                return False
+            print(f"✓ CollectionPage has about: Place(Hamburg)")
+            break
+    
+    print("\n✅ All /escort-hamburg (DE) checks passed")
+    return True
+
+def test_escort_hamburg_en():
+    """Test GET /en/escort-hamburg (EN)"""
+    url = f"{BASE_URL}/en/escort-hamburg"
+    result = test_ssr_seo(
+        url,
+        "Escort Hamburg — Premium Companion Agency",
+        "/en/escort-hamburg",
+        "en",
+        "en",
+        "GET /en/escort-hamburg (EN)"
+    )
+    
+    if not result:
+        return False
+        
+    # Additional checks specific to EN escort-hamburg
+    print("\nAdditional checks for /en/escort-hamburg:")
+    resp = requests.get(url, timeout=30)
+    html = resp.text
+    
+    # Check services grid: 8 hub-service-* with hrefs starting with /en/services/
+    service_count = len(re.findall(r'data-testid="hub-service-[^"]*"', html))
+    if service_count != 8:
+        print(f"✗ FAIL: Expected 8 hub-service-* elements, found {service_count}")
+        return False
+    print(f"✓ Services grid: {service_count} elements")
+    
+    service_hrefs = re.findall(r'data-testid="hub-service-[^"]*"[^>]*href="([^"]*)"', html)
+    if not service_hrefs:
+        service_hrefs = re.findall(r'href="([^"]*)"[^>]*data-testid="hub-service-[^"]*"', html)
+    for href in service_hrefs:
+        if not href.startswith('/en/services/'):
+            print(f"✗ FAIL: Service href '{href}' does not start with '/en/services/'")
+            return False
+    print(f"✓ All service hrefs start with '/en/services/'")
+    
+    # Check reach grid: 18 hub-area-* with hrefs starting /en/escort/
+    area_count = len(re.findall(r'data-testid="hub-area-[^"]*"', html))
+    if area_count != 18:
+        print(f"✗ FAIL: Expected 18 hub-area-* elements, found {area_count}")
+        return False
+    print(f"✓ Reach grid: {area_count} elements")
+    
+    area_hrefs = re.findall(r'data-testid="hub-area-[^"]*"[^>]*href="([^"]*)"', html)
+    if not area_hrefs:
+        area_hrefs = re.findall(r'href="([^"]*)"[^>]*data-testid="hub-area-[^"]*"', html)
+    for href in area_hrefs:
+        if not href.startswith('/en/escort/'):
+            print(f"✗ FAIL: Area href '{href}' does not start with '/en/escort/'")
+            return False
+    print(f"✓ All area hrefs start with '/en/escort/'")
+    
+    # Check bottom CTAs point to /en/contact and /en/models
+    contact_cta = re.search(r'data-testid="hub-cta-contact"[^>]*href="([^"]*)"', html)
+    if not contact_cta:
+        contact_cta = re.search(r'href="([^"]*)"[^>]*data-testid="hub-cta-contact"', html)
+    if not contact_cta or contact_cta.group(1) != '/en/contact':
+        print(f"✗ FAIL: hub-cta-contact href is not '/en/contact'")
+        return False
+    print("✓ hub-cta-contact → /en/contact")
+    
+    models_cta = re.search(r'data-testid="hub-cta-models"[^>]*href="([^"]*)"', html)
+    if not models_cta:
+        models_cta = re.search(r'href="([^"]*)"[^>]*data-testid="hub-cta-models"', html)
+    if not models_cta or models_cta.group(1) != '/en/models':
+        print(f"✗ FAIL: hub-cta-models href is not '/en/models'")
+        return False
+    print("✓ hub-cta-models → /en/models")
+    
+    # Check overline "Coverage" (EN) present
+    if 'Coverage' not in html:
+        print("✗ FAIL: Overline 'Coverage' not found")
+        return False
+    print("✓ Overline 'Coverage' present")
+    
+    print("\n✅ All /en/escort-hamburg (EN) checks passed")
+    return True
+
+def test_areas_de():
+    """Test GET /areas (DE)"""
+    url = f"{BASE_URL}/areas"
+    result = test_ssr_seo(
+        url,
+        "Hamburg Areas — Premium Escort in der ganzen Metropolregion",
+        "/areas",
+        "de",
+        "de-DE",
+        "GET /areas (DE)"
+    )
+    
+    if not result:
+        return False
+        
+    # Additional checks specific to areas
+    print("\nAdditional checks for /areas:")
+    resp = requests.get(url, timeout=30)
+    html = resp.text
+    
+    # Check for data-testid="areas-list"
+    if not check_testid(html, "areas-list"):
+        print("✗ FAIL: Missing data-testid='areas-list'")
+        return False
+    print("✓ data-testid='areas-list' present")
+    
+    # Check exactly 18 area-card-* items
+    area_count = len(re.findall(r'data-testid="area-card-[^"]*"', html))
+    if area_count != 18:
+        print(f"✗ FAIL: Expected 18 area-card-* elements, found {area_count}")
+        return False
+    print(f"✓ Area cards: {area_count} elements")
+    
+    # Check each href starts with /escort/
+    area_hrefs = re.findall(r'data-testid="area-card-[^"]*"[^>]*href="([^"]*)"', html)
+    if not area_hrefs:
+        area_hrefs = re.findall(r'href="([^"]*)"[^>]*data-testid="area-card-[^"]*"', html)
+    for href in area_hrefs:
+        if not href.startswith('/escort/'):
+            print(f"✗ FAIL: Area href '{href}' does not start with '/escort/'")
+            return False
+    print(f"✓ All area hrefs start with '/escort/'")
+    
+    # Check JSON-LD CollectionPage has hasPart array with length 18
+    meta = extract_meta(html)
+    for block in meta['jsonld_blocks']:
+        data = json.loads(block)
+        if data.get('@type') == 'CollectionPage':
+            has_part = data.get('hasPart', [])
+            if len(has_part) != 18:
+                print(f"✗ FAIL: CollectionPage hasPart length {len(has_part)} != 18")
+                return False
+            print(f"✓ CollectionPage hasPart length: {len(has_part)}")
+            
+            # Check each item is a Place with name and url
+            for item in has_part:
+                if item.get('@type') != 'Place':
+                    print(f"✗ FAIL: hasPart item @type '{item.get('@type')}' != 'Place'")
+                    return False
+                if not item.get('name') or not item.get('url'):
+                    print(f"✗ FAIL: hasPart Place missing name or url")
+                    return False
+            print(f"✓ All hasPart items are valid Places with name + url")
+            break
+    
+    print("\n✅ All /areas (DE) checks passed")
+    return True
+
+def test_areas_en():
+    """Test GET /en/areas (EN)"""
+    url = f"{BASE_URL}/en/areas"
+    result = test_ssr_seo(
+        url,
+        "Hamburg Areas — Premium Escort across the Metropolitan Region",
+        "/en/areas",
+        "en",
+        "en",
+        "GET /en/areas (EN)"
+    )
+    
+    if not result:
+        return False
+        
+    # Additional checks specific to EN areas
+    print("\nAdditional checks for /en/areas:")
+    resp = requests.get(url, timeout=30)
+    html = resp.text
+    
+    # Check exactly 18 area-card-* with hrefs starting /en/escort/
+    area_count = len(re.findall(r'data-testid="area-card-[^"]*"', html))
+    if area_count != 18:
+        print(f"✗ FAIL: Expected 18 area-card-* elements, found {area_count}")
+        return False
+    print(f"✓ Area cards: {area_count} elements")
+    
+    area_hrefs = re.findall(r'data-testid="area-card-[^"]*"[^>]*href="([^"]*)"', html)
+    if not area_hrefs:
+        area_hrefs = re.findall(r'href="([^"]*)"[^>]*data-testid="area-card-[^"]*"', html)
+    for href in area_hrefs:
+        if not href.startswith('/en/escort/'):
+            print(f"✗ FAIL: Area href '{href}' does not start with '/en/escort/'")
+            return False
+    print(f"✓ All area hrefs start with '/en/escort/'")
+    
+    # Check JSON-LD CollectionPage has hasPart length 18
+    meta = extract_meta(html)
+    for block in meta['jsonld_blocks']:
+        data = json.loads(block)
+        if data.get('@type') == 'CollectionPage':
+            has_part = data.get('hasPart', [])
+            if len(has_part) != 18:
+                print(f"✗ FAIL: CollectionPage hasPart length {len(has_part)} != 18")
+                return False
+            print(f"✓ CollectionPage hasPart length: {len(has_part)}")
+            break
+    
+    print("\n✅ All /en/areas (EN) checks passed")
+    return True
+
+def test_en_leak_scan():
+    """Test EN pages for German string leaks"""
+    print(f"\n{'='*80}")
+    print("TEST: EN 0-LEAK SCAN")
+    print(f"{'='*80}")
+    
+    forbidden_strings = [
+        'Startseite',
+        'Über uns',
+        'Häufige',
+        'Wissenswertes',
+        'Reichweite',
+        'Hansestadt',
+        'Hauptstadt der Eleganz',
+        'Anfrage senden',
+        'Models ansehen',
+        'in der gesamten Metropolregion',
+        'hanseatisch'
+    ]
+    
+    urls = [
+        f"{BASE_URL}/en/escort-hamburg",
+        f"{BASE_URL}/en/areas"
+    ]
+    
+    all_passed = True
+    
+    for url in urls:
+        print(f"\nChecking: {url}")
+        resp = requests.get(url, timeout=30)
+        html = resp.text
+        
+        # Strip scripts and tags
+        visible_text = strip_scripts_and_tags(html)
+        
+        found_leaks = []
+        for forbidden in forbidden_strings:
+            if forbidden in visible_text:
+                found_leaks.append(forbidden)
+        
+        if found_leaks:
+            print(f"✗ FAIL: Found German string leaks: {found_leaks}")
+            all_passed = False
+        else:
+            print(f"✓ No German string leaks found")
+        
+        # Verify email is allowed
+        if 'kontakt@noir-hamburg.de' not in html:
+            print(f"✗ WARNING: Email 'kontakt@noir-hamburg.de' not found (should be present)")
+        else:
+            print(f"✓ Email 'kontakt@noir-hamburg.de' correctly present")
+    
+    if all_passed:
+        print("\n✅ EN 0-LEAK SCAN PASSED")
+    else:
+        print("\n✗ EN 0-LEAK SCAN FAILED")
+    
+    return all_passed
+
+def test_sitemap_regression():
+    """Test sitemap contains escort-hamburg and areas entries with EN alternates"""
+    print(f"\n{'='*80}")
+    print("TEST: SITEMAP REGRESSION")
+    print(f"{'='*80}")
+    
+    url = f"{BASE_URL}/sitemap.xml"
+    print(f"URL: {url}")
+    
+    try:
+        resp = requests.get(url, timeout=30)
+        print(f"✓ Status: {resp.status_code}")
+        
+        if resp.status_code != 200:
+            print(f"✗ FAIL: Expected 200, got {resp.status_code}")
+            return False
+        
+        xml = resp.text
+        
+        # Check for /escort-hamburg entry
+        if '<loc>https://noir-migration.preview.emergentagent.com/escort-hamburg</loc>' not in xml:
+            print("✗ FAIL: Missing <loc> for /escort-hamburg")
+            return False
+        print("✓ Found <loc> for /escort-hamburg")
+        
+        # Check for /areas entry
+        if '<loc>https://noir-migration.preview.emergentagent.com/areas</loc>' not in xml:
+            print("✗ FAIL: Missing <loc> for /areas")
+            return False
+        print("✓ Found <loc> for /areas")
+        
+        # Check for EN alternates
+        if 'hreflang="en"' not in xml or '/en/escort-hamburg' not in xml:
+            print("✗ FAIL: Missing hreflang='en' alternate for /en/escort-hamburg")
+            return False
+        print("✓ Found hreflang='en' alternate for /en/escort-hamburg")
+        
+        if 'hreflang="en"' not in xml or '/en/areas' not in xml:
+            print("✗ FAIL: Missing hreflang='en' alternate for /en/areas")
+            return False
+        print("✓ Found hreflang='en' alternate for /en/areas")
+        
+        print("\n✅ SITEMAP REGRESSION PASSED")
+        return True
+        
+    except Exception as e:
+        print(f"✗ FAIL: Exception during test: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def test_regression_prior_work():
+    """Test regression on prior work"""
+    print(f"\n{'='*80}")
+    print("TEST: REGRESSION ON PRIOR WORK")
+    print(f"{'='*80}")
+    
+    endpoints = [
+        '/api/health',
+        '/services/vip-escort-hamburg',
+        '/models',
+        '/blog',
+        '/escort/hafencity',
+        '/p/diskretion',
+        '/kontakt',
+        '/ueber-uns',
+        '/impressum',
+        '/faq'
+    ]
+    
+    all_passed = True
+    
+    for endpoint in endpoints:
+        url = f"{BASE_URL}{endpoint}"
+        try:
+            resp = requests.get(url, timeout=30)
+            if resp.status_code == 200:
+                print(f"✓ {endpoint} → 200")
+            else:
+                print(f"✗ {endpoint} → {resp.status_code} (expected 200)")
+                all_passed = False
+        except Exception as e:
+            print(f"✗ {endpoint} → Exception: {e}")
+            all_passed = False
+    
+    if all_passed:
+        print("\n✅ REGRESSION ON PRIOR WORK PASSED")
+    else:
+        print("\n✗ REGRESSION ON PRIOR WORK FAILED")
+    
+    return all_passed
+
+def main():
+    """Run all tests"""
+    print("="*80)
+    print("PHASE 3 CHUNK D7 - BACKEND TESTING")
+    print("Public /escort-hamburg landing + /areas list (+ EN twins)")
+    print("="*80)
+    
+    results = {}
+    
+    # Test 1: DE /escort-hamburg
+    results['escort_hamburg_de'] = test_escort_hamburg_de()
+    
+    # Test 2: EN /en/escort-hamburg
+    results['escort_hamburg_en'] = test_escort_hamburg_en()
+    
+    # Test 3: DE /areas
+    results['areas_de'] = test_areas_de()
+    
+    # Test 4: EN /en/areas
+    results['areas_en'] = test_areas_en()
+    
+    # Test 5: EN 0-leak scan
+    results['en_leak_scan'] = test_en_leak_scan()
+    
+    # Test 6: Sitemap regression
+    results['sitemap_regression'] = test_sitemap_regression()
+    
+    # Test 7: Regression on prior work
+    results['regression_prior_work'] = test_regression_prior_work()
+    
+    # Summary
+    print("\n" + "="*80)
+    print("TEST SUMMARY")
+    print("="*80)
+    
+    passed = sum(1 for v in results.values() if v)
+    total = len(results)
+    
+    for test_name, result in results.items():
+        status = "✅ PASSED" if result else "✗ FAILED"
+        print(f"{test_name}: {status}")
+    
+    print(f"\nTotal: {passed}/{total} tests passed")
+    
+    if passed == total:
+        print("\n🎉 ALL TESTS PASSED! Phase 3 chunk d7 is production-ready.")
+        return 0
+    else:
+        print(f"\n❌ {total - passed} test(s) failed. Please review the output above.")
         return 1
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     exit(main())
