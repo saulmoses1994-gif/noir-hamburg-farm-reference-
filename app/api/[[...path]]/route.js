@@ -125,7 +125,7 @@ async function route(request, ctx, method) {
       const slug = parts[2]
       const body = await readJson(request)
       const ALLOW = [
-        'title', 'short_label', 'h1',
+        'title', 'title_en', 'short_label', 'h1',
         'tagline', 'tagline_en',
         'description', 'description_en',
         'long_copy', 'long_copy_en',
@@ -223,7 +223,7 @@ async function route(request, ctx, method) {
       const slug = parts[1]
       const body = await readJson(request)
       const ALLOW = [
-        'title', 'name',
+        'title', 'title_en', 'name', 'name_en',
         'intro', 'intro_en',
         'description', 'description_en',
         'long_copy', 'long_copy_en',

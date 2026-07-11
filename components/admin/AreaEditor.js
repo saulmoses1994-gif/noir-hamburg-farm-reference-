@@ -16,7 +16,8 @@ export default function AreaEditor({ initial }) {
     setSaving(true); setMsg(null)
     try {
       const payload = {
-        title: doc.title, name: doc.name,
+        title: doc.title, title_en: doc.title_en,
+        name: doc.name, name_en: doc.name_en,
         intro: doc.intro, intro_en: doc.intro_en,
         description: doc.description, description_en: doc.description_en,
         long_copy: doc.long_copy, long_copy_en: doc.long_copy_en,
@@ -69,8 +70,10 @@ export default function AreaEditor({ initial }) {
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">Grunddaten</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Field label="Name (Anzeige)" name="name" type="input" value={doc.name} onChange={set} />
-            <Field label="Title (intern)" name="title" type="input" value={doc.title} onChange={set} />
+            <Field label="Name (Anzeige, DE)" name="name" type="input" value={doc.name} onChange={set} />
+            <Field label="Name (EN)" name="name_en" type="input" value={doc.name_en} onChange={set} />
+            <Field label="Title (intern, DE)" name="title" type="input" value={doc.title} onChange={set} />
+            <Field label="Title (EN) — bestimmt den H1 auf /en/escort/…" name="title_en" type="input" value={doc.title_en} onChange={set} />
             <Field label="Intro (DE)" name="intro" type="input" value={doc.intro} onChange={set} />
             <Field label="Intro (EN)" name="intro_en" type="input" value={doc.intro_en} onChange={set} />
             <Field label="Beschreibung (DE)" name="description" type="textarea" value={doc.description} onChange={set} />

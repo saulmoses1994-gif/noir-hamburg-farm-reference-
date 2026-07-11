@@ -79,9 +79,9 @@ export default async function ServiceDetailEn({ params }) {
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">
-            <Breadcrumbs items={[{ label: 'Services', href: '/en/services' }, { label: s.title }]} dark />
-            <span className="overline block mt-6 mb-4 text-[#E5A5B5]">{s.short_label}</span>
-            <h1 className="font-heading text-5xl lg:text-7xl font-semibold tracking-tight leading-tight text-white">{s.title}</h1>
+            <Breadcrumbs items={[{ label: 'Services', href: '/en/services' }, { label: pick(s, 'title', 'en') || s.title }]} dark />
+            <span className="overline block mt-6 mb-4 text-[#E5A5B5]">{pick(s, 'short_label', 'en') || s.short_label}</span>
+            <h1 className="font-heading text-5xl lg:text-7xl font-semibold tracking-tight leading-tight text-white">{pick(s, 'title', 'en') || s.h1 || s.title}</h1>
             {tagline && <p className="font-heading italic text-xl text-white/80 mt-4">{tagline}</p>}
           </div>
         </section>

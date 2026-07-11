@@ -517,16 +517,68 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.6"
-  test_sequence: 28
+  version: "3.7"
+  test_sequence: 29
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Admin dashboard polish + files-collection cleanup"
+    - "Admin editor gap: title_en on Services + Areas"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+editor_gap_title_en:
+  - task: "Admin editor gap: title_en on Services + Areas + EN service H1 fallback fix"
+    implemented: true
+    working: true
+    file: "components/admin/ServiceEditor.js + components/admin/AreaEditor.js + app/api/[[...path]]/route.js + app/(en)/en/services/[slug]/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+            Editor gap fix ahead of QA pass.
+
+            SERVICES EDITOR
+              * Added "Title (EN)" field next to "Title (intern)" in the Hero
+                section of ServiceEditor.js. Wired to `title_en` in doc state
+                via the existing `set(name, value)` helper.
+              * Whitelisted `title_en` in the PUT /api/admin/service-content
+                handler (was missing — silently dropped on save).
+
+            AREAS EDITOR
+              * Same gap existed: only `Name (Anzeige)` + `Title (intern)`
+                DE-only. Added `Name (EN)` + `Title (EN)` next to the DE
+                counterparts. Save payload extended to include `title_en` +
+                `name_en`. Whitelisted both in PUT /api/area-content handler.
+
+            RENDER FIX
+              * /app/(en)/en/services/[slug]/page.js was rendering `s.title`
+                directly (hardcoded DE fallback on H1, breadcrumb, hero
+                overline). Switched to `pick(s, 'title', 'en') || s.h1 || s.title`
+                and `pick(s, 'short_label', 'en')`. Now respects the new
+                title_en field, with h1/short_label serving as intermediate
+                fallbacks.
+              * DE variant unchanged (uses s.h1 by design — same H1 in both).
+
+            E2E VERIFICATION (curl)
+              * BEFORE: /en/services/luxury-escort-hamburg h1 = "Luxus Escort
+                Hamburg" (German leaking into EN).
+              * PUT /api/admin/service-content/luxury-escort-hamburg
+                {"title_en":"Luxury Escort Hamburg"} -> 200, DB persisted.
+              * AFTER: /en/services/luxury-escort-hamburg h1 = "Luxury Escort
+                Hamburg". Breadcrumb text also flipped.
+              * DE /services/luxury-escort-hamburg h1 unchanged.
+              * Dashboard launch-readiness "Services ohne title_en" flipped
+                8 -> 7 (verified via curl scrape of /admin).
+              * Reverted title_en to "" after test — DB clean.
+
+            Deliverable: user can now fill in the remaining 8 title_en fields
+            via Admin -> Services and dashboard will go to green. Same
+            workflow for Areas.
 
 phase2_c_dashboard_polish:
   - task: "Admin dashboard polish + files-collection cleanup"

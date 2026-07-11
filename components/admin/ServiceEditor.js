@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 // Editable whitelist — must match the server-side whitelist in the PUT handler.
 const SIMPLE_FIELDS = [
   ['title', 'Title (intern)', 'input'],
+  ['title_en', 'Title (EN) — bestimmt den H1 auf /en/services/…', 'input'],
   ['short_label', 'Short label', 'input'],
   ['h1', 'H1 (Hero, wird auf beiden Sprachen genutzt)', 'input'],
   ['tagline', 'Tagline (DE)', 'input'],
@@ -223,6 +224,7 @@ export default function ServiceEditor({ initial }) {
           <h2 className="font-heading text-xl mb-6">Hero</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Field label="Title (intern)" name="title" type="input" value={doc.title} onChange={set} />
+            <Field label="Title (EN)" name="title_en" type="input" value={doc.title_en} onChange={set} />
             <Field label="Short label" name="short_label" type="input" value={doc.short_label} onChange={set} />
             <div className="md:col-span-2"><Field label="H1 (Hero)" name="h1" type="input" value={doc.h1} onChange={set} /></div>
             <Field label="Tagline (DE)" name="tagline" type="input" value={doc.tagline} onChange={set} />
