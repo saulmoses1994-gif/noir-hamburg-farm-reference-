@@ -1,715 +1,461 @@
 #!/usr/bin/env python3
 """
-Phase 2 Chunk A Backend Testing
-Tests JWT auth + production data parity for Noir Hamburg migration
+Phase 2 Resource #1 (Services CMS) — PUT /api/admin/service-content/{slug} endpoint test
+Tests admin-gated update of service SEO content with SSR revalidation verification.
 """
-import os
+
 import requests
 import json
+import time
 from typing import Dict, Any, Optional
 
-# Base URL from environment
-BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://noir-migration.preview.emergentagent.com')
-API_BASE = f"{BASE_URL}/api"
-
-# Admin credentials (real, restored from production dump)
+BASE_URL = "https://noir-migration.preview.emergentagent.com"
 ADMIN_EMAIL = "admin@noir-hamburg.de"
 ADMIN_PASSWORD = "NoirAdmin2026!"
+TEST_SLUG = "vip-escort-hamburg"
 
-# Test results tracking
-test_results = []
-
-def log_test(section: str, test_num: int, description: str, passed: bool, details: str = ""):
-    """Log test result"""
-    status = "✅ PASS" if passed else "❌ FAIL"
-    result = f"{status} | Section {section} | Test {test_num}: {description}"
-    if details:
-        result += f"\n    Details: {details}"
-    test_results.append((passed, result))
-    print(result)
-
-def check_no_id_field(data: Any, path: str = "") -> bool:
-    """Recursively check that no _id field exists in response"""
-    if isinstance(data, dict):
-        if '_id' in data:
+class TestRunner:
+    def __init__(self):
+        self.session = requests.Session()
+        self.baseline = None
+        self.passed = 0
+        self.failed = 0
+        self.critical_failures = []
+        
+    def log(self, msg: str, level: str = "INFO"):
+        prefix = "✅" if level == "PASS" else "❌" if level == "FAIL" else "ℹ️"
+        print(f"{prefix} {msg}")
+        
+    def assert_status(self, response: requests.Response, expected: int, step: str):
+        if response.status_code == expected:
+            self.passed += 1
+            self.log(f"Step {step}: Status {expected} ✓", "PASS")
+            return True
+        else:
+            self.failed += 1
+            self.log(f"Step {step}: Expected {expected}, got {response.status_code}. Body: {response.text[:200]}", "FAIL")
             return False
-        return all(check_no_id_field(v, f"{path}.{k}") for k, v in data.items())
-    elif isinstance(data, list):
-        return all(check_no_id_field(item, f"{path}[{i}]") for i, item in enumerate(data))
-    return True
-
-def check_cookie_header(response: requests.Response, cookie_name: str, should_exist: bool = True) -> tuple[bool, str]:
-    """Check if Set-Cookie header is present and valid"""
-    set_cookie = response.headers.get('Set-Cookie', '')
-    if should_exist:
-        if cookie_name not in set_cookie:
-            return False, f"Set-Cookie header missing {cookie_name}"
-        if 'HttpOnly' not in set_cookie:
-            return False, "Set-Cookie missing HttpOnly flag"
-        if 'Path=/' not in set_cookie:
-            return False, "Set-Cookie missing Path=/"
-        if 'Max-Age' not in set_cookie:
-            return False, "Set-Cookie missing Max-Age"
-        return True, "Cookie header valid"
-    else:
-        # Should not set cookie
-        if cookie_name in set_cookie and 'Max-Age=0' not in set_cookie:
-            return False, f"Unexpected Set-Cookie for {cookie_name}"
-        return True, "No cookie set as expected"
-
-print("="*80)
-print("PHASE 2 CHUNK A BACKEND TESTING")
-print(f"Base URL: {BASE_URL}")
-print(f"API Base: {API_BASE}")
-print("="*80)
-
-# ===== Section 1: Data-parity (verify production dump is loaded via the API) =====
-print("\n" + "="*80)
-print("SECTION 1: DATA-PARITY (Production Dump Verification)")
-print("="*80)
-
-# Test 1: GET /api/settings
-try:
-    resp = requests.get(f"{API_BASE}/settings", timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        required_fields = ['business_name', 'phone', 'email', 'hours_de', 'hours_en', 
-                          'homepage_hero_image', 'area_images', 'about_image', 'escort_hamburg_image']
-        missing = [f for f in required_fields if f not in data]
-        has_correct_email = data.get('email') == 'kontakt@noir-hamburg.de'
-        no_id = check_no_id_field(data)
-        
-        if missing:
-            passed = False
-            details = f"Missing fields: {missing}"
-        elif not has_correct_email:
-            passed = False
-            details = f"Wrong email: {data.get('email')} (expected kontakt@noir-hamburg.de)"
-        elif not no_id:
-            passed = False
-            details = "_id field found in response"
-        else:
-            details = f"All fields present, email={data.get('email')}, no _id"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("1", 1, "GET /api/settings → 200 with real production fields", passed, details)
-except Exception as e:
-    log_test("1", 1, "GET /api/settings", False, f"Exception: {str(e)}")
-
-# Test 2: GET /api/models
-try:
-    resp = requests.get(f"{API_BASE}/models", timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        count = len(data)
-        if count != 14:
-            passed = False
-            details = f"Expected 14 models, got {count}"
-        else:
-            # Check structure
-            required_fields = ['slug', 'name', 'age', 'height_cm', 'cover_image', 'gallery']
-            sample = data[0] if data else {}
-            missing = [f for f in required_fields if f not in sample]
-            has_aurelia = any(m.get('slug') == 'aurelia' for m in data)
-            no_id = all(check_no_id_field(m) for m in data)
             
-            if missing:
-                passed = False
-                details = f"Missing fields in model: {missing}"
-            elif not has_aurelia:
-                passed = False
-                details = "Expected model with slug='aurelia' not found"
-            elif not no_id:
-                passed = False
-                details = "_id field found in models"
-            else:
-                details = f"14 models, all fields present, aurelia found, no _id"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("1", 2, "GET /api/models → 200 with exactly 14 models", passed, details)
-except Exception as e:
-    log_test("1", 2, "GET /api/models", False, f"Exception: {str(e)}")
-
-# Test 3: GET /api/blog
-try:
-    resp = requests.get(f"{API_BASE}/blog", timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        count = len(data)
-        if count != 13:
-            passed = False
-            details = f"Expected 13 posts, got {count}"
+    def assert_field(self, data: Dict, field: str, expected: Any, step: str):
+        actual = data.get(field)
+        if actual == expected:
+            self.passed += 1
+            self.log(f"Step {step}: Field '{field}' = '{expected}' ✓", "PASS")
+            return True
         else:
-            required_fields = ['slug', 'category', 'cover_image', 'excerpt', 'content', 'published']
-            sample = data[0] if data else {}
-            missing = [f for f in required_fields if f not in sample]
-            all_published = all(m.get('published') == True for m in data)
-            no_id = all(check_no_id_field(m) for m in data)
+            self.failed += 1
+            self.log(f"Step {step}: Field '{field}' expected '{expected}', got '{actual}'", "FAIL")
+            return False
             
-            if missing:
-                passed = False
-                details = f"Missing fields in post: {missing}"
-            elif not all_published:
-                passed = False
-                details = "Not all posts have published=true"
-            elif not no_id:
-                passed = False
-                details = "_id field found in posts"
-            else:
-                details = f"13 posts, all fields present, all published=true, no _id"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("1", 3, "GET /api/blog → 200 with exactly 13 posts", passed, details)
-except Exception as e:
-    log_test("1", 3, "GET /api/blog", False, f"Exception: {str(e)}")
-
-# Test 4: GET /api/pages
-try:
-    resp = requests.get(f"{API_BASE}/pages", timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        count = len(data)
-        if count != 3:
-            passed = False
-            details = f"Expected 3 pages, got {count}"
+    def assert_in_html(self, html: str, substring: str, step: str, critical: bool = False):
+        if substring in html:
+            self.passed += 1
+            self.log(f"Step {step}: Found '{substring[:50]}...' in HTML ✓", "PASS")
+            return True
         else:
-            expected_slugs = [
-                'diskretion-und-datenschutz-noir-hamburg',
-                'professionelle-standards-noir-hamburg',
-                'so-funktioniert-eine-buchung-noir-hamburg'
-            ]
-            actual_slugs = [p.get('slug') for p in data]
-            missing_slugs = [s for s in expected_slugs if s not in actual_slugs]
-            no_id = all(check_no_id_field(p) for p in data)
+            self.failed += 1
+            msg = f"Step {step}: Expected substring '{substring[:50]}...' NOT found in HTML"
+            self.log(msg, "FAIL")
+            if critical:
+                self.critical_failures.append(msg)
+            return False
             
-            if missing_slugs:
-                passed = False
-                details = f"Missing expected slugs: {missing_slugs}"
-            elif not no_id:
-                passed = False
-                details = "_id field found in pages"
+    def run_tests(self):
+        print("\n" + "="*80)
+        print("PHASE 2 SERVICES CMS — PUT /api/admin/service-content/{slug} TEST")
+        print("="*80 + "\n")
+        
+        # ===== Auth guards =====
+        print("\n--- SECTION 1: AUTH GUARDS ---")
+        
+        # Step 1: PUT without cookie → 401
+        print("\n[Step 1] PUT without cookie → expect 401")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={"meta_title": "x"}
+        )
+        self.assert_status(r, 401, "1")
+        if r.status_code == 401:
+            body = r.json()
+            self.assert_field(body, "detail", "Not authenticated", "1")
+        
+        # Step 2: PUT with garbage cookie → 401
+        print("\n[Step 2] PUT with garbage cookie → expect 401")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={"meta_title": "x"},
+            cookies={"access_token": "notavalidjwt"}
+        )
+        self.assert_status(r, 401, "2")
+        
+        # Step 3: Login as admin and save baseline
+        print("\n[Step 3] Login as admin and save baseline")
+        r = requests.post(
+            f"{BASE_URL}/api/auth/login",
+            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+        )
+        if not self.assert_status(r, 200, "3-login"):
+            print("❌ CRITICAL: Cannot login. Aborting test.")
+            return
+        
+        # Extract cookie
+        cookie = r.cookies.get("access_token")
+        if not cookie:
+            self.log("Step 3: No access_token cookie received", "FAIL")
+            self.failed += 1
+            return
+        self.log(f"Step 3: Got access_token cookie", "PASS")
+        self.passed += 1
+        
+        # Get baseline
+        r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+        if not self.assert_status(r, 200, "3-baseline"):
+            print("❌ CRITICAL: Cannot fetch baseline. Aborting test.")
+            return
+        self.baseline = r.json()
+        self.log(f"Step 3: Saved baseline with {len(self.baseline)} fields", "PASS")
+        self.passed += 1
+        
+        # ===== Happy path — partial update =====
+        print("\n--- SECTION 2: HAPPY PATH — PARTIAL UPDATE ---")
+        
+        # Step 4: PUT with cookie, body {"meta_title":"Test title 1"} → 200
+        print("\n[Step 4] PUT meta_title='Test title 1' → expect 200")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={"meta_title": "Test title 1"},
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "4"):
+            body = r.json()
+            self.assert_field(body, "meta_title", "Test title 1", "4")
+            if "updated_at" in body:
+                self.log(f"Step 4: updated_at field present: {body['updated_at']}", "PASS")
+                self.passed += 1
             else:
-                details = f"3 pages with expected slugs, no _id"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("1", 4, "GET /api/pages → 200 with exactly 3 pages", passed, details)
-except Exception as e:
-    log_test("1", 4, "GET /api/pages", False, f"Exception: {str(e)}")
-
-# Test 5: GET /api/service-content and /api/area-content counts
-try:
-    resp_svc = requests.get(f"{API_BASE}/service-content", timeout=10)
-    resp_area = requests.get(f"{API_BASE}/area-content", timeout=10)
-    
-    passed = resp_svc.status_code == 200 and resp_area.status_code == 200
-    if passed:
-        svc_data = resp_svc.json()
-        area_data = resp_area.json()
-        svc_count = len(svc_data)
-        area_count = len(area_data)
+                self.log("Step 4: updated_at field missing", "FAIL")
+                self.failed += 1
         
-        if svc_count != 8:
-            passed = False
-            details = f"Expected 8 services, got {svc_count}"
-        elif area_count != 18:
-            passed = False
-            details = f"Expected 18 areas, got {area_count}"
-        else:
-            details = f"service-content: 8, area-content: 18"
-    else:
-        details = f"service-content: {resp_svc.status_code}, area-content: {resp_area.status_code}"
-    log_test("1", 5, "GET /api/service-content and /api/area-content → 8 and 18", passed, details)
-except Exception as e:
-    log_test("1", 5, "GET /api/service-content and /api/area-content", False, f"Exception: {str(e)}")
-
-# ===== Section 2: Auth happy path =====
-print("\n" + "="*80)
-print("SECTION 2: AUTH HAPPY PATH")
-print("="*80)
-
-session = requests.Session()
-
-# Test 6: POST /api/auth/login with correct credentials
-try:
-    resp = session.post(f"{API_BASE}/auth/login", 
-                       json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-                       timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        user = data.get('user', {})
+        # Step 5: GET and verify meta_title changed, other fields unchanged
+        print("\n[Step 5] GET and verify meta_title='Test title 1', other fields unchanged")
+        r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+        if self.assert_status(r, 200, "5"):
+            body = r.json()
+            self.assert_field(body, "meta_title", "Test title 1", "5")
+            # Check a few other fields are unchanged
+            for field in ["h1", "tagline", "description"]:
+                if field in self.baseline:
+                    if body.get(field) == self.baseline.get(field):
+                        self.log(f"Step 5: Field '{field}' unchanged ✓", "PASS")
+                        self.passed += 1
+                    else:
+                        self.log(f"Step 5: Field '{field}' changed unexpectedly", "FAIL")
+                        self.failed += 1
         
-        # Check user fields
-        has_email = user.get('email') == ADMIN_EMAIL
-        has_role = user.get('role') == 'admin'
-        has_name = 'name' in user
-        has_password_hash = 'password_hash' in user
+        # Step 6: Curl public SSR page and verify <title> reflects new meta_title
+        print("\n[Step 6] Curl public page and verify <title> reflects 'Test title 1'")
+        time.sleep(2)  # Wait for revalidation
+        r = requests.get(f"{BASE_URL}/services/{TEST_SLUG}")
+        if self.assert_status(r, 200, "6"):
+            html = r.text
+            # Look for <title>Test title 1</title>
+            if "<title>Test title 1</title>" in html:
+                self.log("Step 6: <title> tag reflects new meta_title (revalidatePath worked) ✓", "PASS")
+                self.passed += 1
+            else:
+                self.log("Step 6: <title> tag does NOT reflect new meta_title (revalidatePath may have failed)", "FAIL")
+                self.failed += 1
         
-        # Check cookie
-        cookie_ok, cookie_msg = check_cookie_header(resp, 'access_token', should_exist=True)
+        # ===== Complex-field updates =====
+        print("\n--- SECTION 3: COMPLEX-FIELD UPDATES ---")
         
-        if not has_email:
-            passed = False
-            details = f"Wrong email in response: {user.get('email')}"
-        elif not has_role:
-            passed = False
-            details = f"Wrong role: {user.get('role')}"
-        elif has_password_hash:
-            passed = False
-            details = "password_hash field present in response (should be excluded)"
-        elif not cookie_ok:
-            passed = False
-            details = cookie_msg
-        else:
-            details = f"Login successful, user={user.get('email')}, role={user.get('role')}, cookie set"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("2", 6, "POST /api/auth/login with correct credentials → 200 + cookie", passed, details)
-except Exception as e:
-    log_test("2", 6, "POST /api/auth/login", False, f"Exception: {str(e)}")
-
-# Test 7: GET /api/auth/me with cookie
-try:
-    resp = session.get(f"{API_BASE}/auth/me", timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        user = data.get('user', {})
-        has_email = user.get('email') == ADMIN_EMAIL
-        has_password_hash = 'password_hash' in user
+        # Step 7: PUT with new sections array
+        print("\n[Step 7] PUT with new sections array (2 sections) → expect 200")
+        new_sections = [
+            {
+                "h2": "Test Section 1",
+                "h2_en": "Test Section 1 EN",
+                "body": ["Body paragraph 1", "Body paragraph 2"],
+                "body_en": ["Body paragraph 1 EN", "Body paragraph 2 EN"]
+            },
+            {
+                "h2": "Test Section 2",
+                "h2_en": "Test Section 2 EN",
+                "body": ["Body paragraph 3"],
+                "body_en": ["Body paragraph 3 EN"]
+            }
+        ]
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={"sections": new_sections},
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "7"):
+            # GET and verify
+            r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+            if r.status_code == 200:
+                body = r.json()
+                if body.get("sections") == new_sections:
+                    self.log("Step 7: sections match what was sent ✓", "PASS")
+                    self.passed += 1
+                else:
+                    self.log("Step 7: sections do NOT match", "FAIL")
+                    self.failed += 1
         
-        if not has_email:
-            passed = False
-            details = f"Wrong email: {user.get('email')}"
-        elif has_password_hash:
-            passed = False
-            details = "password_hash field present (should be excluded)"
-        else:
-            details = f"User retrieved: {user.get('email')}, role={user.get('role')}"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("2", 7, "GET /api/auth/me with cookie → 200", passed, details)
-except Exception as e:
-    log_test("2", 7, "GET /api/auth/me", False, f"Exception: {str(e)}")
-
-# Test 8: POST /api/auth/logout
-try:
-    resp = session.post(f"{API_BASE}/auth/logout", timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        has_ok = data.get('ok') == True
+        # Step 8: PUT with new faqs
+        print("\n[Step 8] PUT with new faqs (1 FAQ) → expect 200")
+        new_faqs = [
+            {
+                "q": "Test question?",
+                "q_en": "Test question EN?",
+                "a": "Test answer.",
+                "a_en": "Test answer EN."
+            }
+        ]
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={"faqs": new_faqs},
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "8"):
+            r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+            if r.status_code == 200:
+                body = r.json()
+                if body.get("faqs") == new_faqs:
+                    self.log("Step 8: faqs match what was sent ✓", "PASS")
+                    self.passed += 1
+                else:
+                    self.log("Step 8: faqs do NOT match", "FAIL")
+                    self.failed += 1
         
-        # Check cookie is cleared
-        set_cookie = resp.headers.get('Set-Cookie', '')
-        cookie_cleared = 'access_token' in set_cookie and 'Max-Age=0' in set_cookie
+        # Step 9: PUT with new keypoints
+        print("\n[Step 9] PUT with new keypoints and keypoints_en → expect 200")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={
+                "keypoints": ["kp1", "kp2", "kp3"],
+                "keypoints_en": ["kp1en", "kp2en"]
+            },
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "9"):
+            r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+            if r.status_code == 200:
+                body = r.json()
+                if body.get("keypoints") == ["kp1", "kp2", "kp3"] and body.get("keypoints_en") == ["kp1en", "kp2en"]:
+                    self.log("Step 9: keypoints arrays match ✓", "PASS")
+                    self.passed += 1
+                else:
+                    self.log("Step 9: keypoints arrays do NOT match", "FAIL")
+                    self.failed += 1
         
-        if not has_ok:
-            passed = False
-            details = f"Response missing ok:true"
-        elif not cookie_cleared:
-            passed = False
-            details = "Cookie not cleared (Max-Age=0 not found)"
-        else:
-            details = "Logout successful, cookie cleared"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("2", 8, "POST /api/auth/logout → 200 + cookie cleared", passed, details)
-except Exception as e:
-    log_test("2", 8, "POST /api/auth/logout", False, f"Exception: {str(e)}")
-
-# Test 9: GET /api/auth/me after logout (should fail)
-try:
-    resp = session.get(f"{API_BASE}/auth/me", timeout=10)
-    passed = resp.status_code == 401
-    if passed:
-        data = resp.json()
-        has_detail = 'detail' in data
-        correct_msg = data.get('detail') == 'Not authenticated'
-        if not correct_msg:
-            passed = False
-            details = f"Wrong error message: {data.get('detail')}"
-        else:
-            details = "401 with 'Not authenticated' as expected"
-    else:
-        details = f"Expected 401, got {resp.status_code}: {resp.text[:200]}"
-    log_test("2", 9, "GET /api/auth/me after logout → 401", passed, details)
-except Exception as e:
-    log_test("2", 9, "GET /api/auth/me after logout", False, f"Exception: {str(e)}")
-
-# ===== Section 3: Auth failures =====
-print("\n" + "="*80)
-print("SECTION 3: AUTH FAILURES")
-print("="*80)
-
-# Test 10: POST /api/auth/login with wrong password
-try:
-    resp = requests.post(f"{API_BASE}/auth/login",
-                        json={"email": ADMIN_EMAIL, "password": "WrongPassword123!"},
-                        timeout=10)
-    passed = resp.status_code == 401
-    if passed:
-        data = resp.json()
-        correct_msg = data.get('detail') == 'Invalid credentials'
+        # Step 10: PUT with related_services
+        print("\n[Step 10] PUT with related_services → expect 200")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={"related_services": ["luxury-escort-hamburg", "business-escort-hamburg"]},
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "10"):
+            r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+            if r.status_code == 200:
+                body = r.json()
+                if body.get("related_services") == ["luxury-escort-hamburg", "business-escort-hamburg"]:
+                    self.log("Step 10: related_services match ✓", "PASS")
+                    self.passed += 1
+                else:
+                    self.log("Step 10: related_services do NOT match", "FAIL")
+                    self.failed += 1
         
-        # Check no cookie is set
-        set_cookie = resp.headers.get('Set-Cookie', '')
-        no_cookie = 'access_token' not in set_cookie or 'Max-Age=0' in set_cookie
+        # ===== Whitelist enforcement =====
+        print("\n--- SECTION 4: WHITELIST ENFORCEMENT ---")
         
-        if not correct_msg:
-            passed = False
-            details = f"Wrong error message: {data.get('detail')}"
-        elif not no_cookie:
-            passed = False
-            details = "Cookie was set (should not be)"
-        else:
-            details = "401 with 'Invalid credentials', no cookie set"
-    else:
-        details = f"Expected 401, got {resp.status_code}: {resp.text[:200]}"
-    log_test("3", 10, "POST /api/auth/login with wrong password → 401", passed, details)
-except Exception as e:
-    log_test("3", 10, "POST /api/auth/login wrong password", False, f"Exception: {str(e)}")
-
-# Test 11: POST /api/auth/login with unknown email
-try:
-    resp = requests.post(f"{API_BASE}/auth/login",
-                        json={"email": "unknown@example.com", "password": "SomePassword123!"},
-                        timeout=10)
-    passed = resp.status_code == 401
-    if passed:
-        data = resp.json()
-        correct_msg = data.get('detail') == 'Invalid credentials'
+        # Step 11: PUT with non-whitelisted fields → 200 but fields ignored
+        print("\n[Step 11] PUT with non-whitelisted fields (slug, _id, created_at, password_hash) → expect 200, fields ignored")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={
+                "slug": "HACKED",
+                "_id": "HACKED",
+                "created_at": "1970-01-01",
+                "password_hash": "HACKED"
+            },
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "11"):
+            r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+            if r.status_code == 200:
+                body = r.json()
+                if body.get("slug") == TEST_SLUG:
+                    self.log("Step 11: slug still 'vip-escort-hamburg' (not HACKED) ✓", "PASS")
+                    self.passed += 1
+                else:
+                    self.log("Step 11: slug was changed to HACKED!", "FAIL")
+                    self.failed += 1
+                if "password_hash" not in body:
+                    self.log("Step 11: password_hash not injected ✓", "PASS")
+                    self.passed += 1
+                else:
+                    self.log("Step 11: password_hash was injected!", "FAIL")
+                    self.failed += 1
         
-        if not correct_msg:
-            passed = False
-            details = f"Wrong error message: {data.get('detail')} (should be 'Invalid credentials' to prevent user enumeration)"
-        else:
-            details = "401 with 'Invalid credentials' (no user enumeration)"
-    else:
-        details = f"Expected 401, got {resp.status_code}: {resp.text[:200]}"
-    log_test("3", 11, "POST /api/auth/login with unknown email → 401", passed, details)
-except Exception as e:
-    log_test("3", 11, "POST /api/auth/login unknown email", False, f"Exception: {str(e)}")
-
-# Test 12: POST /api/auth/login with missing fields
-try:
-    resp = requests.post(f"{API_BASE}/auth/login", json={}, timeout=10)
-    passed = resp.status_code == 400
-    if passed:
-        data = resp.json()
-        correct_msg = data.get('detail') == 'Email and password required'
+        # Step 12: PUT with empty body → 200 (only updates updated_at)
+        print("\n[Step 12] PUT with empty body {} → expect 200")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={},
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "12"):
+            r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+            if r.status_code == 200:
+                body = r.json()
+                # Check that baseline fields are still intact (e.g., slug)
+                if body.get("slug") == TEST_SLUG:
+                    self.log("Step 12: baseline fields intact after empty PUT ✓", "PASS")
+                    self.passed += 1
+                else:
+                    self.log("Step 12: baseline fields changed after empty PUT", "FAIL")
+                    self.failed += 1
         
-        if not correct_msg:
-            passed = False
-            details = f"Wrong error message: {data.get('detail')}"
-        else:
-            details = "400 with 'Email and password required'"
-    else:
-        details = f"Expected 400, got {resp.status_code}: {resp.text[:200]}"
-    log_test("3", 12, "POST /api/auth/login with missing fields → 400", passed, details)
-except Exception as e:
-    log_test("3", 12, "POST /api/auth/login missing fields", False, f"Exception: {str(e)}")
-
-# Test 13: GET /api/auth/me without cookie
-try:
-    resp = requests.get(f"{API_BASE}/auth/me", timeout=10)
-    passed = resp.status_code == 401
-    if passed:
-        details = "401 as expected"
-    else:
-        details = f"Expected 401, got {resp.status_code}: {resp.text[:200]}"
-    log_test("3", 13, "GET /api/auth/me without cookie → 401", passed, details)
-except Exception as e:
-    log_test("3", 13, "GET /api/auth/me without cookie", False, f"Exception: {str(e)}")
-
-# Test 14: GET /api/auth/me with garbage cookie
-try:
-    resp = requests.get(f"{API_BASE}/auth/me", 
-                       cookies={"access_token": "notavalidjwt"},
-                       timeout=10)
-    passed = resp.status_code == 401
-    if passed:
-        details = "401 as expected"
-    else:
-        details = f"Expected 401, got {resp.status_code}: {resp.text[:200]}"
-    log_test("3", 14, "GET /api/auth/me with garbage cookie → 401", passed, details)
-except Exception as e:
-    log_test("3", 14, "GET /api/auth/me garbage cookie", False, f"Exception: {str(e)}")
-
-# ===== Section 4: change-password (destructive — must rotate back) =====
-print("\n" + "="*80)
-print("SECTION 4: CHANGE-PASSWORD (Destructive - Must Rotate Back)")
-print("="*80)
-
-# Test 15: Login again (fresh cookie)
-session2 = requests.Session()
-try:
-    resp = session2.post(f"{API_BASE}/auth/login",
-                        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-                        timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        details = "Fresh login successful"
-    else:
-        details = f"Login failed: {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 15, "Login again (fresh cookie)", passed, details)
-except Exception as e:
-    log_test("4", 15, "Login again", False, f"Exception: {str(e)}")
-
-# Test 16: POST /api/auth/change-password without cookie
-try:
-    resp = requests.post(f"{API_BASE}/auth/change-password",
-                        json={"current_password": ADMIN_PASSWORD, "new_password": "NewPass123!"},
-                        timeout=10)
-    passed = resp.status_code == 401
-    if passed:
-        data = resp.json()
-        correct_msg = data.get('detail') == 'Not authenticated'
-        if not correct_msg:
-            passed = False
-            details = f"Wrong error message: {data.get('detail')}"
-        else:
-            details = "401 with 'Not authenticated'"
-    else:
-        details = f"Expected 401, got {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 16, "POST /api/auth/change-password without cookie → 401", passed, details)
-except Exception as e:
-    log_test("4", 16, "POST /api/auth/change-password without cookie", False, f"Exception: {str(e)}")
-
-# Test 17: POST /api/auth/change-password with wrong current_password
-try:
-    resp = session2.post(f"{API_BASE}/auth/change-password",
-                         json={"current_password": "WrongCurrent123!", "new_password": "NewPass123!"},
-                         timeout=10)
-    passed = resp.status_code == 400
-    if passed:
-        data = resp.json()
-        correct_msg = data.get('detail') == 'Current password is incorrect'
-        if not correct_msg:
-            passed = False
-            details = f"Wrong error message: {data.get('detail')}"
-        else:
-            details = "400 with 'Current password is incorrect'"
-    else:
-        details = f"Expected 400, got {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 17, "POST /api/auth/change-password with wrong current_password → 400", passed, details)
-except Exception as e:
-    log_test("4", 17, "POST /api/auth/change-password wrong current", False, f"Exception: {str(e)}")
-
-# Test 18: POST /api/auth/change-password with new_password too short
-try:
-    resp = session2.post(f"{API_BASE}/auth/change-password",
-                         json={"current_password": ADMIN_PASSWORD, "new_password": "short"},
-                         timeout=10)
-    passed = resp.status_code == 400
-    if passed:
-        data = resp.json()
-        has_detail = 'detail' in data
-        mentions_short = 'short' in data.get('detail', '').lower() or '8' in data.get('detail', '')
-        if not mentions_short:
-            passed = False
-            details = f"Error message doesn't mention length: {data.get('detail')}"
-        else:
-            details = f"400 with length validation: {data.get('detail')}"
-    else:
-        details = f"Expected 400, got {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 18, "POST /api/auth/change-password with short password → 400", passed, details)
-except Exception as e:
-    log_test("4", 18, "POST /api/auth/change-password short password", False, f"Exception: {str(e)}")
-
-# Test 19: POST /api/auth/change-password valid rotation to TestingRotation2026!
-TEMP_PASSWORD = "TestingRotation2026!"
-try:
-    resp = session2.post(f"{API_BASE}/auth/change-password",
-                         json={"current_password": ADMIN_PASSWORD, "new_password": TEMP_PASSWORD},
-                         timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        has_ok = data.get('ok') == True
-        if not has_ok:
-            passed = False
-            details = "Response missing ok:true"
-        else:
-            details = f"Password changed to {TEMP_PASSWORD}"
-    else:
-        details = f"Expected 200, got {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 19, "POST /api/auth/change-password valid rotation → 200", passed, details)
-except Exception as e:
-    log_test("4", 19, "POST /api/auth/change-password valid rotation", False, f"Exception: {str(e)}")
-
-# Test 20: POST /api/auth/login with TestingRotation2026!
-try:
-    resp = requests.post(f"{API_BASE}/auth/login",
-                        json={"email": ADMIN_EMAIL, "password": TEMP_PASSWORD},
-                        timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        details = "Login with new password successful (rotation persisted)"
-    else:
-        details = f"Login failed: {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 20, "POST /api/auth/login with TestingRotation2026! → 200", passed, details)
-    
-    # Store session for rotation back
-    if passed:
-        session3 = requests.Session()
-        session3.cookies.update(resp.cookies)
-except Exception as e:
-    log_test("4", 20, "POST /api/auth/login with new password", False, f"Exception: {str(e)}")
-
-# Test 21: CRITICAL — rotate back to NoirAdmin2026!
-try:
-    # Use session3 from test 20
-    resp = session3.post(f"{API_BASE}/auth/change-password",
-                         json={"current_password": TEMP_PASSWORD, "new_password": ADMIN_PASSWORD},
-                         timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        has_ok = data.get('ok') == True
-        if not has_ok:
-            passed = False
-            details = "⚠️ CRITICAL: Response missing ok:true - password may not be restored!"
-        else:
-            details = f"✅ CRITICAL: Password restored to {ADMIN_PASSWORD}"
-    else:
-        details = f"⚠️ CRITICAL: Failed to restore password! Status {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 21, "CRITICAL: Rotate back to NoirAdmin2026! → 200", passed, details)
-except Exception as e:
-    log_test("4", 21, "CRITICAL: Rotate back", False, f"⚠️ CRITICAL EXCEPTION: {str(e)}")
-
-# Test 22: Final verification: POST /api/auth/login with NoirAdmin2026!
-try:
-    resp = requests.post(f"{API_BASE}/auth/login",
-                        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-                        timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        details = "✅ CRITICAL: Login with original password successful - NOT LOCKED OUT"
-    else:
-        details = f"⚠️⚠️⚠️ CRITICAL FAILURE: LOCKED OUT! Status {resp.status_code}: {resp.text[:200]}"
-    log_test("4", 22, "CRITICAL: Final verification login with NoirAdmin2026! → 200", passed, details)
-except Exception as e:
-    log_test("4", 22, "CRITICAL: Final verification", False, f"⚠️⚠️⚠️ CRITICAL EXCEPTION: {str(e)}")
-
-# ===== Section 5: Regression on Phase 1 endpoints =====
-print("\n" + "="*80)
-print("SECTION 5: REGRESSION ON PHASE 1 ENDPOINTS")
-print("="*80)
-
-# Test 23: GET /api/health, /api/service-content, /api/service-content/vip-escort-hamburg
-try:
-    resp_health = requests.get(f"{API_BASE}/health", timeout=10)
-    resp_svc_list = requests.get(f"{API_BASE}/service-content", timeout=10)
-    resp_svc_single = requests.get(f"{API_BASE}/service-content/vip-escort-hamburg", timeout=10)
-    
-    passed = (resp_health.status_code == 200 and 
-              resp_svc_list.status_code == 200 and 
-              resp_svc_single.status_code == 200)
-    
-    if passed:
-        health_data = resp_health.json()
-        svc_list_data = resp_svc_list.json()
-        svc_single_data = resp_svc_single.json()
+        # ===== 404 =====
+        print("\n--- SECTION 5: 404 ---")
         
-        health_ok = health_data.get('status') == 'ok'
-        svc_list_ok = len(svc_list_data) == 8
-        svc_single_ok = svc_single_data.get('slug') == 'vip-escort-hamburg'
+        # Step 13: PUT to non-existent slug → 404
+        print("\n[Step 13] PUT to /api/admin/service-content/does-not-exist → expect 404")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/does-not-exist",
+            json={"meta_title": "x"},
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 404, "13"):
+            body = r.json()
+            self.assert_field(body, "detail", "Service not found", "13")
         
-        if not health_ok:
-            passed = False
-            details = f"Health check failed: {health_data}"
-        elif not svc_list_ok:
-            passed = False
-            details = f"Service list wrong count: {len(svc_list_data)}"
-        elif not svc_single_ok:
-            passed = False
-            details = f"Service single wrong slug: {svc_single_data.get('slug')}"
-        else:
-            details = "All Phase 1 endpoints still working"
-    else:
-        details = f"Status codes: health={resp_health.status_code}, svc_list={resp_svc_list.status_code}, svc_single={resp_svc_single.status_code}"
-    log_test("5", 23, "Phase 1 endpoints regression check → all 200", passed, details)
-except Exception as e:
-    log_test("5", 23, "Phase 1 endpoints regression", False, f"Exception: {str(e)}")
-
-# Test 24: GET /sitemap.xml and /robots.txt
-try:
-    resp_sitemap = requests.get(f"{BASE_URL}/sitemap.xml", timeout=10)
-    resp_robots = requests.get(f"{BASE_URL}/robots.txt", timeout=10)
-    
-    passed = resp_sitemap.status_code == 200 and resp_robots.status_code == 200
-    
-    if passed:
-        sitemap_valid = '<?xml' in resp_sitemap.text and '<urlset' in resp_sitemap.text
-        robots_valid = 'Allow: /' in resp_robots.text and 'Disallow: /admin' in resp_robots.text
+        # ===== SSR revalidation cross-check =====
+        print("\n--- SECTION 6: SSR REVALIDATION CROSS-CHECK ---")
         
-        if not sitemap_valid:
-            passed = False
-            details = "Sitemap XML invalid"
-        elif not robots_valid:
-            passed = False
-            details = "Robots.txt invalid"
-        else:
-            details = "Sitemap and robots.txt still valid"
-    else:
-        details = f"Status codes: sitemap={resp_sitemap.status_code}, robots={resp_robots.status_code}"
-    log_test("5", 24, "GET /sitemap.xml and /robots.txt → still valid", passed, details)
-except Exception as e:
-    log_test("5", 24, "Sitemap and robots.txt", False, f"Exception: {str(e)}")
-
-# Test 25: GET /api/sitemap/status
-try:
-    resp = requests.get(f"{API_BASE}/sitemap/status", timeout=10)
-    passed = resp.status_code == 200
-    if passed:
-        data = resp.json()
-        expected = {'services': 8, 'areas': 18, 'models': 14, 'blog': 13, 'pages': 3}
-        matches = all(data.get(k) == v for k, v in expected.items())
+        # Step 14: PUT h1, wait, curl public page, verify <h1> updated
+        print("\n[Step 14] PUT h1='RevalidationCheck H1' → expect 200, then verify in HTML")
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json={"h1": "RevalidationCheck H1"},
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "14"):
+            time.sleep(2)
+            r = requests.get(f"{BASE_URL}/services/{TEST_SLUG}")
+            if r.status_code == 200:
+                html = r.text
+                self.assert_in_html(html, "RevalidationCheck H1", "14")
         
-        if not matches:
-            passed = False
-            details = f"Counts mismatch. Expected {expected}, got {data}"
-        else:
-            details = f"All counts correct: {data}"
-    else:
-        details = f"Status {resp.status_code}: {resp.text[:200]}"
-    log_test("5", 25, "GET /api/sitemap/status → correct counts", passed, details)
-except Exception as e:
-    log_test("5", 25, "GET /api/sitemap/status", False, f"Exception: {str(e)}")
+        # ===== CRITICAL — restore baseline =====
+        print("\n--- SECTION 7: CRITICAL — RESTORE BASELINE ---")
+        
+        # Step 15: Restore all editable fields to baseline in ONE call
+        print("\n[Step 15] Restore all editable fields to baseline")
+        restore_fields = [
+            'meta_title', 'meta_title_en', 'meta_description', 'meta_description_en',
+            'h1', 'title', 'short_label', 'tagline', 'tagline_en',
+            'description', 'description_en', 'long_copy', 'long_copy_en',
+            'image', 'image_alt', 'image_alt_en',
+            'keypoints', 'keypoints_en', 'related_services',
+            'sections', 'faqs'
+        ]
+        restore_body = {k: self.baseline[k] for k in restore_fields if k in self.baseline}
+        r = requests.put(
+            f"{BASE_URL}/api/admin/service-content/{TEST_SLUG}",
+            json=restore_body,
+            cookies={"access_token": cookie}
+        )
+        if not self.assert_status(r, 200, "15"):
+            self.critical_failures.append("Step 15: Failed to restore baseline")
+        
+        # Step 16: GET and assert deep equality with baseline
+        print("\n[Step 16] GET and verify deep equality with baseline")
+        r = requests.get(f"{BASE_URL}/api/service-content/{TEST_SLUG}")
+        if self.assert_status(r, 200, "16"):
+            body = r.json()
+            all_match = True
+            for field in restore_fields:
+                if field in self.baseline:
+                    if body.get(field) == self.baseline.get(field):
+                        self.log(f"Step 16: Field '{field}' restored ✓", "PASS")
+                        self.passed += 1
+                    else:
+                        self.log(f"Step 16: Field '{field}' NOT restored. Expected: {self.baseline.get(field)}, Got: {body.get(field)}", "FAIL")
+                        self.failed += 1
+                        all_match = False
+                        self.critical_failures.append(f"Step 16: Field '{field}' NOT restored")
+            if all_match:
+                self.log("Step 16: All fields restored to baseline ✓", "PASS")
+        
+        # Step 17: Curl public page and verify <title>, <h1>, JSON-LD match baseline
+        print("\n[Step 17] Curl public page and verify <title>, <h1>, JSON-LD match baseline")
+        time.sleep(2)
+        r = requests.get(f"{BASE_URL}/services/{TEST_SLUG}")
+        if self.assert_status(r, 200, "17"):
+            html = r.text
+            # Check <title>
+            baseline_title = self.baseline.get("meta_title", "")
+            self.assert_in_html(html, f"<title>{baseline_title}</title>", "17-title", critical=True)
+            # Check <h1>
+            baseline_h1 = self.baseline.get("h1", "")
+            self.assert_in_html(html, baseline_h1, "17-h1", critical=True)
+            # Check JSON-LD Service block (just verify it exists)
+            self.assert_in_html(html, '"@type":"Service"', "17-jsonld", critical=True)
+        
+        # ===== Regression =====
+        print("\n--- SECTION 8: REGRESSION ---")
+        
+        # Step 18: Verify other endpoints still work
+        print("\n[Step 18] Verify GET /api/health, /api/service-content, /api/settings still work")
+        r = requests.get(f"{BASE_URL}/api/health")
+        self.assert_status(r, 200, "18-health")
+        
+        r = requests.get(f"{BASE_URL}/api/service-content")
+        if self.assert_status(r, 200, "18-service-content"):
+            body = r.json()
+            if len(body) == 8:
+                self.log("Step 18: /api/service-content still returns 8 items ✓", "PASS")
+                self.passed += 1
+            else:
+                self.log(f"Step 18: /api/service-content returns {len(body)} items (expected 8)", "FAIL")
+                self.failed += 1
+        
+        r = requests.get(f"{BASE_URL}/api/settings")
+        self.assert_status(r, 200, "18-settings")
+        
+        # Step 19: Verify GET /api/auth/me still works with same cookie
+        print("\n[Step 19] Verify GET /api/auth/me still returns 200 with same cookie")
+        r = requests.get(
+            f"{BASE_URL}/api/auth/me",
+            cookies={"access_token": cookie}
+        )
+        if self.assert_status(r, 200, "19"):
+            body = r.json()
+            if body.get("user", {}).get("email") == ADMIN_EMAIL:
+                self.log(f"Step 19: /api/auth/me returns correct user email ✓", "PASS")
+                self.passed += 1
+            else:
+                self.log("Step 19: /api/auth/me user email mismatch", "FAIL")
+                self.failed += 1
+        
+        # ===== Summary =====
+        print("\n" + "="*80)
+        print("TEST SUMMARY")
+        print("="*80)
+        print(f"✅ PASSED: {self.passed}")
+        print(f"❌ FAILED: {self.failed}")
+        if self.critical_failures:
+            print(f"\n🚨 CRITICAL FAILURES ({len(self.critical_failures)}):")
+            for cf in self.critical_failures:
+                print(f"   - {cf}")
+        print("="*80 + "\n")
+        
+        return self.failed == 0
 
-# ===== Summary =====
-print("\n" + "="*80)
-print("TEST SUMMARY")
-print("="*80)
-
-total = len(test_results)
-passed = sum(1 for p, _ in test_results if p)
-failed = total - passed
-
-print(f"\nTotal Tests: {total}")
-print(f"Passed: {passed}")
-print(f"Failed: {failed}")
-print(f"Success Rate: {passed/total*100:.1f}%")
-
-if failed > 0:
-    print("\n" + "="*80)
-    print("FAILED TESTS:")
-    print("="*80)
-    for p, result in test_results:
-        if not p:
-            print(result)
-
-print("\n" + "="*80)
-print("ALL TEST RESULTS:")
-print("="*80)
-for p, result in test_results:
-    print(result)
-
-print("\n" + "="*80)
-print("TESTING COMPLETE")
-print("="*80)
+if __name__ == "__main__":
+    runner = TestRunner()
+    success = runner.run_tests()
+    exit(0 if success else 1)

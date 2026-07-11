@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { getDb, cleanDoc } from '@/lib/mongo'
 import {
   listServiceContent, getServiceContent,
@@ -78,6 +79,47 @@ async function route(request, ctx, method) {
         { $set: { password_hash: newHash, updated_at: new Date() } }
       )
       return j({ ok: true })
+    }
+
+    // ---------- Admin: Service content write ----------
+    // PUT /api/admin/service-content/:slug \u2014 partial update, whitelisted fields.
+    if (parts[0] === 'admin' && parts[1] === 'service-content' && parts.length === 3 && method === 'PUT') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[2]
+      const body = await readJson(request)
+      const ALLOW = [
+        'title', 'short_label', 'h1',
+        'tagline', 'tagline_en',
+        'description', 'description_en',
+        'long_copy', 'long_copy_en',
+        'meta_title', 'meta_title_en',
+        'meta_description', 'meta_description_en',
+        'image', 'image_alt', 'image_alt_en',
+        'keypoints', 'keypoints_en',
+        'related_services',
+        'sections', 'faqs',
+      ]
+      const update = {}
+      for (const k of ALLOW) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      const result = await db.collection('service_content').findOneAndUpdate(
+        { slug },
+        { $set: update },
+        { returnDocument: 'after' }
+      )
+      if (!result) return j({ detail: 'Service not found' }, { status: 404 })
+      // Bust the SSG cache for both locale variants and the list page.
+      try {
+        revalidatePath(`/services/${slug}`)
+        revalidatePath(`/en/services/${slug}`)
+        revalidatePath('/services')
+        revalidatePath('/en/services')
+        revalidatePath('/')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(result))
     }
 
     // ---------- Settings (real collection is `site_settings`) ----------

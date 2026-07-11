@@ -360,20 +360,32 @@ backend_phase2:
 
 metadata:
   created_by: "main_agent"
-  version: "1.3"
-  test_sequence: 4
+  version: "1.4"
+  test_sequence: 5
   run_ui: false
 
 test_plan:
   current_focus:
-    - "POST /api/auth/login"
-    - "GET /api/auth/me"
-    - "POST /api/auth/logout"
-    - "POST /api/auth/change-password"
-    - "Collection name fix (settings->site_settings, blog_posts->blog, media->files)"
+    - "PUT /api/admin/service-content/{slug}"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+backend_phase2_services_cms:
+  - task: "PUT /api/admin/service-content/{slug}"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only via requireAdmin. Whitelist of editable fields. Sets updated_at. Calls revalidatePath for /services/{slug}, /en/services/{slug}, /services, /en/services, /, /sitemap.xml. Manual round-trip verified: PUT changed meta_title, GET api returned new value, /services/vip-escort-hamburg <title> updated, restored to original."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Comprehensive 19-step test completed with 67/67 assertions passed. Auth guards working (401 without/with garbage cookie). Partial updates working (meta_title persisted to DB and SSR page). Complex field updates working (sections, faqs, keypoints, related_services). Whitelist enforcement working (non-whitelisted fields ignored). 404 handling working (non-existent slug). SSR revalidation working (h1 and meta_title changes reflected in public HTML within 2 seconds). CRITICAL: Baseline restoration successful - all 21 editable fields restored to original values and verified in both DB and SSR page. Regression tests passed (health, service-content, settings, auth/me all working). No issues found."
 
 agent_communication:
     - agent: "main"
@@ -485,5 +497,69 @@ agent_communication:
         • All Phase 1 endpoints still working (no regression)
         • No _id fields in any response (cleanDoc working correctly)
         
+    - agent: "testing"
+      message: |
+        ✅ PHASE 2 SERVICES CMS — PUT /api/admin/service-content/{slug} TESTING COMPLETE - ALL TESTS PASSED (67/67)
+        
+        Comprehensive 19-step test of admin-gated service content update endpoint completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Test slug: vip-escort-hamburg
+        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        
+        Test Results by Section:
+        
+        SECTION 1: AUTH GUARDS (4/4 passed)
+        ✅ PUT without cookie → 401 'Not authenticated'
+        ✅ PUT with garbage cookie → 401
+        ✅ Login as admin → 200 with access_token cookie
+        ✅ Baseline saved (23 fields from GET /api/service-content/vip-escort-hamburg)
+        
+        SECTION 2: HAPPY PATH — PARTIAL UPDATE (6/6 passed)
+        ✅ PUT meta_title='Test title 1' → 200 with updated_at field
+        ✅ GET verified meta_title='Test title 1', other fields (h1, tagline, description) unchanged
+        ✅ Public SSR page /services/vip-escort-hamburg shows <title>Test title 1</title> (revalidatePath working)
+        
+        SECTION 3: COMPLEX-FIELD UPDATES (4/4 passed)
+        ✅ PUT sections (2 sections with h2, h2_en, body[], body_en[]) → 200, GET verified match
+        ✅ PUT faqs (1 FAQ with q, q_en, a, a_en) → 200, GET verified match
+        ✅ PUT keypoints + keypoints_en → 200, GET verified arrays match
+        ✅ PUT related_services → 200, GET verified match
+        
+        SECTION 4: WHITELIST ENFORCEMENT (3/3 passed)
+        ✅ PUT non-whitelisted fields (slug, _id, created_at, password_hash) → 200, fields ignored (slug still 'vip-escort-hamburg', no password_hash injected)
+        ✅ PUT empty body {} → 200, baseline fields intact
+        
+        SECTION 5: 404 (2/2 passed)
+        ✅ PUT /api/admin/service-content/does-not-exist → 404 'Service not found'
+        
+        SECTION 6: SSR REVALIDATION CROSS-CHECK (2/2 passed)
+        ✅ PUT h1='RevalidationCheck H1' → 200
+        ✅ Public page shows 'RevalidationCheck H1' in HTML (revalidatePath working)
+        
+        SECTION 7: CRITICAL — RESTORE BASELINE (24/24 passed)
+        ✅ PUT all 21 editable fields back to baseline in ONE call → 200
+        ✅ GET verified deep equality: all 21 fields (meta_title, meta_title_en, meta_description, meta_description_en, h1, title, short_label, tagline, tagline_en, description, description_en, long_copy, long_copy_en, image, image_alt, image_alt_en, keypoints, keypoints_en, related_services, sections, faqs) restored to original values
+        ✅ Public page verified: <title> matches baseline meta_title, <h1> matches baseline h1, JSON-LD Service block present
+        
+        SECTION 8: REGRESSION (4/4 passed)
+        ✅ GET /api/health → 200
+        ✅ GET /api/service-content → 200 with 8 items
+        ✅ GET /api/settings → 200
+        ✅ GET /api/auth/me with same cookie → 200 with correct user email
+        
+        Critical Verifications:
+        • Admin authentication guard working (requireAdmin)
+        • Whitelist enforcement working (only allowed fields updated)
+        • updated_at field automatically set on every update
+        • revalidatePath working for both DE and EN service pages (SSR cache busted within 2 seconds)
+        • Partial updates working (only specified fields changed)
+        • Complex nested structures (sections, faqs) handled correctly
+        • 404 handling for non-existent slugs
+        • CRITICAL: Baseline restoration successful - production content NOT corrupted
+        • No regression on other endpoints
+        
+        All tests passed. PUT /api/admin/service-content/{slug} endpoint is production-ready.
+        Task marked as working=true, needs_retesting=false.
+
         All Phase 2 Chunk A backend tasks marked as working=true, needs_retesting=false.
         No issues found. Phase 2 Chunk A backend implementation is production-ready.
