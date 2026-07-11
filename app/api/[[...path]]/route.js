@@ -483,15 +483,62 @@ async function route(request, ctx, method) {
       return j({ ok: true, slug, deleted_at: result.deleted_at })
     }
 
+    // ---------- Contacts (admin only) ----------
+    if (p === '/contacts' && method === 'GET') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const url = new URL(request.url)
+      const archived = url.searchParams.get('archived') === '1'
+      const { listContacts } = await import('@/lib/contacts')
+      return j(await listContacts({ archived }))
+    }
+    if (p === '/contacts/stats' && method === 'GET') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const { countUnread } = await import('@/lib/contacts')
+      const db = await getDb()
+      const [unread, total, archived, starred] = await Promise.all([
+        countUnread(),
+        db.collection('contacts').countDocuments({}),
+        db.collection('contacts').countDocuments({ archived: true }),
+        db.collection('contacts').countDocuments({ starred: true, archived: { $ne: true } }),
+      ])
+      return j({ unread, total, archived, starred })
+    }
+    if (parts[0] === 'contacts' && parts.length === 2 && method === 'GET') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const { getContact } = await import('@/lib/contacts')
+      const doc = await getContact(parts[1])
+      if (!doc) return j({ detail: 'Contact not found' }, { status: 404 })
+      return j(doc)
+    }
+    if (parts[0] === 'contacts' && parts.length === 2 && (method === 'PATCH' || method === 'PUT')) {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const id = parts[1]
+      const body = await readJson(request)
+      const ALLOW = ['read', 'starred', 'archived', 'notes']
+      const update = {}
+      for (const k of ALLOW) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      const result = await db.collection('contacts').findOneAndUpdate(
+        { id }, { $set: update }, { returnDocument: 'after' }
+      )
+      if (!result) return j({ detail: 'Contact not found' }, { status: 404 })
+      return j(cleanDoc(result))
+    }
+
     // ---------- Sitemap status ----------
     if (p === '/sitemap/status' && method === 'GET') {
       const svc = await listServiceContent()
       const areas = await listAreaContent()
       const db = await getDb()
       const [models, blog, pages] = await Promise.all([
-        db.collection('models').countDocuments({ published: { $ne: false } }),
-        db.collection('blog').countDocuments({ published: { $ne: false } }),
-        db.collection('pages').countDocuments({ published: { $ne: false } }),
+        db.collection('models').countDocuments({ published: { $ne: false }, deleted_at: { $in: [null, undefined] } }),
+        db.collection('blog').countDocuments({ published: { $ne: false }, deleted_at: { $in: [null, undefined] } }),
+        db.collection('pages').countDocuments({ published: { $ne: false }, deleted_at: { $in: [null, undefined] } }),
       ])
       return j({ services: svc.length, areas: areas.length, models, blog, pages })
     }
@@ -506,4 +553,5 @@ async function route(request, ctx, method) {
 export const GET = (req, ctx) => route(req, ctx, 'GET')
 export const POST = (req, ctx) => route(req, ctx, 'POST')
 export const PUT = (req, ctx) => route(req, ctx, 'PUT')
+export const PATCH = (req, ctx) => route(req, ctx, 'PATCH')
 export const DELETE = (req, ctx) => route(req, ctx, 'DELETE')

@@ -1,624 +1,644 @@
 #!/usr/bin/env python3
 """
-Phase 2 Resource #6 — Pages CMS CRUD + draft/publish + soft-delete
-Comprehensive 30-step test plan
+Phase 2 Resource #7 — Contacts Inbox Backend Testing
+Comprehensive 25-step test plan for contacts CRUD + flags/notes management.
 """
-import os
-import sys
 import requests
-from datetime import datetime
+import json
+import sys
+from typing import Dict, Any, Optional
 
-BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://noir-migration.preview.emergentagent.com')
-API_BASE = f"{BASE_URL}/api"
-
+BASE_URL = "https://noir-migration.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@noir-hamburg.de"
 ADMIN_PASSWORD = "NoirAdmin2026!"
 
-# Production baseline: 3 pages, all published=true, none soft-deleted
-PRODUCTION_SLUGS = [
-    "diskretion-und-datenschutz-noir-hamburg",
-    "professionelle-standards-noir-hamburg",
-    "so-funktioniert-eine-buchung-noir-hamburg"
-]
-
-# Test slugs (destructive, will be hard-deleted at end)
-TEST_SLUGS = ["qa-page-draft", "qa-page-live"]
-
-session = requests.Session()
-cookie_jar = {}
-
-def log(msg):
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
-
-def test_get(path, expected_status=200, description=""):
-    url = f"{API_BASE}{path}"
-    log(f"GET {path} — {description}")
-    try:
-        r = session.get(url, cookies=cookie_jar, timeout=10)
-        log(f"  → {r.status_code}")
-        if r.status_code != expected_status:
-            log(f"  ❌ Expected {expected_status}, got {r.status_code}")
-            log(f"  Response: {r.text[:500]}")
-            return None
-        return r.json() if r.status_code != 204 else {}
-    except Exception as e:
-        log(f"  ❌ Exception: {e}")
-        return None
-
-def test_post(path, payload, expected_status=200, description=""):
-    url = f"{API_BASE}{path}"
-    log(f"POST {path} — {description}")
-    try:
-        r = session.post(url, json=payload, cookies=cookie_jar, timeout=10)
-        log(f"  → {r.status_code}")
-        if r.status_code != expected_status:
-            log(f"  ❌ Expected {expected_status}, got {r.status_code}")
-            log(f"  Response: {r.text[:500]}")
-            return None
-        return r.json() if r.status_code != 204 else {}
-    except Exception as e:
-        log(f"  ❌ Exception: {e}")
-        return None
-
-def test_put(path, payload, expected_status=200, description=""):
-    url = f"{API_BASE}{path}"
-    log(f"PUT {path} — {description}")
-    try:
-        r = session.put(url, json=payload, cookies=cookie_jar, timeout=10)
-        log(f"  → {r.status_code}")
-        if r.status_code != expected_status:
-            log(f"  ❌ Expected {expected_status}, got {r.status_code}")
-            log(f"  Response: {r.text[:500]}")
-            return None
-        return r.json() if r.status_code != 204 else {}
-    except Exception as e:
-        log(f"  ❌ Exception: {e}")
-        return None
-
-def test_delete(path, expected_status=200, description=""):
-    url = f"{API_BASE}{path}"
-    log(f"DELETE {path} — {description}")
-    try:
-        r = session.delete(url, cookies=cookie_jar, timeout=10)
-        log(f"  → {r.status_code}")
-        if r.status_code != expected_status:
-            log(f"  ❌ Expected {expected_status}, got {r.status_code}")
-            log(f"  Response: {r.text[:500]}")
-            return None
-        return r.json() if r.status_code != 204 else {}
-    except Exception as e:
-        log(f"  ❌ Exception: {e}")
-        return None
-
-def login_admin():
-    log("=== LOGIN AS ADMIN ===")
-    r = session.post(f"{API_BASE}/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}, timeout=10)
-    if r.status_code != 200:
-        log(f"❌ Login failed: {r.status_code} {r.text}")
-        sys.exit(1)
-    # Extract access_token cookie
-    if 'access_token' in r.cookies:
-        cookie_jar['access_token'] = r.cookies['access_token']
-        log(f"✅ Logged in, access_token cookie set")
-    else:
-        log(f"❌ No access_token cookie in response")
-        sys.exit(1)
-
-def hard_delete_test_pages():
-    """Hard-delete test pages from MongoDB"""
-    log("=== CLEANUP: HARD-DELETE TEST PAGES ===")
-    try:
-        from pymongo import MongoClient
-        mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-        db_name = os.environ.get('DB_NAME', 'noir_hamburg')
-        client = MongoClient(mongo_url)
-        db = client[db_name]
-        result = db.pages.delete_many({'slug': {'$in': TEST_SLUGS}})
-        log(f"✅ Hard-deleted {result.deleted_count} test pages from MongoDB")
-        # Verify count
-        count = db.pages.count_documents({})
-        log(f"✅ MongoDB pages collection count: {count}")
-        if count != 3:
-            log(f"⚠️  Expected 3 pages, got {count}")
-        client.close()
-    except Exception as e:
-        log(f"❌ Hard-delete failed: {e}")
-
-def main():
-    log("=" * 80)
-    log("PHASE 2 RESOURCE #6 — PAGES CMS CRUD + DRAFT/PUBLISH + SOFT-DELETE")
-    log("=" * 80)
+class TestRunner:
+    def __init__(self):
+        self.session = requests.Session()
+        self.test_id = None
+        self.baseline_stats = None
+        self.passed = 0
+        self.failed = 0
+        
+    def log(self, msg: str):
+        print(f"  {msg}")
     
-    passed = 0
-    failed = 0
+    def assert_eq(self, actual, expected, msg: str):
+        if actual == expected:
+            self.passed += 1
+            self.log(f"✅ {msg}")
+            return True
+        else:
+            self.failed += 1
+            self.log(f"❌ {msg}")
+            self.log(f"   Expected: {expected}")
+            self.log(f"   Actual: {actual}")
+            return False
     
-    # ===== READ =====
-    log("\n=== SECTION 1: READ PATH (3 tests) ===")
+    def assert_true(self, condition: bool, msg: str):
+        if condition:
+            self.passed += 1
+            self.log(f"✅ {msg}")
+            return True
+        else:
+            self.failed += 1
+            self.log(f"❌ {msg}")
+            return False
     
-    # 1. GET /api/pages → 200, exactly 3 items
-    data = test_get("/pages", 200, "Public list, hide drafts AND soft-deleted")
-    if data is not None:
-        if len(data) == 3:
-            log(f"  ✅ Exactly 3 items")
-            # Check each has required fields
-            for item in data:
-                if not all(k in item for k in ['slug', 'title', 'h1', 'intro', 'content', 'published']):
-                    log(f"  ❌ Missing required fields in item: {item.get('slug', 'unknown')}")
-                    failed += 1
-                    break
-                if item.get('published') != True:
-                    log(f"  ❌ Item {item['slug']} has published={item.get('published')}, expected True")
-                    failed += 1
-                    break
-                if '_id' in item:
-                    log(f"  ❌ Item {item['slug']} has _id field (should be stripped)")
-                    failed += 1
-                    break
+    def assert_in(self, item, container, msg: str):
+        if item in container:
+            self.passed += 1
+            self.log(f"✅ {msg}")
+            return True
+        else:
+            self.failed += 1
+            self.log(f"❌ {msg}")
+            self.log(f"   Item: {item}")
+            self.log(f"   Container: {container}")
+            return False
+    
+    def assert_not_in(self, item, container, msg: str):
+        if item not in container:
+            self.passed += 1
+            self.log(f"✅ {msg}")
+            return True
+        else:
+            self.failed += 1
+            self.log(f"❌ {msg}")
+            return False
+
+    def run_all_tests(self):
+        print("\n" + "="*80)
+        print("PHASE 2 CONTACTS INBOX — COMPREHENSIVE BACKEND TESTING")
+        print("="*80 + "\n")
+        
+        try:
+            # ===== Auth =====
+            print("SECTION 1: AUTH GUARDS (5 tests)")
+            print("-" * 80)
+            self.test_01_get_contacts_no_auth()
+            self.test_02_get_stats_no_auth()
+            self.test_03_get_contact_detail_no_auth()
+            self.test_04_patch_contact_no_auth()
+            self.test_05_login_admin()
+            
+            # ===== Read =====
+            print("\nSECTION 2: READ PATH (4 tests)")
+            print("-" * 80)
+            self.test_06_get_contacts_list()
+            self.test_07_get_contacts_stats()
+            self.test_08_get_contact_detail()
+            self.test_09_get_contact_404()
+            
+            # ===== PATCH — mark as read =====
+            print("\nSECTION 3: PATCH — MARK AS READ (3 tests)")
+            print("-" * 80)
+            self.test_10_patch_mark_read()
+            self.test_11_verify_unread_decreased()
+            self.test_12_patch_mark_unread()
+            
+            # ===== PATCH — starred / archived / notes =====
+            print("\nSECTION 4: PATCH — STARRED / ARCHIVED / NOTES (5 tests)")
+            print("-" * 80)
+            self.test_13_patch_starred()
+            self.test_14_patch_archived()
+            self.test_15_verify_archived_filter()
+            self.test_16_verify_starred_count()
+            self.test_17_patch_notes_and_unarchive()
+            
+            # ===== Whitelist enforcement =====
+            print("\nSECTION 5: WHITELIST ENFORCEMENT (2 tests)")
+            print("-" * 80)
+            self.test_18_whitelist_enforcement()
+            self.test_19_no_password_hash()
+            
+            # ===== PUT alias =====
+            print("\nSECTION 6: PUT ALIAS (1 test)")
+            print("-" * 80)
+            self.test_20_put_alias()
+            
+            # ===== 404 on PATCH =====
+            print("\nSECTION 7: 404 HANDLING (1 test)")
+            print("-" * 80)
+            self.test_21_patch_404()
+            
+            # ===== CRITICAL — restore baseline =====
+            print("\nSECTION 8: CRITICAL — RESTORE BASELINE (2 tests)")
+            print("-" * 80)
+            self.test_22_restore_baseline()
+            self.test_23_verify_baseline_stats()
+            
+            # ===== Regression =====
+            print("\nSECTION 9: REGRESSION CHECKS (2 tests)")
+            print("-" * 80)
+            self.test_24_regression_endpoints()
+            self.test_25_verify_other_contacts_untouched()
+            
+        except Exception as e:
+            print(f"\n❌ FATAL ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+            self.failed += 1
+        
+        # Summary
+        print("\n" + "="*80)
+        print("TEST SUMMARY")
+        print("="*80)
+        print(f"✅ Passed: {self.passed}")
+        print(f"❌ Failed: {self.failed}")
+        print(f"Total: {self.passed + self.failed}")
+        
+        if self.failed == 0:
+            print("\n🎉 ALL TESTS PASSED!")
+            return 0
+        else:
+            print(f"\n⚠️  {self.failed} TEST(S) FAILED")
+            return 1
+    
+    # ===== SECTION 1: AUTH GUARDS =====
+    
+    def test_01_get_contacts_no_auth(self):
+        """Step 1: GET /api/contacts without cookie → 401"""
+        print("\n[Step 1] GET /api/contacts without cookie")
+        r = requests.get(f"{BASE_URL}/contacts")
+        self.assert_eq(r.status_code, 401, "Status 401 without auth")
+        if r.status_code == 401:
+            data = r.json()
+            self.assert_in("detail", data, "Response has 'detail' field")
+    
+    def test_02_get_stats_no_auth(self):
+        """Step 2: GET /api/contacts/stats without cookie → 401"""
+        print("\n[Step 2] GET /api/contacts/stats without cookie")
+        r = requests.get(f"{BASE_URL}/contacts/stats")
+        self.assert_eq(r.status_code, 401, "Status 401 without auth")
+    
+    def test_03_get_contact_detail_no_auth(self):
+        """Step 3: GET /api/contacts/{any-id} without cookie → 401"""
+        print("\n[Step 3] GET /api/contacts/fake-id without cookie")
+        r = requests.get(f"{BASE_URL}/contacts/fake-id")
+        self.assert_eq(r.status_code, 401, "Status 401 without auth")
+    
+    def test_04_patch_contact_no_auth(self):
+        """Step 4: PATCH /api/contacts/{any-id} without cookie → 401"""
+        print("\n[Step 4] PATCH /api/contacts/fake-id without cookie")
+        r = requests.patch(f"{BASE_URL}/contacts/fake-id", json={"read": True})
+        self.assert_eq(r.status_code, 401, "Status 401 without auth")
+    
+    def test_05_login_admin(self):
+        """Step 5: Login admin → cookie"""
+        print("\n[Step 5] POST /api/auth/login with admin credentials")
+        r = self.session.post(f"{BASE_URL}/auth/login", json={
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD
+        })
+        self.assert_eq(r.status_code, 200, "Login successful (200)")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_in("user", data, "Response has 'user' field")
+            self.assert_true("access_token" in r.cookies or "Set-Cookie" in r.headers, 
+                           "access_token cookie set")
+    
+    # ===== SECTION 2: READ PATH =====
+    
+    def test_06_get_contacts_list(self):
+        """Step 6: GET /api/contacts → 200 with array of exactly 80 items"""
+        print("\n[Step 6] GET /api/contacts (authenticated)")
+        r = self.session.get(f"{BASE_URL}/contacts")
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_true(isinstance(data, list), "Response is array")
+            self.assert_eq(len(data), 80, "Exactly 80 contacts returned")
+            if len(data) > 0:
+                first = data[0]
+                self.assert_in("id", first, "Contact has 'id' field")
+                self.assert_in("name", first, "Contact has 'name' field")
+                self.assert_in("email", first, "Contact has 'email' field")
+                self.assert_in("message", first, "Contact has 'message' field")
+                self.assert_in("created_at", first, "Contact has 'created_at' field")
+                self.assert_not_in("_id", first, "No '_id' field in response")
+                # Save first contact ID for later tests
+                self.test_id = first["id"]
+                self.log(f"   TEST_ID saved: {self.test_id}")
+                # Verify sorted by created_at desc (newest first)
+                if len(data) > 1:
+                    first_date = first.get("created_at", "")
+                    second_date = data[1].get("created_at", "")
+                    self.assert_true(first_date >= second_date, 
+                                   "Sorted by created_at desc (newest first)")
+    
+    def test_07_get_contacts_stats(self):
+        """Step 7: GET /api/contacts/stats → 200 with {unread, total, archived, starred}"""
+        print("\n[Step 7] GET /api/contacts/stats")
+        r = self.session.get(f"{BASE_URL}/contacts/stats")
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_in("unread", data, "Has 'unread' field")
+            self.assert_in("total", data, "Has 'total' field")
+            self.assert_in("archived", data, "Has 'archived' field")
+            self.assert_in("starred", data, "Has 'starred' field")
+            # At the start: unread=80, total=80, archived=0, starred=0
+            self.assert_eq(data["unread"], 80, "unread=80 (baseline)")
+            self.assert_eq(data["total"], 80, "total=80 (baseline)")
+            self.assert_eq(data["archived"], 0, "archived=0 (baseline)")
+            self.assert_eq(data["starred"], 0, "starred=0 (baseline)")
+            # Save baseline for later comparison
+            self.baseline_stats = data
+            self.log(f"   Baseline stats saved: {data}")
+    
+    def test_08_get_contact_detail(self):
+        """Step 8: GET /api/contacts/{TEST_ID} → 200 with full doc"""
+        print(f"\n[Step 8] GET /api/contacts/{self.test_id}")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("id"), self.test_id, f"id matches {self.test_id}")
+            self.assert_not_in("_id", data, "No '_id' field in response")
+    
+    def test_09_get_contact_404(self):
+        """Step 9: GET /api/contacts/not-a-real-uuid → 404"""
+        print("\n[Step 9] GET /api/contacts/not-a-real-uuid")
+        r = self.session.get(f"{BASE_URL}/contacts/not-a-real-uuid")
+        self.assert_eq(r.status_code, 404, "Status 404")
+        if r.status_code == 404:
+            data = r.json()
+            self.assert_eq(data.get("detail"), "Contact not found", 
+                         "Error message: 'Contact not found'")
+    
+    # ===== SECTION 3: PATCH — MARK AS READ =====
+    
+    def test_10_patch_mark_read(self):
+        """Step 10: PATCH /api/contacts/{TEST_ID} body {"read":true} → 200"""
+        print(f"\n[Step 10] PATCH /api/contacts/{self.test_id} mark as read")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"read": True})
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("read"), True, "read=true in response")
+            self.assert_in("updated_at", data, "Has 'updated_at' field")
+            self.assert_not_in("_id", data, "No '_id' field in response")
+    
+    def test_11_verify_unread_decreased(self):
+        """Step 11: GET /api/contacts/stats → unread is now 79"""
+        print("\n[Step 11] GET /api/contacts/stats (verify unread decreased)")
+        r = self.session.get(f"{BASE_URL}/contacts/stats")
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data["unread"], 79, "unread=79 (one dropped)")
+            self.assert_eq(data["total"], 80, "total still 80")
+    
+    def test_12_patch_mark_unread(self):
+        """Step 12: PATCH again with {"read":false} → 200, stats back to 80 unread"""
+        print(f"\n[Step 12] PATCH /api/contacts/{self.test_id} mark as unread")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"read": False})
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("read"), False, "read=false in response")
+        # Verify stats
+        r2 = self.session.get(f"{BASE_URL}/contacts/stats")
+        if r2.status_code == 200:
+            stats = r2.json()
+            self.assert_eq(stats["unread"], 80, "unread back to 80")
+    
+    # ===== SECTION 4: PATCH — STARRED / ARCHIVED / NOTES =====
+    
+    def test_13_patch_starred(self):
+        """Step 13: PATCH {"starred":true} → 200, stats starred:1"""
+        print(f"\n[Step 13] PATCH /api/contacts/{self.test_id} starred=true")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"starred": True})
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("starred"), True, "starred=true in response")
+        # Verify stats
+        r2 = self.session.get(f"{BASE_URL}/contacts/stats")
+        if r2.status_code == 200:
+            stats = r2.json()
+            self.assert_eq(stats["starred"], 1, "starred=1 in stats")
+    
+    def test_14_patch_archived(self):
+        """Step 14: PATCH {"archived":true} → 200"""
+        print(f"\n[Step 14] PATCH /api/contacts/{self.test_id} archived=true")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={"archived": True})
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("archived"), True, "archived=true in response")
+    
+    def test_15_verify_archived_filter(self):
+        """Step 15: GET /api/contacts → 79 items, GET /api/contacts?archived=1 → 1 item"""
+        print("\n[Step 15] Verify archived filter")
+        # Default list (archived hidden)
+        r1 = self.session.get(f"{BASE_URL}/contacts")
+        self.assert_eq(r1.status_code, 200, "Status 200 for default list")
+        if r1.status_code == 200:
+            data1 = r1.json()
+            self.assert_eq(len(data1), 79, "79 items (archived hidden from default view)")
+        # Archived list
+        r2 = self.session.get(f"{BASE_URL}/contacts?archived=1")
+        self.assert_eq(r2.status_code, 200, "Status 200 for archived list")
+        if r2.status_code == 200:
+            data2 = r2.json()
+            self.assert_eq(len(data2), 1, "1 item (the archived one)")
+            if len(data2) > 0:
+                self.assert_eq(data2[0].get("id"), self.test_id, 
+                             "Archived item is TEST_ID")
+    
+    def test_16_verify_starred_count(self):
+        """Step 16: GET /api/contacts/stats → archived:1, starred:0 or 1"""
+        print("\n[Step 16] GET /api/contacts/stats (verify archived and starred)")
+        r = self.session.get(f"{BASE_URL}/contacts/stats")
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            stats = r.json()
+            self.assert_eq(stats["archived"], 1, "archived=1")
+            # starred count filters archived != true, so should be 0
+            # (starred=true AND archived=true is excluded from starred count)
+            self.assert_eq(stats["starred"], 0, 
+                         "starred=0 (starred+archived excluded from starred count)")
+    
+    def test_17_patch_notes_and_unarchive(self):
+        """Step 17: PATCH notes + archived=false + starred=false → 200"""
+        print(f"\n[Step 17] PATCH /api/contacts/{self.test_id} notes + unarchive + unstar")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        notes_text = "Called 12.02 — booking Fri dinner"
+        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={
+            "notes": notes_text,
+            "archived": False,
+            "starred": False
+        })
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("notes"), notes_text, f"notes='{notes_text}'")
+            self.assert_eq(data.get("archived"), False, "archived=false")
+            self.assert_eq(data.get("starred"), False, "starred=false")
+        # Verify via GET
+        r2 = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
+        if r2.status_code == 200:
+            data2 = r2.json()
+            self.assert_eq(data2.get("notes"), notes_text, 
+                         f"GET confirms notes='{notes_text}'")
+            self.assert_eq(data2.get("archived"), False, "GET confirms archived=false")
+            self.assert_eq(data2.get("starred"), False, "GET confirms starred=false")
+    
+    # ===== SECTION 5: WHITELIST ENFORCEMENT =====
+    
+    def test_18_whitelist_enforcement(self):
+        """Step 18: PATCH with non-whitelisted fields → 200, fields ignored"""
+        print(f"\n[Step 18] PATCH /api/contacts/{self.test_id} with forbidden fields")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        # Get current state
+        r_before = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
+        if r_before.status_code != 200:
+            self.log("❌ Failed to get contact before PATCH")
+            self.failed += 1
+            return
+        before = r_before.json()
+        original_email = before.get("email")
+        original_message = before.get("message")
+        original_name = before.get("name")
+        original_id = before.get("id")
+        original_phone = before.get("phone")
+        original_status = before.get("status")
+        original_created_at = before.get("created_at")
+        
+        # Try to PATCH forbidden fields
+        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={
+            "email": "HACK@example.com",
+            "message": "HACK content",
+            "name": "HACK NAME",
+            "_id": "HACK",
+            "id": "HACK",
+            "phone": "HACK",
+            "status": "HACK",
+            "created_at": "1970-01-01"
+        })
+        self.assert_eq(r.status_code, 200, "Status 200 (ignored forbidden fields)")
+        
+        # Verify nothing changed
+        r_after = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
+        if r_after.status_code == 200:
+            after = r_after.json()
+            self.assert_eq(after.get("email"), original_email, 
+                         "email UNCHANGED (not in whitelist)")
+            self.assert_eq(after.get("message"), original_message, 
+                         "message UNCHANGED (not in whitelist)")
+            self.assert_eq(after.get("name"), original_name, 
+                         "name UNCHANGED (not in whitelist)")
+            self.assert_eq(after.get("id"), original_id, 
+                         "id UNCHANGED (not in whitelist)")
+            self.assert_eq(after.get("phone"), original_phone, 
+                         "phone UNCHANGED (not in whitelist)")
+            self.assert_eq(after.get("status"), original_status, 
+                         "status UNCHANGED (not in whitelist)")
+            self.assert_eq(after.get("created_at"), original_created_at, 
+                         "created_at UNCHANGED (not in whitelist)")
+    
+    def test_19_no_password_hash(self):
+        """Step 19: Verify no password_hash field appears in response"""
+        print(f"\n[Step 19] Verify no password_hash in response")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_not_in("password_hash", data, "No 'password_hash' field")
+    
+    # ===== SECTION 6: PUT ALIAS =====
+    
+    def test_20_put_alias(self):
+        """Step 20: PUT /api/contacts/{TEST_ID} {"read":true} → 200"""
+        print(f"\n[Step 20] PUT /api/contacts/{self.test_id} (PUT also works)")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.put(f"{BASE_URL}/contacts/{self.test_id}", json={"read": True})
+        self.assert_eq(r.status_code, 200, "Status 200 (PUT works)")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("read"), True, "read=true")
+        # Verify via GET
+        r2 = self.session.get(f"{BASE_URL}/contacts/{self.test_id}")
+        if r2.status_code == 200:
+            data2 = r2.json()
+            self.assert_eq(data2.get("read"), True, "GET confirms read=true")
+    
+    # ===== SECTION 7: 404 HANDLING =====
+    
+    def test_21_patch_404(self):
+        """Step 21: PATCH /api/contacts/does-not-exist → 404"""
+        print("\n[Step 21] PATCH /api/contacts/does-not-exist")
+        r = self.session.patch(f"{BASE_URL}/contacts/does-not-exist", json={"read": True})
+        self.assert_eq(r.status_code, 404, "Status 404")
+        if r.status_code == 404:
+            data = r.json()
+            self.assert_eq(data.get("detail"), "Contact not found", 
+                         "Error message: 'Contact not found'")
+    
+    # ===== SECTION 8: CRITICAL — RESTORE BASELINE =====
+    
+    def test_22_restore_baseline(self):
+        """Step 22: PATCH restore all flags to baseline → 200"""
+        print(f"\n[Step 22] PATCH /api/contacts/{self.test_id} restore baseline")
+        if not self.test_id:
+            self.log("❌ TEST_ID not set, skipping")
+            self.failed += 1
+            return
+        r = self.session.patch(f"{BASE_URL}/contacts/{self.test_id}", json={
+            "read": False,
+            "starred": False,
+            "archived": False,
+            "notes": ""
+        })
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            data = r.json()
+            self.assert_eq(data.get("read"), False, "read=false")
+            self.assert_eq(data.get("starred"), False, "starred=false")
+            self.assert_eq(data.get("archived"), False, "archived=false")
+            self.assert_eq(data.get("notes"), "", "notes='' (empty)")
+    
+    def test_23_verify_baseline_stats(self):
+        """Step 23: GET /api/contacts/stats → all back to baseline"""
+        print("\n[Step 23] GET /api/contacts/stats (verify baseline restored)")
+        r = self.session.get(f"{BASE_URL}/contacts/stats")
+        self.assert_eq(r.status_code, 200, "Status 200")
+        if r.status_code == 200:
+            stats = r.json()
+            self.assert_eq(stats["unread"], 80, "CRITICAL: unread=80 (baseline)")
+            self.assert_eq(stats["total"], 80, "CRITICAL: total=80 (baseline)")
+            self.assert_eq(stats["archived"], 0, "CRITICAL: archived=0 (baseline)")
+            self.assert_eq(stats["starred"], 0, "CRITICAL: starred=0 (baseline)")
+            if stats != self.baseline_stats:
+                self.log("⚠️  CRITICAL: Stats differ from baseline!")
+                self.log(f"   Baseline: {self.baseline_stats}")
+                self.log(f"   Current:  {stats}")
+    
+    # ===== SECTION 9: REGRESSION =====
+    
+    def test_24_regression_endpoints(self):
+        """Step 24: Verify other endpoints still work"""
+        print("\n[Step 24] Regression checks on other endpoints")
+        
+        # GET /api/health
+        r1 = self.session.get(f"{BASE_URL}/health")
+        self.assert_eq(r1.status_code, 200, "GET /api/health → 200")
+        
+        # GET /api/auth/me
+        r2 = self.session.get(f"{BASE_URL}/auth/me")
+        self.assert_eq(r2.status_code, 200, "GET /api/auth/me → 200")
+        
+        # GET /api/service-content
+        r3 = self.session.get(f"{BASE_URL}/service-content")
+        self.assert_eq(r3.status_code, 200, "GET /api/service-content → 200")
+        if r3.status_code == 200:
+            data3 = r3.json()
+            self.assert_eq(len(data3), 8, "8 service items")
+        
+        # GET /api/area-content
+        r4 = self.session.get(f"{BASE_URL}/area-content")
+        self.assert_eq(r4.status_code, 200, "GET /api/area-content → 200")
+        if r4.status_code == 200:
+            data4 = r4.json()
+            self.assert_eq(len(data4), 18, "18 area items")
+        
+        # GET /api/models
+        r5 = self.session.get(f"{BASE_URL}/models")
+        self.assert_eq(r5.status_code, 200, "GET /api/models → 200")
+        if r5.status_code == 200:
+            data5 = r5.json()
+            self.assert_eq(len(data5), 14, "14 models")
+        
+        # GET /api/blog
+        r6 = self.session.get(f"{BASE_URL}/blog")
+        self.assert_eq(r6.status_code, 200, "GET /api/blog → 200")
+        if r6.status_code == 200:
+            data6 = r6.json()
+            self.assert_eq(len(data6), 13, "13 blog posts")
+        
+        # GET /api/pages
+        r7 = self.session.get(f"{BASE_URL}/pages")
+        self.assert_eq(r7.status_code, 200, "GET /api/pages → 200")
+        if r7.status_code == 200:
+            data7 = r7.json()
+            self.assert_eq(len(data7), 3, "3 pages")
+        
+        # GET /api/settings
+        r8 = self.session.get(f"{BASE_URL}/settings")
+        self.assert_eq(r8.status_code, 200, "GET /api/settings → 200")
+    
+    def test_25_verify_other_contacts_untouched(self):
+        """Step 25: Random-sample 5 other contacts, verify no flags set"""
+        print("\n[Step 25] Verify other contacts untouched")
+        # Get all contacts
+        r = self.session.get(f"{BASE_URL}/contacts")
+        if r.status_code != 200:
+            self.log("❌ Failed to get contacts list")
+            self.failed += 1
+            return
+        contacts = r.json()
+        # Filter out TEST_ID
+        other_contacts = [c for c in contacts if c.get("id") != self.test_id]
+        # Sample 5 (or fewer if less than 5)
+        import random
+        sample_size = min(5, len(other_contacts))
+        sample = random.sample(other_contacts, sample_size)
+        
+        self.log(f"   Sampling {sample_size} other contacts...")
+        for contact in sample:
+            contact_id = contact.get("id")
+            r2 = self.session.get(f"{BASE_URL}/contacts/{contact_id}")
+            if r2.status_code == 200:
+                data = r2.json()
+                # These fields should be absent or falsy (production hasn't touched them)
+                read_val = data.get("read")
+                starred_val = data.get("starred")
+                archived_val = data.get("archived")
+                notes_val = data.get("notes")
+                
+                # All should be falsy or absent
+                is_clean = (not read_val) and (not starred_val) and (not archived_val) and (not notes_val)
+                self.assert_true(is_clean, 
+                               f"Contact {contact_id[:8]}... has no flags set")
             else:
-                log(f"  ✅ All items have required fields, published=true, no _id")
-                passed += 1
-        else:
-            log(f"  ❌ Expected 3 items, got {len(data)}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 2. GET /api/pages/diskretion-und-datenschutz-noir-hamburg → 200
-    data = test_get("/pages/diskretion-und-datenschutz-noir-hamburg", 200, "Public detail for production page")
-    if data is not None:
-        if data.get('slug') == 'diskretion-und-datenschutz-noir-hamburg':
-            if data.get('meta_title') == 'Diskretion & Datenschutz — Noir Hamburg Premium Escort':
-                if 'content' in data and len(data['content']) > 100:
-                    log(f"  ✅ Has content (long HTML), meta_title correct")
-                    passed += 1
-                else:
-                    log(f"  ❌ Content too short or missing")
-                    failed += 1
-            else:
-                log(f"  ❌ meta_title mismatch: {data.get('meta_title')}")
-                failed += 1
-        else:
-            log(f"  ❌ Slug mismatch")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 3. GET /api/pages/does-not-exist → 404
-    data = test_get("/pages/does-not-exist", 404, "404 on non-existent slug")
-    if data is not None:
-        if data.get('detail') == 'Page not found':
-            log(f"  ✅ 404 with correct detail message")
-            passed += 1
-        else:
-            log(f"  ❌ Wrong detail message: {data.get('detail')}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # ===== AUTH =====
-    log("\n=== SECTION 2: AUTH GUARDS (4 tests) ===")
-    
-    # 4. POST /api/pages no cookie → 401
-    data = test_post("/pages", {"slug": "test", "title": "test"}, 401, "POST without cookie")
-    if data is not None:
-        log(f"  ✅ 401 without cookie")
-        passed += 1
-    else:
-        failed += 1
-    
-    # 5. PUT no cookie → 401
-    data = test_put("/pages/test", {"title": "test"}, 401, "PUT without cookie")
-    if data is not None:
-        log(f"  ✅ 401 without cookie")
-        passed += 1
-    else:
-        failed += 1
-    
-    # 6. DELETE no cookie → 401
-    data = test_delete("/pages/test", 401, "DELETE without cookie")
-    if data is not None:
-        log(f"  ✅ 401 without cookie")
-        passed += 1
-    else:
-        failed += 1
-    
-    # 7. Login admin
-    login_admin()
-    passed += 1
-    
-    # ===== POST VALIDATION =====
-    log("\n=== SECTION 3: POST VALIDATION (4 tests) ===")
-    
-    # 8. POST missing slug → 400
-    data = test_post("/pages", {"title": "missing slug"}, 400, "POST missing slug")
-    if data is not None:
-        if 'slug and title are required' in data.get('detail', ''):
-            log(f"  ✅ 400 with correct detail")
-            passed += 1
-        else:
-            log(f"  ❌ Wrong detail: {data.get('detail')}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 9. POST missing title → 400
-    data = test_post("/pages", {"slug": "missing-title"}, 400, "POST missing title")
-    if data is not None:
-        if 'slug and title are required' in data.get('detail', ''):
-            log(f"  ✅ 400 with correct detail")
-            passed += 1
-        else:
-            log(f"  ❌ Wrong detail: {data.get('detail')}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 10. POST invalid slug pattern → 400
-    data = test_post("/pages", {"slug": "Has Spaces", "title": "x"}, 400, "POST invalid slug pattern")
-    if data is not None:
-        if 'may only contain a-z, 0-9 and hyphens' in data.get('detail', ''):
-            log(f"  ✅ 400 with slug-regex detail")
-            passed += 1
-        else:
-            log(f"  ❌ Wrong detail: {data.get('detail')}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 11. POST existing slug → 409
-    data = test_post("/pages", {"slug": "diskretion-und-datenschutz-noir-hamburg", "title": "clash"}, 409, "POST existing slug")
-    if data is not None:
-        log(f"  ✅ 409 conflict")
-        passed += 1
-    else:
-        failed += 1
-    
-    # ===== POST + PUT + DELETE FLOW =====
-    log("\n=== SECTION 4: POST + PUT + DELETE FLOW (16 tests) ===")
-    
-    # 12. POST qa-page-draft (published=false) → 201
-    payload = {
-        "slug": "qa-page-draft",
-        "title": "QA Draft",
-        "h1": "QA",
-        "intro": "i",
-        "content": "# hi",
-        "published": False
-    }
-    data = test_post("/pages", payload, 201, "Create draft page")
-    if data is not None:
-        if data.get('slug') == 'qa-page-draft' and data.get('published') == False:
-            if 'id' in data and len(data['id']) == 36:  # UUID
-                if '_id' not in data:
-                    log(f"  ✅ Created draft with UUID id, published=false, no _id")
-                    passed += 1
-                else:
-                    log(f"  ❌ Response has _id field")
-                    failed += 1
-            else:
-                log(f"  ❌ No UUID id in response")
-                failed += 1
-        else:
-            log(f"  ❌ Slug or published mismatch")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 13. GET /api/pages → still 3 items (draft hidden)
-    data = test_get("/pages", 200, "Public list should still be 3 (draft hidden)")
-    if data is not None:
-        if len(data) == 3:
-            log(f"  ✅ Still 3 items (draft hidden)")
-            passed += 1
-        else:
-            log(f"  ❌ Expected 3 items, got {len(data)}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 14. GET /api/pages/qa-page-draft → 404 (draft hidden)
-    data = test_get("/pages/qa-page-draft", 404, "Draft hidden from public detail")
-    if data is not None:
-        log(f"  ✅ 404 on draft")
-        passed += 1
-    else:
-        failed += 1
-    
-    # 15. POST qa-page-live (published=true) → 201
-    payload = {
-        "slug": "qa-page-live",
-        "title": "QA Live",
-        "h1": "QA",
-        "content": "live",
-        "published": True
-    }
-    data = test_post("/pages", payload, 201, "Create published page")
-    if data is not None:
-        if data.get('slug') == 'qa-page-live' and data.get('published') == True:
-            log(f"  ✅ Created published page")
-            passed += 1
-        else:
-            log(f"  ❌ Slug or published mismatch")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 16. GET /api/pages → 4 items now
-    data = test_get("/pages", 200, "Public list should be 4 now")
-    if data is not None:
-        if len(data) == 4:
-            if any(p['slug'] == 'qa-page-live' for p in data):
-                log(f"  ✅ 4 items, includes qa-page-live")
-                passed += 1
-            else:
-                log(f"  ❌ qa-page-live not in list")
-                failed += 1
-        else:
-            log(f"  ❌ Expected 4 items, got {len(data)}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 17. GET /api/pages/qa-page-live → 200
-    data = test_get("/pages/qa-page-live", 200, "Published page accessible")
-    if data is not None:
-        if data.get('slug') == 'qa-page-live':
-            log(f"  ✅ Published page accessible")
-            passed += 1
-        else:
-            log(f"  ❌ Slug mismatch")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 18. PUT qa-page-draft published=true → 200, list → 5 items
-    data = test_put("/pages/qa-page-draft", {"published": True}, 200, "Publish draft")
-    if data is not None:
-        if data.get('published') == True:
-            log(f"  ✅ Draft published")
-            # Check list
-            list_data = test_get("/pages", 200, "List should be 5 now")
-            if list_data is not None and len(list_data) == 5:
-                log(f"  ✅ List now has 5 items")
-                passed += 1
-            else:
-                log(f"  ❌ Expected 5 items, got {len(list_data) if list_data else 'None'}")
-                failed += 1
-        else:
-            log(f"  ❌ published not True")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 19. PUT qa-page-live published=false → 200, list → 4 items
-    data = test_put("/pages/qa-page-live", {"published": False}, 200, "Unpublish qa-page-live")
-    if data is not None:
-        if data.get('published') == False:
-            log(f"  ✅ Page unpublished")
-            # Check list
-            list_data = test_get("/pages", 200, "List should be 4 now")
-            if list_data is not None and len(list_data) == 4:
-                # qa-page-live should be gone, qa-page-draft should be there
-                slugs = [p['slug'] for p in list_data]
-                if 'qa-page-draft' in slugs and 'qa-page-live' not in slugs:
-                    log(f"  ✅ List has 4 items, qa-page-live gone, qa-page-draft present")
-                    passed += 1
-                else:
-                    log(f"  ❌ Unexpected slugs in list: {slugs}")
-                    failed += 1
-            else:
-                log(f"  ❌ Expected 4 items, got {len(list_data) if list_data else 'None'}")
-                failed += 1
-        else:
-            log(f"  ❌ published not False")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 20. PUT qa-page-draft (update title, h1, meta_title) → 200
-    payload = {
-        "title": "QA Updated",
-        "h1": "QA H1 Updated",
-        "meta_title": "QA | Noir"
-    }
-    data = test_put("/pages/qa-page-draft", payload, 200, "Partial update")
-    if data is not None:
-        if data.get('title') == 'QA Updated' and data.get('h1') == 'QA H1 Updated' and data.get('meta_title') == 'QA | Noir':
-            log(f"  ✅ All three fields updated")
-            passed += 1
-        else:
-            log(f"  ❌ Fields not updated correctly")
-            failed += 1
-    else:
-        failed += 1
-    
-    # ===== WHITELIST =====
-    log("\n=== SECTION 5: WHITELIST ENFORCEMENT (1 test) ===")
-    
-    # 21. PUT with forbidden fields → 200, fields ignored
-    payload = {
-        "slug": "HACK",
-        "_id": "HACK",
-        "deleted_at": "1970-01-01"
-    }
-    data = test_put("/pages/qa-page-draft", payload, 200, "PUT with forbidden fields")
-    if data is not None:
-        # Verify slug still qa-page-draft
-        detail_data = test_get("/pages/qa-page-draft", 200, "Verify slug unchanged")
-        if detail_data is not None:
-            if detail_data.get('slug') == 'qa-page-draft':
-                log(f"  ✅ Slug still qa-page-draft (forbidden fields ignored)")
-                passed += 1
-            else:
-                log(f"  ❌ Slug changed to {detail_data.get('slug')}")
-                failed += 1
-        else:
-            failed += 1
-    else:
-        failed += 1
-    
-    # ===== 404 =====
-    log("\n=== SECTION 6: 404 HANDLING (1 test) ===")
-    
-    # 22. PUT /api/pages/does-not-exist → 404
-    data = test_put("/pages/does-not-exist", {"title": "test"}, 404, "PUT non-existent slug")
-    if data is not None:
-        if data.get('detail') == 'Page not found':
-            log(f"  ✅ 404 with correct detail")
-            passed += 1
-        else:
-            log(f"  ❌ Wrong detail: {data.get('detail')}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # ===== DELETE =====
-    log("\n=== SECTION 7: DELETE (SOFT-DELETE) (5 tests) ===")
-    
-    # 23. DELETE qa-page-draft → 200
-    data = test_delete("/pages/qa-page-draft", 200, "Soft-delete qa-page-draft")
-    if data is not None:
-        if data.get('ok') == True and data.get('slug') == 'qa-page-draft' and 'deleted_at' in data:
-            log(f"  ✅ Soft-deleted with deleted_at: {data.get('deleted_at')}")
-            passed += 1
-        else:
-            log(f"  ❌ Response missing ok/slug/deleted_at")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 24. GET /api/pages/qa-page-draft → 404
-    data = test_get("/pages/qa-page-draft", 404, "Soft-deleted page hidden")
-    if data is not None:
-        log(f"  ✅ 404 on soft-deleted page")
-        passed += 1
-    else:
-        failed += 1
-    
-    # 25. DELETE qa-page-draft again → 404
-    data = test_delete("/pages/qa-page-draft", 404, "DELETE already-deleted")
-    if data is not None:
-        if 'Page not found or already deleted' in data.get('detail', ''):
-            log(f"  ✅ 404 with correct detail")
-            passed += 1
-        else:
-            log(f"  ❌ Wrong detail: {data.get('detail')}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 26. DELETE qa-page-live → 200
-    data = test_delete("/pages/qa-page-live", 200, "Soft-delete qa-page-live")
-    if data is not None:
-        if data.get('ok') == True:
-            log(f"  ✅ Soft-deleted qa-page-live")
-            passed += 1
-        else:
-            log(f"  ❌ Response missing ok")
-            failed += 1
-    else:
-        failed += 1
-    
-    # 27. GET /api/pages → exactly 3 items (production baseline)
-    data = test_get("/pages", 200, "List back to 3 (production baseline)")
-    if data is not None:
-        if len(data) == 3:
-            log(f"  ✅ Exactly 3 items (production baseline restored)")
-            passed += 1
-        else:
-            log(f"  ❌ Expected 3 items, got {len(data)}")
-            failed += 1
-    else:
-        failed += 1
-    
-    # ===== CLEANUP =====
-    log("\n=== SECTION 8: CLEANUP (1 test) ===")
-    
-    # 28. Hard-delete test pages
-    hard_delete_test_pages()
-    passed += 1
-    
-    # ===== REGRESSION =====
-    log("\n=== SECTION 9: REGRESSION CHECKS (2 tests) ===")
-    
-    # 29. Regression checks
-    endpoints = [
-        ("/health", "health"),
-        ("/auth/me", "auth/me"),
-        ("/service-content", "service-content (8)"),
-        ("/area-content", "area-content (18)"),
-        ("/models", "models (14)"),
-        ("/blog", "blog (13)"),
-        ("/settings", "settings")
-    ]
-    
-    all_ok = True
-    for path, desc in endpoints:
-        data = test_get(path, 200, f"Regression: {desc}")
-        if data is None:
-            all_ok = False
-            break
-        # Verify counts
-        if path == "/service-content" and len(data) != 8:
-            log(f"  ❌ Expected 8 service-content, got {len(data)}")
-            all_ok = False
-            break
-        if path == "/area-content" and len(data) != 18:
-            log(f"  ❌ Expected 18 area-content, got {len(data)}")
-            all_ok = False
-            break
-        if path == "/models" and len(data) != 14:
-            log(f"  ❌ Expected 14 models, got {len(data)}")
-            all_ok = False
-            break
-        if path == "/blog" and len(data) != 13:
-            log(f"  ❌ Expected 13 blog, got {len(data)}")
-            all_ok = False
-            break
-    
-    if all_ok:
-        log(f"  ✅ All regression checks passed")
-        passed += 1
-    else:
-        failed += 1
-    
-    # 30. Verify all 3 production pages still return 200
-    all_ok = True
-    for slug in PRODUCTION_SLUGS:
-        data = test_get(f"/pages/{slug}", 200, f"Production page: {slug}")
-        if data is None:
-            all_ok = False
-            break
-        if 'deleted_at' in data:
-            log(f"  ❌ Production page {slug} has deleted_at field")
-            all_ok = False
-            break
-        # Verify specific titles
-        if slug == "diskretion-und-datenschutz-noir-hamburg":
-            if data.get('meta_title') != 'Diskretion & Datenschutz — Noir Hamburg Premium Escort':
-                log(f"  ❌ meta_title mismatch for {slug}")
-                all_ok = False
-                break
-    
-    if all_ok:
-        log(f"  ✅ All 3 production pages accessible with correct titles, no deleted_at")
-        passed += 1
-    else:
-        failed += 1
-    
-    # ===== SUMMARY =====
-    log("\n" + "=" * 80)
-    log(f"PAGES CMS TESTING COMPLETE")
-    log(f"PASSED: {passed}/30")
-    log(f"FAILED: {failed}/30")
-    log("=" * 80)
-    
-    if failed == 0:
-        log("✅ ALL TESTS PASSED")
-        return 0
-    else:
-        log(f"❌ {failed} TESTS FAILED")
-        return 1
+                self.log(f"❌ Failed to GET contact {contact_id}")
+                self.failed += 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    runner = TestRunner()
+    exit_code = runner.run_all_tests()
+    sys.exit(exit_code)
