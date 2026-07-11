@@ -68,7 +68,7 @@ export default function FaqBody({ lang }) {
               >
                 <summary className="cursor-pointer p-8 list-none flex items-center justify-between gap-6">
                   <span className="font-heading text-2xl">{q(f)}</span>
-                  <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
+                  <span aria-hidden="true" className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                 </summary>
                 <div className="px-8 pb-8 text-base font-light text-[#6B5F5F] leading-relaxed">{a(f)}</div>
               </details>

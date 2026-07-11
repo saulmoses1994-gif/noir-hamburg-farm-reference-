@@ -124,7 +124,7 @@ export default async function ServiceDetailEn({ params }) {
                       <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group">
                         <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
                           <span className="font-heading text-lg text-[#1A1414]">{pick(f, 'q', lang)}</span>
-                          <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
+                          <span aria-hidden="true" className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                         </summary>
                         <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{pick(f, 'a', lang)}</div>
                       </details>

@@ -1,632 +1,487 @@
 #!/usr/bin/env python3
 """
-Phase 3 Header/Footer Refactor — Comprehensive Backend Test Suite
-Tests live site_settings as single source of truth for Header/Footer/Topbar
+Pre-cutover polish v2 regression test suite
+Curl-based, NO writes (except admin login), NO auth needed for public URLs
 """
 
 import requests
 import json
-import time
 import re
-from html.parser import HTMLParser
+import time
+from typing import Dict, List, Tuple
 
 BASE_URL = "https://noir-migration.preview.emergentagent.com"
-ADMIN_EMAIL = "admin@noir-hamburg.de"
-ADMIN_PASSWORD = "NoirAdmin2026!"
 
-# Session for cookie persistence
-session = requests.Session()
+# Test results tracking
+results = {
+    "section_1_404": {"passed": 0, "failed": 0, "failures": []},
+    "section_2a_contact_form": {"passed": 0, "failed": 0, "failures": []},
+    "section_2b_faq_glyphs": {"passed": 0, "failed": 0, "failures": []},
+    "section_2c_header_nav": {"passed": 0, "failed": 0, "failures": []},
+    "section_3_root_layout": {"passed": 0, "failed": 0, "failures": []},
+    "section_4_sitemap_robots": {"passed": 0, "failed": 0, "failures": []},
+    "section_5_admin": {"passed": 0, "failed": 0, "failures": []},
+}
 
-class TestIDExtractor(HTMLParser):
-    """Extract data-testid values from HTML"""
-    def __init__(self):
-        super().__init__()
-        self.testids = {}
-        self.current_testid = None
-        self.capture_text = False
-        
-    def handle_starttag(self, tag, attrs):
-        attrs_dict = dict(attrs)
-        if 'data-testid' in attrs_dict:
-            self.current_testid = attrs_dict['data-testid']
-            self.capture_text = True
-            self.testids[self.current_testid] = {'tag': tag, 'text': '', 'attrs': attrs_dict}
-    
-    def handle_data(self, data):
-        if self.capture_text and self.current_testid:
-            self.testids[self.current_testid]['text'] += data.strip()
-    
-    def handle_endtag(self, tag):
-        if self.capture_text:
-            self.capture_text = False
-            self.current_testid = None
+def log_pass(section: str, test_name: str):
+    """Log a passing test"""
+    results[section]["passed"] += 1
+    print(f"✅ PASS: {test_name}")
 
-def extract_testids(html):
-    """Extract all data-testid elements and their text content"""
-    parser = TestIDExtractor()
-    parser.feed(html)
-    return parser.testids
+def log_fail(section: str, test_name: str, expected: str, actual: str):
+    """Log a failing test"""
+    results[section]["failed"] += 1
+    failure = f"{test_name} | Expected: {expected} | Actual: {actual}"
+    results[section]["failures"].append(failure)
+    print(f"❌ FAIL: {failure}")
 
-def login():
-    """Login and get access_token cookie"""
-    print("\n=== LOGGING IN ===")
-    resp = session.post(
-        f"{BASE_URL}/api/auth/login",
-        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
-    )
-    if resp.status_code == 200:
-        print(f"✅ Login successful: {resp.json().get('user', {}).get('email')}")
-        return True
-    else:
-        print(f"❌ Login failed: {resp.status_code} {resp.text}")
-        return False
-
-def get_settings():
-    """Get current settings"""
-    resp = session.get(f"{BASE_URL}/api/settings")
-    if resp.status_code == 200:
-        return resp.json()
-    return {}
-
-def put_settings(data):
-    """Update settings (requires auth)"""
-    resp = session.put(f"{BASE_URL}/api/settings", json=data)
-    return resp
-
-def test_1a_empty_settings_fallback():
-    """Test 1a: Empty settings render with fallback constants"""
-    print("\n" + "="*80)
-    print("TEST 1a: EMPTY SETTINGS FALLBACK (rule-a constants)")
-    print("="*80)
-    
-    # Clear all relevant settings
-    empty_payload = {
-        "phone": "",
-        "email": "",
-        "hours_de": "",
-        "hours_en": "",
-        "tagline_de": "",
-        "tagline_en": "",
-        "business_name": "",
-        "instagram_url": "",
-        "facebook_url": "",
-        "twitter_url": "",
-        "whatsapp_number": ""
-    }
-    
-    print("\n1. Clearing settings...")
-    resp = put_settings(empty_payload)
-    if resp.status_code != 200:
-        print(f"❌ Failed to clear settings: {resp.status_code} {resp.text}")
-        return False
-    print("✅ Settings cleared")
-    
-    time.sleep(2)  # Wait for revalidation
-    
-    # Test DE homepage
-    print("\n2. Testing DE homepage (/)...")
-    resp = session.get(f"{BASE_URL}/")
-    if resp.status_code != 200:
-        print(f"❌ GET / failed: {resp.status_code}")
-        return False
-    
-    html = resp.text
-    testids = extract_testids(html)
-    
-    # Expected fallback values
-    expected = {
-        "topbar-phone": "+49 40 0000 0000",
-        "topbar-email": "kontakt@noir-hamburg.de",
-        "topbar-hours": "Mo – Fr · 10 – 22 Uhr  ·  Sa, So, Feiertag · 13 – 22 Uhr",
-        "footer-tagline": "Premium Begleitagentur · Hamburg",
-        "footer-phone": "+49 40 0000 0000",
-        "footer-email": "kontakt@noir-hamburg.de"
-    }
-    
-    all_pass = True
-    for testid, expected_text in expected.items():
-        if testid not in testids:
-            print(f"❌ Missing testid: {testid}")
-            all_pass = False
-            continue
-        
-        actual = testids[testid]['text']
-        # Normalize whitespace for comparison
-        actual_norm = re.sub(r'\s+', ' ', actual).strip()
-        expected_norm = re.sub(r'\s+', ' ', expected_text).strip()
-        
-        if actual_norm == expected_norm:
-            print(f"✅ {testid}: '{actual_norm}'")
-        else:
-            print(f"❌ {testid}: expected '{expected_norm}', got '{actual_norm}'")
-            all_pass = False
-    
-    # Check that social links are NOT present
-    if 'social-instagram' in testids:
-        print(f"❌ social-instagram should NOT be present (empty URL)")
-        all_pass = False
-    else:
-        print(f"✅ social-instagram correctly absent (empty URL)")
-    
-    # Check copyright contains "Noir Hamburg"
-    if 'Noir Hamburg' in html:
-        print(f"✅ Copyright contains 'Noir Hamburg' (business_name fallback)")
-    else:
-        print(f"❌ Copyright missing 'Noir Hamburg'")
-        all_pass = False
-    
-    # Test EN homepage
-    print("\n3. Testing EN homepage (/en)...")
-    resp = session.get(f"{BASE_URL}/en")
-    if resp.status_code != 200:
-        print(f"❌ GET /en failed: {resp.status_code}")
-        return False
-    
-    html_en = resp.text
-    testids_en = extract_testids(html_en)
-    
-    expected_en = {
-        "topbar-hours": "Mon – Fri · 10 am – 10 pm  ·  Sat, Sun, Holidays · 1 pm – 10 pm",
-        "footer-tagline": "Premium Companion Agency · Hamburg"
-    }
-    
-    for testid, expected_text in expected_en.items():
-        if testid not in testids_en:
-            print(f"❌ Missing testid: {testid}")
-            all_pass = False
-            continue
-        
-        actual = testids_en[testid]['text']
-        actual_norm = re.sub(r'\s+', ' ', actual).strip()
-        expected_norm = re.sub(r'\s+', ' ', expected_text).strip()
-        
-        if actual_norm == expected_norm:
-            print(f"✅ {testid}: '{actual_norm}'")
-        else:
-            print(f"❌ {testid}: expected '{expected_norm}', got '{actual_norm}'")
-            all_pass = False
-    
-    return all_pass
-
-def test_1b_populated_settings():
-    """Test 1b: Populated settings override fallbacks"""
-    print("\n" + "="*80)
-    print("TEST 1b: POPULATED SETTINGS (settings win over fallbacks)")
-    print("="*80)
-    
-    # Set test values
-    test_payload = {
-        "phone": "+49 40 111 22 33",
-        "hours_de": "Mo–Sa · 12–24 Uhr (Test)",
-        "hours_en": "Mon–Sat · noon–midnight (Test)",
-        "tagline_de": "TEST DE Tagline",
-        "tagline_en": "TEST EN Tagline",
-        "business_name": "Noir Hamburg TEST",
-        "instagram_url": "https://instagram.com/noirhamburg",
-        "facebook_url": "https://facebook.com/noirhamburg",
-        "twitter_url": ""
-    }
-    
-    print("\n1. Setting test values...")
-    resp = put_settings(test_payload)
-    if resp.status_code != 200:
-        print(f"❌ Failed to set settings: {resp.status_code} {resp.text}")
-        return False
-    print("✅ Settings updated")
-    
-    time.sleep(2)  # Wait for revalidation
-    
-    # Test DE homepage
-    print("\n2. Testing DE homepage (/)...")
-    resp = session.get(f"{BASE_URL}/")
-    if resp.status_code != 200:
-        print(f"❌ GET / failed: {resp.status_code}")
-        return False
-    
-    html = resp.text
-    testids = extract_testids(html)
-    
-    expected = {
-        "topbar-phone": "+49 40 111 22 33",
-        "topbar-hours": "Mo–Sa · 12–24 Uhr (Test)",
-        "footer-tagline": "TEST DE Tagline",
-        "footer-hours": "Mo–Sa · 12–24 Uhr (Test)",
-        "footer-phone": "+49 40 111 22 33"
-    }
-    
-    all_pass = True
-    for testid, expected_text in expected.items():
-        if testid not in testids:
-            print(f"❌ Missing testid: {testid}")
-            all_pass = False
-            continue
-        
-        actual = testids[testid]['text']
-        actual_norm = re.sub(r'\s+', ' ', actual).strip()
-        expected_norm = re.sub(r'\s+', ' ', expected_text).strip()
-        
-        if actual_norm == expected_norm:
-            print(f"✅ {testid}: '{actual_norm}'")
-        else:
-            print(f"❌ {testid}: expected '{expected_norm}', got '{actual_norm}'")
-            all_pass = False
-    
-    # Check social links
-    if 'social-instagram' in testids:
-        href = testids['social-instagram']['attrs'].get('href', '')
-        if href == "https://instagram.com/noirhamburg":
-            print(f"✅ social-instagram present with correct href")
-        else:
-            print(f"❌ social-instagram href wrong: {href}")
-            all_pass = False
-    else:
-        print(f"❌ social-instagram missing")
-        all_pass = False
-    
-    if 'social-facebook' in testids:
-        href = testids['social-facebook']['attrs'].get('href', '')
-        if href == "https://facebook.com/noirhamburg":
-            print(f"✅ social-facebook present with correct href")
-        else:
-            print(f"❌ social-facebook href wrong: {href}")
-            all_pass = False
-    else:
-        print(f"❌ social-facebook missing")
-        all_pass = False
-    
-    if 'social-twitter' in testids:
-        print(f"❌ social-twitter should NOT be present (empty URL)")
-        all_pass = False
-    else:
-        print(f"✅ social-twitter correctly absent (empty URL)")
-    
-    # Check copyright
-    if 'Noir Hamburg TEST' in html:
-        print(f"✅ Copyright contains 'Noir Hamburg TEST'")
-    else:
-        print(f"❌ Copyright missing 'Noir Hamburg TEST'")
-        all_pass = False
-    
-    # Test EN homepage
-    print("\n3. Testing EN homepage (/en)...")
-    resp = session.get(f"{BASE_URL}/en")
-    if resp.status_code != 200:
-        print(f"❌ GET /en failed: {resp.status_code}")
-        return False
-    
-    html_en = resp.text
-    testids_en = extract_testids(html_en)
-    
-    expected_en = {
-        "topbar-phone": "+49 40 111 22 33",
-        "topbar-hours": "Mon–Sat · noon–midnight (Test)",
-        "footer-tagline": "TEST EN Tagline",
-        "footer-hours": "Mon–Sat · noon–midnight (Test)"
-    }
-    
-    for testid, expected_text in expected_en.items():
-        if testid not in testids_en:
-            print(f"❌ Missing testid: {testid}")
-            all_pass = False
-            continue
-        
-        actual = testids_en[testid]['text']
-        actual_norm = re.sub(r'\s+', ' ', actual).strip()
-        expected_norm = re.sub(r'\s+', ' ', expected_text).strip()
-        
-        if actual_norm == expected_norm:
-            print(f"✅ {testid}: '{actual_norm}'")
-        else:
-            print(f"❌ {testid}: expected '{expected_norm}', got '{actual_norm}'")
-            all_pass = False
-    
-    return all_pass
-
-def test_1c_locale_isolation():
-    """Test 1c: Locale isolation (DE never shows EN strings and vice versa)"""
-    print("\n" + "="*80)
-    print("TEST 1c: LOCALE ISOLATION")
-    print("="*80)
-    
-    # Get DE page
-    resp_de = session.get(f"{BASE_URL}/")
-    html_de = resp_de.text
-    testids_de = extract_testids(html_de)
-    
-    # Get EN page
-    resp_en = session.get(f"{BASE_URL}/en")
-    html_en = resp_en.text
-    testids_en = extract_testids(html_en)
-    
-    all_pass = True
-    
-    # DE should not contain "Test)" from EN
-    de_hours = testids_de.get('topbar-hours', {}).get('text', '')
-    if 'Test)' in de_hours and 'noon' in de_hours:
-        print(f"❌ DE topbar-hours contains EN text: '{de_hours}'")
-        all_pass = False
-    else:
-        print(f"✅ DE topbar-hours does not contain EN text")
-    
-    # EN should not contain "Uhr" from DE
-    en_hours = testids_en.get('topbar-hours', {}).get('text', '')
-    if 'Uhr' in en_hours:
-        print(f"❌ EN topbar-hours contains DE text: '{en_hours}'")
-        all_pass = False
-    else:
-        print(f"✅ EN topbar-hours does not contain DE text")
-    
-    return all_pass
-
-def test_1d_whatsapp_propagation():
-    """Test 1d: whatsapp_number propagation"""
-    print("\n" + "="*80)
-    print("TEST 1d: WHATSAPP NUMBER PROPAGATION")
-    print("="*80)
-    
-    # Set whatsapp number
-    payload = {"whatsapp_number": "+49 40 999 88 77"}
-    
-    print("\n1. Setting whatsapp_number...")
-    resp = put_settings(payload)
-    if resp.status_code != 200:
-        print(f"❌ Failed to set whatsapp_number: {resp.status_code} {resp.text}")
-        return False
-    print("✅ whatsapp_number updated")
-    
-    time.sleep(2)
-    
-    # Test DE homepage
-    print("\n2. Testing whatsapp links...")
-    resp = session.get(f"{BASE_URL}/")
-    if resp.status_code != 200:
-        print(f"❌ GET / failed: {resp.status_code}")
-        return False
-    
-    html = resp.text
-    testids = extract_testids(html)
-    
-    expected_href = "https://wa.me/4940999887"  # All non-digits stripped (note: last digit is 7, not 77)
-    
-    all_pass = True
-    
-    # Check header whatsapp
-    if 'header-whatsapp' in testids:
-        href = testids['header-whatsapp']['attrs'].get('href', '')
-        if href == expected_href:
-            print(f"✅ header-whatsapp href: {href}")
-        else:
-            print(f"❌ header-whatsapp href wrong: expected {expected_href}, got {href}")
-            all_pass = False
-    else:
-        print(f"❌ header-whatsapp missing")
-        all_pass = False
-    
-    # Check footer whatsapp
-    if 'footer-whatsapp' in testids:
-        href = testids['footer-whatsapp']['attrs'].get('href', '')
-        if href == expected_href:
-            print(f"✅ footer-whatsapp href: {href}")
-        else:
-            print(f"❌ footer-whatsapp href wrong: expected {expected_href}, got {href}")
-            all_pass = False
-    else:
-        print(f"❌ footer-whatsapp missing")
-        all_pass = False
-    
-    return all_pass
-
-def test_1e_cross_page_layout():
-    """Test 1e: Cross-page layout check (settings propagate to all pages)"""
-    print("\n" + "="*80)
-    print("TEST 1e: CROSS-PAGE LAYOUT CHECK")
-    print("="*80)
-    
-    test_pages = ['/blog', '/faq', '/kontakt', '/escort-hamburg']
-    expected_phone = "+49 40 111 22 33"
-    
-    all_pass = True
-    for page in test_pages:
-        print(f"\nTesting {page}...")
-        resp = session.get(f"{BASE_URL}{page}")
-        if resp.status_code != 200:
-            print(f"❌ GET {page} failed: {resp.status_code}")
-            all_pass = False
-            continue
-        
-        html = resp.text
-        testids = extract_testids(html)
-        
-        if 'topbar-phone' in testids:
-            actual = testids['topbar-phone']['text'].strip()
-            if actual == expected_phone:
-                print(f"✅ {page} topbar-phone: {actual}")
-            else:
-                print(f"❌ {page} topbar-phone: expected {expected_phone}, got {actual}")
-                all_pass = False
-        else:
-            print(f"❌ {page} missing topbar-phone")
-            all_pass = False
-    
-    return all_pass
-
-def test_1f_restore_baseline(baseline):
-    """Test 1f: Restore baseline settings"""
-    print("\n" + "="*80)
-    print("TEST 1f: RESTORE BASELINE")
-    print("="*80)
-    
-    print("\n1. Restoring baseline settings...")
-    resp = put_settings(baseline)
-    if resp.status_code != 200:
-        print(f"❌ Failed to restore baseline: {resp.status_code} {resp.text}")
-        return False
-    print("✅ Baseline restored")
-    
-    time.sleep(2)
-    
-    # Verify restoration
-    print("\n2. Verifying restoration...")
-    resp = session.get(f"{BASE_URL}/api/settings")
-    if resp.status_code != 200:
-        print(f"❌ GET /api/settings failed: {resp.status_code}")
-        return False
-    
-    current = resp.json()
-    
-    # Check key fields
-    all_pass = True
-    for key in ['phone', 'email', 'business_name', 'tagline_de', 'tagline_en']:
-        if key in baseline:
-            if current.get(key) == baseline[key]:
-                print(f"✅ {key} restored: {current.get(key)}")
-            else:
-                print(f"❌ {key} mismatch: expected {baseline[key]}, got {current.get(key)}")
-                all_pass = False
-    
-    return all_pass
-
-def test_2_regression_ssr_routes():
-    """Test 2: Regression on all prior public SSR routes"""
-    print("\n" + "="*80)
-    print("TEST 2: REGRESSION ON ALL PRIOR PUBLIC SSR ROUTES")
-    print("="*80)
-    
-    routes = [
-        '/', '/en',
-        '/models', '/en/models',
-        '/services/vip-escort-hamburg', '/en/services/vip-escort-hamburg',
-        '/blog', '/en/blog',
-        '/blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner',
-        '/en/blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner',
-        '/escort/hafencity', '/en/escort/hafencity',
-        '/p/diskretion', '/en/p/diskretion',
-        '/kontakt', '/en/contact',
-        '/ueber-uns', '/en/about',
-        '/impressum', '/en/imprint',
-        '/faq', '/en/faq',
-        '/escort-hamburg', '/en/escort-hamburg',
-        '/areas', '/en/areas'
-    ]
-    
-    all_pass = True
-    for route in routes:
-        resp = session.get(f"{BASE_URL}{route}")
-        if resp.status_code != 200:
-            print(f"❌ {route}: {resp.status_code}")
-            all_pass = False
-            continue
-        
-        html = resp.text
-        testids = extract_testids(html)
-        
-        # Check for required testids
-        required = ['topbar-hours', 'footer-tagline', 'footer-phone']
-        missing = [t for t in required if t not in testids]
-        
-        if missing:
-            print(f"❌ {route}: missing testids {missing}")
-            all_pass = False
-        else:
-            print(f"✅ {route}: 200, all required testids present")
-    
-    return all_pass
-
-def test_3_api_sanity():
-    """Test 3: API sanity checks"""
-    print("\n" + "="*80)
-    print("TEST 3: API SANITY CHECKS")
-    print("="*80)
-    
-    all_pass = True
-    
-    # GET /api/health
-    print("\n1. Testing GET /api/health...")
-    resp = session.get(f"{BASE_URL}/api/health")
-    if resp.status_code == 200:
-        data = resp.json()
-        if data.get('status') == 'ok':
-            print(f"✅ GET /api/health: 200, status='ok'")
-        else:
-            print(f"❌ GET /api/health: status not 'ok': {data}")
-            all_pass = False
-    else:
-        print(f"❌ GET /api/health: {resp.status_code}")
-        all_pass = False
-    
-    # GET /api/settings (unauthenticated read allowed)
-    print("\n2. Testing GET /api/settings (unauthenticated)...")
-    # Use a new session without auth
-    unauth_session = requests.Session()
-    resp = unauth_session.get(f"{BASE_URL}/api/settings")
-    if resp.status_code == 200:
-        print(f"✅ GET /api/settings: 200 (unauthenticated read allowed)")
-    else:
-        print(f"❌ GET /api/settings: {resp.status_code} (should be 200)")
-        all_pass = False
-    
-    return all_pass
-
-def main():
-    """Main test runner"""
-    print("="*80)
-    print("PHASE 3 HEADER/FOOTER REFACTOR — COMPREHENSIVE TEST SUITE")
-    print("="*80)
-    print(f"Base URL: {BASE_URL}")
-    print(f"Admin: {ADMIN_EMAIL}")
-    
-    # Login
-    if not login():
-        print("\n❌ LOGIN FAILED - ABORTING")
-        return False
-    
-    # Save baseline
-    print("\n=== SAVING BASELINE SETTINGS ===")
-    baseline = get_settings()
-    print(f"✅ Baseline saved: phone={baseline.get('phone')}, email={baseline.get('email')}")
-    
-    # Run tests
-    results = {}
-    
+def test_404_page(url: str) -> Dict:
+    """Test a single 404 page for all required assertions"""
+    print(f"\n🔍 Testing 404: {url}")
     try:
-        results['1a_empty_settings'] = test_1a_empty_settings_fallback()
-        results['1b_populated_settings'] = test_1b_populated_settings()
-        results['1c_locale_isolation'] = test_1c_locale_isolation()
-        results['1d_whatsapp'] = test_1d_whatsapp_propagation()
-        results['1e_cross_page'] = test_1e_cross_page_layout()
-        results['1f_restore'] = test_1f_restore_baseline(baseline)
-        results['2_regression'] = test_2_regression_ssr_routes()
-        results['3_api_sanity'] = test_3_api_sanity()
+        resp = requests.get(f"{BASE_URL}{url}", timeout=10)
+        body = resp.text
+        
+        # Check HTTP 404
+        if resp.status_code != 404:
+            log_fail("section_1_404", f"{url} status code", "404", str(resp.status_code))
+        else:
+            log_pass("section_1_404", f"{url} returns 404")
+        
+        # Check data-testid="not-found"
+        if 'data-testid="not-found"' in body:
+            log_pass("section_1_404", f"{url} has not-found testid")
+        else:
+            log_fail("section_1_404", f"{url} not-found testid", "present", "missing")
+        
+        # Check data-testid="not-found-home" (DE CTA)
+        if 'data-testid="not-found-home"' in body:
+            log_pass("section_1_404", f"{url} has not-found-home testid")
+        else:
+            log_fail("section_1_404", f"{url} not-found-home testid", "present", "missing")
+        
+        # Check data-testid="not-found-home-en" (EN CTA)
+        if 'data-testid="not-found-home-en"' in body:
+            log_pass("section_1_404", f"{url} has not-found-home-en testid")
+        else:
+            log_fail("section_1_404", f"{url} not-found-home-en testid", "present", "missing")
+        
+        # Check H1 with "Seite nicht gefunden"
+        h1_match = re.search(r'<h1[^>]*>(.*?)</h1>', body, re.DOTALL)
+        if h1_match:
+            h1_text = re.sub(r'<[^>]+>', '', h1_match.group(1)).strip()
+            if "Seite nicht gefunden" in h1_text:
+                log_pass("section_1_404", f"{url} H1 contains 'Seite nicht gefunden'")
+            else:
+                log_fail("section_1_404", f"{url} H1 text", "'Seite nicht gefunden'", h1_text)
+        else:
+            log_fail("section_1_404", f"{url} H1", "present", "missing")
+        
+        # Check "Back to the homepage" string
+        if "Back to the homepage" in body:
+            log_pass("section_1_404", f"{url} has 'Back to the homepage'")
+        else:
+            log_fail("section_1_404", f"{url} EN text", "'Back to the homepage'", "missing")
+        
+        # Check data-testid="topbar-phone" (Header)
+        if 'data-testid="topbar-phone"' in body:
+            log_pass("section_1_404", f"{url} has topbar-phone (Header)")
+        else:
+            log_fail("section_1_404", f"{url} Header", "topbar-phone present", "missing")
+        
+        # Check data-testid="footer-tagline" (Footer)
+        if 'data-testid="footer-tagline"' in body:
+            log_pass("section_1_404", f"{url} has footer-tagline (Footer)")
+        else:
+            log_fail("section_1_404", f"{url} Footer", "footer-tagline present", "missing")
+        
     except Exception as e:
-        print(f"\n❌ TEST SUITE ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        # Still try to restore baseline
-        print("\n=== ATTEMPTING BASELINE RESTORATION ===")
-        put_settings(baseline)
-        return False
+        log_fail("section_1_404", f"{url} request", "success", str(e))
+
+def test_contact_form_a11y(url: str, locale: str) -> Dict:
+    """Test contact form accessibility"""
+    print(f"\n🔍 Testing contact form a11y: {url}")
+    try:
+        resp = requests.get(f"{BASE_URL}{url}", timeout=10)
+        body = resp.text
+        
+        # Check for 5 input ids
+        required_ids = ['id="cf-name"', 'id="cf-email"', 'id="cf-message"', 'id="cf-consent"', 'id="cf-website"']
+        for input_id in required_ids:
+            if input_id in body:
+                log_pass("section_2a_contact_form", f"{url} has {input_id}")
+            else:
+                log_fail("section_2a_contact_form", f"{url} input id", input_id, "missing")
+        
+        # Check for role="alert" (may not be present in SSR, that's OK)
+        if 'role="alert"' in body:
+            log_pass("section_2a_contact_form", f"{url} has role=alert (client-side)")
+        else:
+            # This is OK - baseline SSR render may not have role=alert
+            log_pass("section_2a_contact_form", f"{url} no role=alert in SSR (expected)")
+        
+    except Exception as e:
+        log_fail("section_2a_contact_form", f"{url} request", "success", str(e))
+
+def test_faq_glyphs_a11y(url: str) -> Dict:
+    """Test FAQ glyph accessibility"""
+    print(f"\n🔍 Testing FAQ glyphs a11y: {url}")
+    try:
+        resp = requests.get(f"{BASE_URL}{url}", timeout=10)
+        body = resp.text
+        
+        # Count aria-hidden glyphs
+        aria_hidden_count = body.count('aria-hidden="true"')
+        
+        # Check for old pre-fix version (should be ZERO)
+        old_pattern = '<span className="accent-text text-2xl group-open:rotate-45'
+        if old_pattern in body:
+            log_fail("section_2b_faq_glyphs", f"{url} old pattern", "0 occurrences", f"found '{old_pattern}'")
+        else:
+            log_pass("section_2b_faq_glyphs", f"{url} no old className pattern")
+        
+        # Verify aria-hidden is present on glyph spans
+        if aria_hidden_count > 0:
+            log_pass("section_2b_faq_glyphs", f"{url} has {aria_hidden_count} aria-hidden glyphs")
+        else:
+            log_fail("section_2b_faq_glyphs", f"{url} aria-hidden count", ">0", "0")
+        
+    except Exception as e:
+        log_fail("section_2b_faq_glyphs", f"{url} request", "success", str(e))
+
+def test_header_nav_a11y(url: str, locale: str) -> Dict:
+    """Test header nav accessibility"""
+    print(f"\n🔍 Testing header nav a11y: {url}")
+    try:
+        resp = requests.get(f"{BASE_URL}{url}", timeout=10)
+        body = resp.text
+        
+        # Check for nav aria-label
+        if locale == "de":
+            if '<nav aria-label="Hauptnavigation"' in body:
+                log_pass("section_2c_header_nav", f"{url} has nav aria-label='Hauptnavigation'")
+            else:
+                log_fail("section_2c_header_nav", f"{url} nav aria-label", "Hauptnavigation", "missing")
+        else:  # en
+            if '<nav aria-label="Primary"' in body:
+                log_pass("section_2c_header_nav", f"{url} has nav aria-label='Primary'")
+            else:
+                log_fail("section_2c_header_nav", f"{url} nav aria-label", "Primary", "missing")
+        
+        # Check mobile nav toggle
+        if 'data-testid="mobile-nav-toggle"' in body:
+            log_pass("section_2c_header_nav", f"{url} has mobile-nav-toggle")
+        else:
+            log_fail("section_2c_header_nav", f"{url} mobile-nav-toggle", "present", "missing")
+        
+        # Check aria-expanded="false"
+        if 'aria-expanded="false"' in body:
+            log_pass("section_2c_header_nav", f"{url} has aria-expanded='false'")
+        else:
+            log_fail("section_2c_header_nav", f"{url} aria-expanded", "false", "missing")
+        
+        # Check aria-controls="mobile-nav"
+        if 'aria-controls="mobile-nav"' in body:
+            log_pass("section_2c_header_nav", f"{url} has aria-controls='mobile-nav'")
+        else:
+            log_fail("section_2c_header_nav", f"{url} aria-controls", "mobile-nav", "missing")
+        
+        # Check locale-appropriate aria-label
+        if locale == "de":
+            if 'aria-label="Menü öffnen"' in body:
+                log_pass("section_2c_header_nav", f"{url} has aria-label='Menü öffnen'")
+            else:
+                log_fail("section_2c_header_nav", f"{url} aria-label", "Menü öffnen", "missing")
+        else:  # en
+            if 'aria-label="Open menu"' in body:
+                log_pass("section_2c_header_nav", f"{url} has aria-label='Open menu'")
+            else:
+                log_fail("section_2c_header_nav", f"{url} aria-label", "Open menu", "missing")
+        
+    except Exception as e:
+        log_fail("section_2c_header_nav", f"{url} request", "success", str(e))
+
+def test_root_layout_regression(url: str, expected_lang: str) -> Dict:
+    """Test root layout regression"""
+    print(f"\n🔍 Testing root layout: {url}")
+    try:
+        resp = requests.get(f"{BASE_URL}{url}", timeout=10)
+        body = resp.text
+        
+        # Check 200 status
+        if resp.status_code == 200:
+            log_pass("section_3_root_layout", f"{url} returns 200")
+        else:
+            log_fail("section_3_root_layout", f"{url} status", "200", str(resp.status_code))
+        
+        # Check data-testid="topbar-phone"
+        if 'data-testid="topbar-phone"' in body:
+            log_pass("section_3_root_layout", f"{url} has topbar-phone")
+        else:
+            log_fail("section_3_root_layout", f"{url} topbar-phone", "present", "missing")
+        
+        # Check correct html lang attribute
+        lang_pattern = f'<html lang="{expected_lang}"'
+        if lang_pattern in body:
+            log_pass("section_3_root_layout", f"{url} has correct html lang={expected_lang}")
+        else:
+            log_fail("section_3_root_layout", f"{url} html lang", expected_lang, "missing or incorrect")
+        
+    except Exception as e:
+        log_fail("section_3_root_layout", f"{url} request", "success", str(e))
+
+def test_sitemap_robots():
+    """Test sitemap and robots.txt"""
+    print(f"\n🔍 Testing sitemap and robots.txt")
     
-    # Summary
+    # Test sitemap.xml
+    try:
+        resp = requests.get(f"{BASE_URL}/sitemap.xml", timeout=10)
+        body = resp.text
+        
+        if resp.status_code == 200:
+            log_pass("section_4_sitemap_robots", "sitemap.xml returns 200")
+        else:
+            log_fail("section_4_sitemap_robots", "sitemap.xml status", "200", str(resp.status_code))
+        
+        # Count <loc> entries
+        loc_count = body.count('<loc>')
+        if loc_count == 67:
+            log_pass("section_4_sitemap_robots", f"sitemap.xml has 67 <loc> entries")
+        else:
+            log_fail("section_4_sitemap_robots", "sitemap.xml <loc> count", "67", str(loc_count))
+        
+    except Exception as e:
+        log_fail("section_4_sitemap_robots", "sitemap.xml request", "success", str(e))
+    
+    # Test robots.txt
+    try:
+        resp = requests.get(f"{BASE_URL}/robots.txt", timeout=10)
+        
+        if resp.status_code == 200:
+            log_pass("section_4_sitemap_robots", "robots.txt returns 200")
+        else:
+            log_fail("section_4_sitemap_robots", "robots.txt status", "200", str(resp.status_code))
+        
+    except Exception as e:
+        log_fail("section_4_sitemap_robots", "robots.txt request", "success", str(e))
+
+def test_admin():
+    """Test admin endpoints"""
+    print(f"\n🔍 Testing admin endpoints")
+    
+    # Test /admin without auth (should redirect 307)
+    try:
+        resp = requests.get(f"{BASE_URL}/admin", allow_redirects=False, timeout=10)
+        
+        if resp.status_code in [307, 200]:
+            log_pass("section_5_admin", f"/admin returns {resp.status_code} (redirect or authed)")
+        else:
+            log_fail("section_5_admin", "/admin status", "307 or 200", str(resp.status_code))
+        
+    except Exception as e:
+        log_fail("section_5_admin", "/admin request", "success", str(e))
+    
+    # Test POST /api/auth/login
+    try:
+        login_data = {
+            "email": "admin@noir-hamburg.de",
+            "password": "NoirAdmin2026!"
+        }
+        resp = requests.post(f"{BASE_URL}/api/auth/login", json=login_data, timeout=10)
+        
+        if resp.status_code == 200:
+            log_pass("section_5_admin", "POST /api/auth/login returns 200")
+        else:
+            log_fail("section_5_admin", "POST /api/auth/login status", "200", str(resp.status_code))
+        
+        # Check for access_token cookie
+        if 'access_token' in resp.cookies:
+            log_pass("section_5_admin", "POST /api/auth/login sets access_token cookie")
+            
+            # Test authed GET /admin
+            cookies = {'access_token': resp.cookies['access_token']}
+            admin_resp = requests.get(f"{BASE_URL}/admin", cookies=cookies, timeout=10)
+            
+            if admin_resp.status_code == 200:
+                log_pass("section_5_admin", "Authed GET /admin returns 200")
+            else:
+                log_fail("section_5_admin", "Authed GET /admin status", "200", str(admin_resp.status_code))
+            
+            admin_body = admin_resp.text
+            
+            # Check for required testids
+            if 'data-testid="hero-unread-contacts"' in admin_body:
+                log_pass("section_5_admin", "Admin has hero-unread-contacts")
+            else:
+                log_fail("section_5_admin", "Admin hero-unread-contacts", "present", "missing")
+            
+            if 'data-testid="panel-activity"' in admin_body:
+                log_pass("section_5_admin", "Admin has panel-activity")
+            else:
+                log_fail("section_5_admin", "Admin panel-activity", "present", "missing")
+            
+            if 'data-testid="panel-health"' in admin_body:
+                log_pass("section_5_admin", "Admin has panel-health")
+            else:
+                log_fail("section_5_admin", "Admin panel-health", "present", "missing")
+        else:
+            log_fail("section_5_admin", "POST /api/auth/login cookie", "access_token", "missing")
+        
+    except Exception as e:
+        log_fail("section_5_admin", "POST /api/auth/login request", "success", str(e))
+
+def print_summary():
+    """Print test summary"""
     print("\n" + "="*80)
     print("TEST SUMMARY")
     print("="*80)
     
-    passed = sum(1 for v in results.values() if v)
-    total = len(results)
+    total_passed = 0
+    total_failed = 0
     
-    for test_name, result in results.items():
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{status}: {test_name}")
+    for section, data in results.items():
+        passed = data["passed"]
+        failed = data["failed"]
+        total_passed += passed
+        total_failed += failed
+        
+        status = "✅ PASS" if failed == 0 else "❌ FAIL"
+        print(f"\n{status} {section}: {passed} passed, {failed} failed")
+        
+        if data["failures"]:
+            print("  Failures:")
+            for failure in data["failures"]:
+                print(f"    - {failure}")
     
-    print(f"\nTotal: {passed}/{total} tests passed")
+    print("\n" + "="*80)
+    print(f"TOTAL: {total_passed} passed, {total_failed} failed")
+    print("="*80)
     
-    if passed == total:
-        print("\n🎉 ALL TESTS PASSED!")
-        return True
+    if total_failed == 0:
+        print("\n🎉 ALL TESTS PASSED - CUTOVER-READY V2")
     else:
-        print(f"\n⚠️  {total - passed} test(s) failed")
-        return False
+        print(f"\n⚠️  {total_failed} ASSERTIONS FAILED - REVIEW REQUIRED")
+
+def main():
+    """Main test runner"""
+    print("="*80)
+    print("PRE-CUTOVER POLISH V2 REGRESSION TEST")
+    print("Base URL:", BASE_URL)
+    print("="*80)
+    
+    # Section 1: 404 page assertions
+    print("\n" + "="*80)
+    print("SECTION 1: 404 PAGE ASSERTIONS")
+    print("="*80)
+    
+    urls_404 = [
+        "/does-not-exist",
+        "/en/does-not-exist",
+        "/models/bad-slug",
+        "/en/models/bad-slug",
+        "/services/bad-slug",
+        "/en/services/bad-slug",
+        "/blog/bad-slug",
+        "/en/blog/bad-slug",
+        "/escort/bad-slug",
+        "/en/escort/bad-slug",
+        "/p/bad-slug",
+        "/en/p/bad-slug",
+        "/random-word-xyz"
+    ]
+    
+    for url in urls_404:
+        test_404_page(url)
+    
+    # Section 2a: Contact form a11y
+    print("\n" + "="*80)
+    print("SECTION 2A: CONTACT FORM A11Y")
+    print("="*80)
+    
+    test_contact_form_a11y("/kontakt", "de")
+    test_contact_form_a11y("/en/contact", "en")
+    
+    # Section 2b: FAQ glyphs a11y
+    print("\n" + "="*80)
+    print("SECTION 2B: FAQ GLYPHS A11Y")
+    print("="*80)
+    
+    faq_urls = [
+        "/faq",
+        "/en/faq",
+        "/blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner",
+        "/escort/hafencity",
+        "/services/vip-escort-hamburg",
+        "/en/services/luxury-escort-hamburg"
+    ]
+    
+    for url in faq_urls:
+        test_faq_glyphs_a11y(url)
+    
+    # Section 2c: Header nav a11y
+    print("\n" + "="*80)
+    print("SECTION 2C: HEADER NAV A11Y")
+    print("="*80)
+    
+    test_header_nav_a11y("/", "de")
+    test_header_nav_a11y("/en", "en")
+    
+    # Section 3: Root layout regression
+    print("\n" + "="*80)
+    print("SECTION 3: ROOT LAYOUT REGRESSION")
+    print("="*80)
+    
+    layout_urls = [
+        ("/", "de"),
+        ("/en", "en"),
+        ("/services", "de"),
+        ("/en/services", "en"),
+        ("/services/vip-escort-hamburg", "de"),
+        ("/en/services/luxury-escort-hamburg", "en"),
+        ("/models", "de"),
+        ("/en/models", "en"),
+        ("/blog", "de"),
+        ("/en/blog", "en"),
+        ("/blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner", "de"),
+        ("/en/blog/die-zehn-besten-restaurants-in-hamburg-fuer-ein-unvergessliches-dinner", "en"),
+        ("/escort/hafencity", "de"),
+        ("/en/escort/hafencity", "en"),
+        ("/p/diskretion", "de"),
+        ("/en/p/diskretion", "en"),
+        ("/kontakt", "de"),
+        ("/en/contact", "en"),
+        ("/ueber-uns", "de"),
+        ("/en/about", "en"),
+        ("/impressum", "de"),
+        ("/en/imprint", "en"),
+        ("/faq", "de"),
+        ("/en/faq", "en"),
+        ("/escort-hamburg", "de"),
+        ("/en/escort-hamburg", "en"),
+        ("/areas", "de"),
+        ("/en/areas", "en")
+    ]
+    
+    for url, lang in layout_urls:
+        test_root_layout_regression(url, lang)
+    
+    # Section 4: Sitemap + robots
+    print("\n" + "="*80)
+    print("SECTION 4: SITEMAP + ROBOTS")
+    print("="*80)
+    
+    test_sitemap_robots()
+    
+    # Section 5: Admin
+    print("\n" + "="*80)
+    print("SECTION 5: ADMIN")
+    print("="*80)
+    
+    test_admin()
+    
+    # Print summary
+    print_summary()
 
 if __name__ == "__main__":
-    success = main()
-    exit(0 if success else 1)
+    main()

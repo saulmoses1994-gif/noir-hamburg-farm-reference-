@@ -146,7 +146,7 @@ export default function AreaDetailBody({ lang, area, services = [], models = [],
                       <details key={i} className="bg-white border border-[#1A1414]/8 rounded-lg group" data-testid={`area-faq-${i}`}>
                         <summary className="cursor-pointer p-5 list-none flex items-center justify-between gap-4">
                           <span className="font-heading text-lg text-[#1A1414]">{f.q}</span>
-                          <span className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
+                          <span aria-hidden="true" className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                         </summary>
                         <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{f.a}</div>
                       </details>

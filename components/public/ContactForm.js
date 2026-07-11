@@ -98,6 +98,16 @@ export default function ContactForm({ lang, services = [] }) {
   const inputCls = (k) =>
     `w-full bg-transparent border ${errors[k] ? 'border-[#8B1538]' : 'border-[#1A1414]/15'} focus:border-[#8B1538] outline-none p-3 font-light text-[#1A1414]`
 
+  // Screen-reader helpers: give every validated input a stable id, wire
+  // aria-invalid + aria-describedby to the error <p> so assistive tech
+  // announces the exact reason a field is rejected.
+  const errId = (k) => `cf-${k}-err`
+  const inputA11y = (k) => ({
+    id: `cf-${k}`,
+    'aria-invalid': errors[k] ? 'true' : undefined,
+    'aria-describedby': errors[k] ? errId(k) : undefined,
+  })
+
   return (
     <form onSubmit={onSubmit} className="lg:col-span-7 space-y-6" data-testid="contact-form" noValidate>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -110,8 +120,9 @@ export default function ContactForm({ lang, services = [] }) {
             className={inputCls('name')}
             data-testid="contact-name"
             required
+            {...inputA11y('name')}
           />
-          {errors.name && <p className="text-[11px] text-[#8B1538] mt-1" data-testid="err-name">{errors.name}</p>}
+          {errors.name && <p id={errId('name')} className="text-[11px] text-[#8B1538] mt-1" data-testid="err-name">{errors.name}</p>}
         </div>
         <div>
           <label className="overline text-[10px] block mb-2">{t(lang, 'contact.form.email')} *</label>
@@ -122,8 +133,9 @@ export default function ContactForm({ lang, services = [] }) {
             className={inputCls('email')}
             data-testid="contact-email"
             required
+            {...inputA11y('email')}
           />
-          {errors.email && <p className="text-[11px] text-[#8B1538] mt-1" data-testid="err-email">{errors.email}</p>}
+          {errors.email && <p id={errId('email')} className="text-[11px] text-[#8B1538] mt-1" data-testid="err-email">{errors.email}</p>}
         </div>
         <div>
           <label className="overline text-[10px] block mb-2">{t(lang, 'contact.form.phone')}</label>
@@ -173,8 +185,9 @@ export default function ContactForm({ lang, services = [] }) {
           placeholder={t(lang, 'contact.form.messagePlaceholder')}
           data-testid="contact-message"
           required
+          {...inputA11y('message')}
         />
-        {errors.message && <p className="text-[11px] text-[#8B1538] mt-1" data-testid="err-message">{errors.message}</p>}
+        {errors.message && <p id={errId('message')} className="text-[11px] text-[#8B1538] mt-1" data-testid="err-message">{errors.message}</p>}
       </div>
 
       <label className="flex items-start gap-3 cursor-pointer" data-testid="contact-consent-wrap">
@@ -184,6 +197,9 @@ export default function ContactForm({ lang, services = [] }) {
           onChange={(e) => setField('consent', e.target.checked)}
           className="mt-1 accent-[#8B1538]"
           data-testid="contact-consent"
+          id="cf-consent"
+          aria-invalid={errors.consent ? 'true' : undefined}
+          aria-describedby={errors.consent ? errId('consent') : undefined}
         />
         <span className="text-sm font-light text-[#3F3838] leading-relaxed">
           {t(lang, 'contact.form.consent')}{' '}
@@ -193,10 +209,10 @@ export default function ContactForm({ lang, services = [] }) {
           {t(lang, 'contact.form.consentTail')}
         </span>
       </label>
-      {errors.consent && <p className="text-[11px] text-[#8B1538]" data-testid="err-consent">{errors.consent}</p>}
+      {errors.consent && <p id={errId('consent')} className="text-[11px] text-[#8B1538]" data-testid="err-consent">{errors.consent}</p>}
 
       {networkError && (
-        <p className="text-sm text-[#8B1538]" data-testid="err-network">{networkError}</p>
+        <p className="text-sm text-[#8B1538]" data-testid="err-network" role="alert" aria-live="assertive">{networkError}</p>
       )}
 
       <button type="submit" disabled={sending} className="btn-primary disabled:opacity-50" data-testid="contact-submit">

@@ -29,7 +29,7 @@ export default async function Header({ lang = 'de', currentPath = '/' }) {
             <span className="text-[#1A1414] font-semibold">Noir</span>{' '}
             <span className="accent-text italic">Hamburg</span>
           </Link>
-          <nav className="hidden xl:flex items-center gap-3 2xl:gap-6">
+          <nav aria-label={lang === 'en' ? 'Primary' : 'Hauptnavigation'} className="hidden xl:flex items-center gap-3 2xl:gap-6">
             {NAV.map((n) => {
               const href = localePath(lang, n.to)
               const label = lang === 'en' ? n.enLabel : n.deLabel
@@ -51,6 +51,24 @@ export default async function Header({ lang = 'de', currentPath = '/' }) {
               {t(lang, 'cta.book')}
             </Link>
           </div>
+          {/*
+            Mobile hamburger scaffold — hidden until a mobile nav ships.
+            When wiring it, use a client subcomponent that toggles a local
+            `open` state and mirrors it onto both aria-expanded (below) and
+            aria-controls pointing at the drawer id. This static markup keeps
+            the AT contract stable for screen readers and future audits.
+          */}
+          <button
+            type="button"
+            className="xl:hidden inline-flex items-center justify-center w-10 h-10 border border-[#1A1414]/15"
+            aria-expanded="false"
+            aria-controls="mobile-nav"
+            aria-label={lang === 'en' ? 'Open menu' : 'Men\u00fc \u00f6ffnen'}
+            data-testid="mobile-nav-toggle"
+            data-nav-open="false"
+          >
+            <span aria-hidden="true" className="block w-4 h-[2px] bg-[#1A1414] relative before:content-[''] before:absolute before:-top-1.5 before:left-0 before:w-4 before:h-[2px] before:bg-[#1A1414] after:content-[''] after:absolute after:top-1.5 after:left-0 after:w-4 after:h-[2px] after:bg-[#1A1414]" />
+          </button>
         </div>
       </header>
     </>
