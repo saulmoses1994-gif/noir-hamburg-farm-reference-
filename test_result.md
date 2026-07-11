@@ -517,16 +517,157 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.4"
-  test_sequence: 26
+  version: "3.5"
+  test_sequence: 27
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Public /escort-hamburg landing + /areas list (+ EN twins)"
+    - "Header/Footer refactor — live site_settings as source of truth"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+phase3_refactor_header_footer:
+  - task: "Header/Footer refactor — live site_settings as source of truth"
+    implemented: true
+    working: true
+    file: "components/site/Header.js + components/site/Footer.js + lib/brand.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Refactor of Header + Footer to consume live site_settings as the
+            single source of truth for all contact/brand info.
+
+            New helper: lib/brand.js > getBrand(lang)
+            * Fetches the singleton site_settings on every request.
+            * Returns a merged { name, tagline, phone, phoneHref, email,
+              emailHref, whatsappNumber, whatsappUrl, recruitmentWhatsappUrl,
+              hours, instagramUrl, facebookUrl, twitterUrl } object.
+            * Locale-aware fields: tagline (tagline_de/tagline_en), hours
+              (hours_de/hours_en).
+            * Rule (a) fallback: each field falls back to the corresponding
+              hardcoded BRAND constant when the CMS field is empty.
+            * whatsappUrl auto-derived from whatsapp_number (digits-only).
+
+            Header (now an async server component):
+              * Topbar: phone, email, hours all from settings.
+              * Header WhatsApp button href from settings.whatsapp_number.
+              * Language switcher unchanged.
+              * data-testids added: topbar, topbar-phone, topbar-email,
+                topbar-hours, header-whatsapp, brand-link.
+
+            Footer (now an async server component):
+              * Tagline block: tagline + hours from settings, locale-aware.
+              * Contact block: phone, email, whatsapp links from settings.
+              * NEW: Social block rendering only when the corresponding
+                settings.{instagram,facebook,twitter}_url is set. Renders
+                nothing when all three are empty.
+              * Copyright line: uses settings.business_name || BRAND.name,
+                and a locale-appropriate "All rights reserved." / "Alle
+                Rechte vorbehalten." tagline.
+              * data-testids added: footer, footer-tagline, footer-hours,
+                footer-phone, footer-email, footer-whatsapp, social-*.
+
+            Verification (manual):
+              * With empty settings -> DE homepage renders default constants
+                (phone +49 40 0000 0000, DE hours "Mo – Fr · 10 – 22 Uhr").
+                EN homepage renders EN hours.
+              * PUT /api/settings with phone="+49 40 111 22 33",
+                hours_de="Mo–Sa · 12–24 Uhr (Test)",
+                hours_en="Mon–Sat · noon–midnight (Test)",
+                tagline_de="TEST DE Tagline", tagline_en="TEST EN Tagline",
+                business_name="Noir Hamburg TEST",
+                instagram_url="https://instagram.com/noirhamburg"
+                -> DE homepage refresh shows all overrides in both topbar
+                and footer within one request. EN homepage shows EN variants.
+                Instagram link appears in footer social block.
+              * PUT settings back to empty values -> constants restored
+                immediately.
+              * Existing revalidatePath('/', 'layout') in the settings PUT
+                handler propagates edits to every layout surface without
+                additional wiring.
+
+            Please regression-verify all prior SSR routes still render with
+            correct Header/Footer.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 8-test suite completed with ALL TESTS PASSED (8/8).
+            All live-update scenarios and regression checks successful.
+            Base URL: https://noir-migration.preview.emergentagent.com
+            
+            TEST 1a - EMPTY SETTINGS FALLBACK: PUT empty values for all settings fields
+            (phone, email, hours_de/en, tagline_de/en, business_name, social URLs). After
+            2s revalidation, GET / returns all fallback constants: topbar-phone="+49 40 0000 0000",
+            topbar-email="kontakt@noir-hamburg.de", topbar-hours="Mo – Fr · 10 – 22 Uhr · Sa, So,
+            Feiertag · 13 – 22 Uhr" (DE variant with em-dash and bullets), footer-tagline=
+            "Premium Begleitagentur · Hamburg", footer-phone/email match topbar. GET /en returns
+            EN hours variant "Mon – Fri · 10 am – 10 pm · Sat, Sun, Holidays · 1 pm – 10 pm",
+            footer-tagline="Premium Companion Agency · Hamburg". Social links (instagram, facebook,
+            twitter) correctly absent. Copyright contains "Noir Hamburg" (business_name fallback
+            to BRAND.name).
+            
+            TEST 1b - POPULATED SETTINGS: PUT test values (phone="+49 40 111 22 33",
+            hours_de="Mo–Sa · 12–24 Uhr (Test)", hours_en="Mon–Sat · noon–midnight (Test)",
+            tagline_de="TEST DE Tagline", tagline_en="TEST EN Tagline", business_name=
+            "Noir Hamburg TEST", instagram_url="https://instagram.com/noirhamburg",
+            facebook_url="https://facebook.com/noirhamburg", twitter_url=""). After 2s,
+            GET / shows all overrides: topbar-phone="+49 40 111 22 33", topbar-hours=
+            "Mo–Sa · 12–24 Uhr (Test)", footer-tagline="TEST DE Tagline", footer-hours matches
+            topbar-hours. Social links: data-testid="social-instagram" present with href=
+            "https://instagram.com/noirhamburg", social-facebook present with correct href,
+            social-twitter correctly absent (empty URL). Copyright contains "Noir Hamburg TEST".
+            GET /en shows EN variants: topbar-hours="Mon–Sat · noon–midnight (Test)",
+            footer-tagline="TEST EN Tagline", same phone (not locale-specific), same social links.
+            
+            TEST 1c - LOCALE ISOLATION: DE topbar-hours does not contain EN keywords ("noon",
+            "Test)" from EN payload). EN topbar-hours does not contain DE keyword "Uhr".
+            No locale mixing detected.
+            
+            TEST 1d - WHATSAPP PROPAGATION: PUT whatsapp_number="+49 40 999 88 77". After 2s,
+            GET / shows data-testid="header-whatsapp" href="https://wa.me/49409998877" (all
+            non-digits stripped correctly: 11 digits preserved), data-testid="footer-whatsapp"
+            same href. WhatsApp URL derivation working correctly across header and footer.
+            
+            TEST 1e - CROSS-PAGE LAYOUT: Verified settings propagate to all layout surfaces.
+            GET /blog, /faq, /kontakt, /escort-hamburg all return 200 with topbar-phone=
+            "+49 40 111 22 33" (the populated test value from 1b). Proves revalidatePath('/', 'layout')
+            propagates to every page using the layout, not just homepage.
+            
+            TEST 1f - RESTORE BASELINE: PUT baseline settings (captured at test start: phone="",
+            email="kontakt@noir-hamburg.de", business_name="", tagline_de="", tagline_en="").
+            After 2s, GET /api/settings confirms all key fields restored to baseline. DB left
+            in clean state (no "TEST" values persisted).
+            
+            TEST 2 - REGRESSION ON ALL PRIOR PUBLIC SSR ROUTES: Tested 24 routes (/, /en, /models,
+            /en/models, /services/vip-escort-hamburg, /en/services/vip-escort-hamburg, /blog,
+            /en/blog, blog detail DE/EN, /escort/hafencity, /en/escort/hafencity, /p/diskretion,
+            /en/p/diskretion, /kontakt, /en/contact, /ueber-uns, /en/about, /impressum, /en/imprint,
+            /faq, /en/faq, /escort-hamburg, /en/escort-hamburg, /areas, /en/areas). All routes
+            return 200 with required testids present (topbar-hours, footer-tagline, footer-phone).
+            Note: Intermittent 502 errors observed on 6 routes during initial run (Kubernetes
+            ingress/load balancer issue), but all routes returned 200 on retry. This is an
+            infrastructure issue, not an application issue. All prior work (Phase 1, Phase 3 d1-d7)
+            still functional.
+            
+            TEST 3 - API SANITY: GET /api/health → 200 with status="ok". GET /api/settings
+            (unauthenticated) → 200 (public read allowed for singleton doc).
+            
+            CRITICAL VERIFICATIONS: Live site_settings is now the single source of truth for
+            phone/email/hours/tagline/business_name/social URLs across topbar + header + footer +
+            copyright. Rule (a) fallback to BRAND constants working correctly when CMS fields are
+            empty. Locale-aware fields (tagline_de/en, hours_de/en) resolve correctly per route
+            locale. WhatsApp URL auto-derived from whatsapp_number (digits-only). Social block
+            renders only when URLs are set (conditional rendering working). revalidatePath('/', 'layout')
+            propagates edits to every layout surface on next request without redeploy. Baseline
+            restored successfully (DB clean).
+            
+            All requirements met. No issues found. Phase 3 Header/Footer refactor is production-ready.
 
 phase3_d7_hub_and_areas_public:
   - task: "Public /escort-hamburg landing + /areas list (+ EN twins)"
@@ -2168,4 +2309,71 @@ agent_communication:
         ACTION ITEMS FOR MAIN AGENT:
         - All backend tests passed with no major issues
         - Please summarize and finish Phase 3 d7
+        - YOU MUST ASK USER BEFORE DOING FRONTEND TESTING
+
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 3 HEADER/FOOTER REFACTOR — TESTING COMPLETE - ALL TESTS PASSED (8/8)
+        
+        Comprehensive end-to-end verification of Header/Footer refactor completed successfully.
+        Live site_settings is now the single source of truth for phone/email/hours/tagline/business_name/social URLs.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        
+        Test Results Summary:
+        ✅ TEST 1a - Empty settings fallback: PUT empty values for all settings fields. After revalidation,
+           GET / and GET /en return all fallback constants (phone="+49 40 0000 0000", email="kontakt@noir-hamburg.de",
+           DE hours="Mo – Fr · 10 – 22 Uhr · Sa, So, Feiertag · 13 – 22 Uhr", EN hours="Mon – Fri · 10 am – 10 pm · Sat, Sun, Holidays · 1 pm – 10 pm",
+           DE tagline="Premium Begleitagentur · Hamburg", EN tagline="Premium Companion Agency · Hamburg").
+           Social links correctly absent. Copyright contains "Noir Hamburg" (business_name fallback).
+        
+        ✅ TEST 1b - Populated settings: PUT test values (phone="+49 40 111 22 33", hours_de="Mo–Sa · 12–24 Uhr (Test)",
+           hours_en="Mon–Sat · noon–midnight (Test)", tagline_de="TEST DE Tagline", tagline_en="TEST EN Tagline",
+           business_name="Noir Hamburg TEST", instagram_url="https://instagram.com/noirhamburg",
+           facebook_url="https://facebook.com/noirhamburg"). After revalidation, GET / and GET /en show all overrides
+           in topbar and footer. Social links (instagram, facebook) present with correct hrefs. Twitter correctly absent
+           (empty URL). Copyright contains "Noir Hamburg TEST".
+        
+        ✅ TEST 1c - Locale isolation: DE topbar-hours does not contain EN keywords ("noon", "Test)"). EN topbar-hours
+           does not contain DE keyword "Uhr". No locale mixing detected.
+        
+        ✅ TEST 1d - WhatsApp propagation: PUT whatsapp_number="+49 40 999 88 77". After revalidation, GET / shows
+           header-whatsapp and footer-whatsapp both with href="https://wa.me/49409998877" (all non-digits stripped,
+           11 digits preserved). WhatsApp URL derivation working correctly.
+        
+        ✅ TEST 1e - Cross-page layout: Verified settings propagate to all layout surfaces. GET /blog, /faq, /kontakt,
+           /escort-hamburg all return 200 with topbar-phone="+49 40 111 22 33" (the populated test value). Proves
+           revalidatePath('/', 'layout') propagates to every page using the layout.
+        
+        ✅ TEST 1f - Restore baseline: PUT baseline settings (captured at test start). After revalidation, GET /api/settings
+           confirms all key fields restored. DB left in clean state (no "TEST" values persisted).
+        
+        ✅ TEST 2 - Regression on all prior public SSR routes: Tested 24 routes (/, /en, /models, /en/models,
+           /services/vip-escort-hamburg, /en/services/vip-escort-hamburg, /blog, /en/blog, blog detail DE/EN,
+           /escort/hafencity, /en/escort/hafencity, /p/diskretion, /en/p/diskretion, /kontakt, /en/contact,
+           /ueber-uns, /en/about, /impressum, /en/imprint, /faq, /en/faq, /escort-hamburg, /en/escort-hamburg,
+           /areas, /en/areas). All routes return 200 with required testids present (topbar-hours, footer-tagline,
+           footer-phone). Note: Intermittent 502 errors observed on 6 routes during initial run (Kubernetes
+           ingress/load balancer issue), but all routes returned 200 on retry. This is an infrastructure issue,
+           not an application issue.
+        
+        ✅ TEST 3 - API sanity: GET /api/health → 200 with status="ok". GET /api/settings (unauthenticated) → 200
+           (public read allowed for singleton doc).
+        
+        Critical Verifications:
+        • Live site_settings is now the single source of truth for phone/email/hours/tagline/business_name/social URLs
+          across topbar + header + footer + copyright
+        • Rule (a) fallback to BRAND constants working correctly when CMS fields are empty
+        • Locale-aware fields (tagline_de/en, hours_de/en) resolve correctly per route locale
+        • WhatsApp URL auto-derived from whatsapp_number (digits-only)
+        • Social block renders only when URLs are set (conditional rendering working)
+        • revalidatePath('/', 'layout') propagates edits to every layout surface on next request without redeploy
+        • All prior work (Phase 1, Phase 3 d1-d7) still functional
+        • Baseline restored successfully (DB clean)
+        
+        All requirements met. No issues found. Phase 3 Header/Footer refactor is production-ready.
+        
+        ACTION ITEMS FOR MAIN AGENT:
+        - All backend tests passed with no major issues
+        - Please summarize and finish Phase 3 Header/Footer refactor
         - YOU MUST ASK USER BEFORE DOING FRONTEND TESTING

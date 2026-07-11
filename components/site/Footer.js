@@ -1,27 +1,49 @@
 import Link from 'next/link'
-import { BRAND } from '@/lib/site'
 import { localePath } from '@/lib/i18n'
+import { getBrand } from '@/lib/brand'
 
-export default function Footer({ lang = 'de' }) {
+// Async server component. Reads live site_settings on every request; the
+// Settings PUT handler already fires revalidatePath('/', 'layout') so edits
+// propagate to every layout surface on the next request.
+export default async function Footer({ lang = 'de' }) {
+  const brand = await getBrand(lang)
+  const socialLinks = [
+    brand.instagramUrl && { href: brand.instagramUrl, label: 'Instagram', testId: 'social-instagram' },
+    brand.facebookUrl && { href: brand.facebookUrl, label: 'Facebook', testId: 'social-facebook' },
+    brand.twitterUrl && { href: brand.twitterUrl, label: 'X / Twitter', testId: 'social-twitter' },
+  ].filter(Boolean)
+
   return (
-    <footer className="bg-[#1A1414] text-white/80 mt-24">
+    <footer className="bg-[#1A1414] text-white/80 mt-24" data-testid="footer">
       <div className="px-6 md:px-12 lg:px-16 py-16 grid grid-cols-1 md:grid-cols-4 gap-10">
         <div>
           <div className="font-heading text-2xl">
             <span className="text-white font-semibold">Noir</span>{' '}
             <span className="text-[#E5A5B5] italic">Hamburg</span>
           </div>
-          <p className="mt-4 text-sm font-light">
-            {lang === 'en' ? BRAND.taglineEn : BRAND.tagline}
+          <p className="mt-4 text-sm font-light" data-testid="footer-tagline">
+            {brand.tagline}
+          </p>
+          <p className="mt-2 text-xs font-light text-white/50" data-testid="footer-hours">
+            {brand.hours}
           </p>
         </div>
         <div>
           <div className="overline text-white/60 mb-3">{lang === 'en' ? 'Contact' : 'Kontakt'}</div>
           <ul className="space-y-2 text-sm">
-            <li><a href={`tel:${BRAND.phone}`} className="hover:text-white">{BRAND.phone}</a></li>
-            <li><a href={`mailto:${BRAND.email}`} className="hover:text-white">{BRAND.email}</a></li>
-            <li><a href={BRAND.whatsappUrl} className="hover:text-white" target="_blank" rel="noreferrer nofollow">WhatsApp</a></li>
+            <li><a href={brand.phoneHref} className="hover:text-white" data-testid="footer-phone">{brand.phone}</a></li>
+            <li><a href={brand.emailHref} className="hover:text-white" data-testid="footer-email">{brand.email}</a></li>
+            <li><a href={brand.whatsappUrl} className="hover:text-white" target="_blank" rel="noreferrer nofollow" data-testid="footer-whatsapp">WhatsApp</a></li>
           </ul>
+          {socialLinks.length > 0 && (
+            <ul className="mt-4 space-y-2 text-sm">
+              {socialLinks.map((s) => (
+                <li key={s.label}>
+                  <a href={s.href} target="_blank" rel="noreferrer nofollow" className="hover:text-white" data-testid={s.testId}>{s.label}</a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div>
           <div className="overline text-white/60 mb-3">{lang === 'en' ? 'Explore' : 'Entdecken'}</div>
@@ -41,7 +63,7 @@ export default function Footer({ lang = 'de' }) {
         </div>
       </div>
       <div className="border-t border-white/10 py-6 text-center text-xs text-white/50">
-        © {new Date().getFullYear()} Noir Hamburg. All rights reserved.
+        © {new Date().getFullYear()} {brand.name}. {lang === 'en' ? 'All rights reserved.' : 'Alle Rechte vorbehalten.'}
       </div>
     </footer>
   )
