@@ -2,9 +2,10 @@
 
 **Purpose:** Full database export from the original FARM project, to be restored into the new farmnext (Next.js) job during migration.
 
-**File:** `mongo_dump.tar.gz` (~73 KB compressed, ~316 KB uncompressed)
-**Source DB:** `noir_hamburg`
-**Dump tool:** `mongodump` (standard BSON format)
+**Format:** Raw `mongodump` BSON files (unarchived — `.tar.gz` was blocked by the repo's `.gitignore`).
+**Location:** `db_export/noir_hamburg/` — one `.bson` + `.metadata.json` pair per collection.
+**Source DB name:** `noir_hamburg`
+**Total size:** ~320 KB
 
 ## Collections and counts (source of truth)
 
@@ -26,23 +27,27 @@
 From the new farmnext project's terminal:
 
 ```bash
-# 1. Extract the archive
-cd /tmp
-tar -xzf /app/_reference/db_export/mongo_dump.tar.gz
+# 1. Locate the dump (already unarchived in the reference repo)
+ls /app/_reference/db_export/noir_hamburg/   # should list all .bson files
 
-# 2. Read target DB config from .env
-source /app/.env   # or however the new project exposes MONGO_URL / DB_NAME
+# 2. Read target DB config from the new project's .env
+#    (MONGO_URL and DB_NAME are already set by the platform)
 
-# 3. Restore into the current MongoDB (drops existing collections of the same name)
-mongorestore --uri="$MONGO_URL" --nsFrom="noir_hamburg.*" --nsTo="${DB_NAME}.*" --drop /tmp/noir_hamburg
+# 3. Restore into the current MongoDB (drops existing same-named collections)
+mongorestore --uri="$MONGO_URL" \
+  --nsFrom="noir_hamburg.*" --nsTo="${DB_NAME}.*" \
+  --drop /app/_reference/db_export/noir_hamburg
 
 # 4. Verify counts match the table above
 mongosh "$MONGO_URL" --eval '
-  const db = db.getSiblingDB(process.env.DB_NAME || "noir_hamburg");
-  ["users","models","blog","pages","service_content","area_content","site_settings","contacts","files","content_migrations"]
-    .forEach(c => print(c + ": " + db[c].countDocuments()));
+  const target = db.getSiblingDB(process.env.DB_NAME);
+  ["users","models","blog","pages","service_content","area_content",
+   "site_settings","contacts","files","content_migrations"]
+    .forEach(c => print(c + ": " + target[c].countDocuments()));
 '
 ```
+
+If `mongosh` is not available, verify via a Node.js one-liner using the same driver the app uses.
 
 ## Critical collection-name reminders
 
@@ -59,4 +64,4 @@ If the new agent's code uses the "cleaner" names, the admin panel and public pag
 - Email: `admin@noir-hamburg.de`
 - Password: `NoirAdmin2026!`
 
-(These match the hashed password stored in the `users` collection dump — do NOT re-seed the admin user; use the one restored from the dump.)
+Do **not** re-seed the admin user — the real one is in the restored `users` collection with the correct bcrypt hash. Re-seeding would overwrite it and could break login.
