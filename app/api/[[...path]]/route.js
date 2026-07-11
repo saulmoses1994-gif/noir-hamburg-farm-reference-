@@ -35,6 +35,19 @@ const MODEL_FIELDS = [
   'featured', 'available',
 ]
 
+// Editable blog fields.
+const BLOG_FIELDS = [
+  'title', 'title_en',
+  'category',
+  'excerpt', 'excerpt_en',
+  'content', 'content_en',
+  'cover_image',
+  'meta_title', 'meta_title_en',
+  'meta_description', 'meta_description_en',
+  'related_services', 'related_locations',
+  'published',
+]
+
 async function readJson(request) {
   try { return await request.json() } catch { return {} }
 }
@@ -325,15 +338,77 @@ async function route(request, ctx, method) {
 
     // ---------- Blog (real collection is `blog`) ----------
     if (p === '/blog' && method === 'GET') {
-      const db = await getDb()
-      const docs = await db.collection('blog').find({ published: { $ne: false } }).sort({ created_at: -1 }).toArray()
-      return j(docs.map(cleanDoc))
+      const { listPublicBlog } = await import('@/lib/blog')
+      return j(await listPublicBlog())
     }
     if (parts[0] === 'blog' && parts.length === 2 && method === 'GET') {
-      const db = await getDb()
-      const doc = await db.collection('blog').findOne({ slug: parts[1] })
+      const { getPublicBlog } = await import('@/lib/blog')
+      const doc = await getPublicBlog(parts[1])
       if (!doc) return j({ detail: 'Blog post not found' }, { status: 404 })
-      return j(cleanDoc(doc))
+      return j(doc)
+    }
+
+    // Admin \u2014 create.
+    if (p === '/blog' && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const body = await readJson(request)
+      if (!body.slug || !body.title) return j({ detail: 'slug and title are required' }, { status: 400 })
+      const slug = String(body.slug).toLowerCase().trim()
+      if (!/^[a-z0-9-]+$/.test(slug)) return j({ detail: 'slug may only contain a-z, 0-9 and hyphens' }, { status: 400 })
+      const db = await getDb()
+      const existing = await db.collection('blog').findOne({ slug })
+      if (existing) return j({ detail: 'A blog post with that slug already exists (including soft-deleted).' }, { status: 409 })
+      const ALLOW = BLOG_FIELDS
+      const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
+      for (const k of ALLOW) if (k in body) doc[k] = body[k]
+      doc.published = doc.published ?? false
+      await db.collection('blog').insertOne(doc)
+      try {
+        revalidatePath('/blog'); revalidatePath('/en/blog')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(doc), { status: 201 })
+    }
+
+    // Admin \u2014 edit.
+    if (parts[0] === 'blog' && parts.length === 2 && method === 'PUT') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[1]
+      const body = await readJson(request)
+      const update = {}
+      for (const k of BLOG_FIELDS) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      const result = await db.collection('blog').findOneAndUpdate({ slug }, { $set: update }, { returnDocument: 'after' })
+      if (!result) return j({ detail: 'Blog post not found' }, { status: 404 })
+      try {
+        revalidatePath(`/blog/${slug}`); revalidatePath(`/en/blog/${slug}`)
+        revalidatePath('/blog'); revalidatePath('/en/blog')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(result))
+    }
+
+    // Admin \u2014 soft delete.
+    if (parts[0] === 'blog' && parts.length === 2 && method === 'DELETE') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[1]
+      const db = await getDb()
+      const result = await db.collection('blog').findOneAndUpdate(
+        { slug, deleted_at: { $in: [null, undefined] } },
+        { $set: { deleted_at: new Date(), updated_at: new Date() } },
+        { returnDocument: 'after' }
+      )
+      if (!result) return j({ detail: 'Blog post not found or already deleted' }, { status: 404 })
+      try {
+        revalidatePath(`/blog/${slug}`); revalidatePath(`/en/blog/${slug}`)
+        revalidatePath('/blog'); revalidatePath('/en/blog')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j({ ok: true, slug, deleted_at: result.deleted_at })
     }
 
     // ---------- Pages ----------

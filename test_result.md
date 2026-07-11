@@ -360,8 +360,8 @@ backend_phase2:
 
 metadata:
   created_by: "main_agent"
-  version: "1.9"
-  test_sequence: 10
+  version: "2.0"
+  test_sequence: 12
   run_ui: false
 
 test_plan:
@@ -369,6 +369,67 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+backend_phase2_blog_cms:
+  - task: "GET /api/blog (public filters draft + soft-deleted)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + lib/blog.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Returns rows where deleted_at is null/undefined AND published != false. Sorted by created_at desc. 13 rows in production (all currently published)."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: GET /api/blog returns exactly 13 production posts. All have slug, title, category, cover_image, excerpt, published=true. No _id fields. No deleted_at fields. Draft posts (published=false) correctly hidden from public list. Soft-deleted posts correctly hidden from public list. GET /api/blog/{slug} returns 200 for published posts, 404 for drafts and soft-deleted posts. Sorted by created_at desc."
+
+  - task: "POST /api/blog (create)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only. Validates slug pattern + uniqueness (409 including soft-deleted). UUID id + timestamps. Defaults published=false (new posts start as drafts). Whitelist: title, title_en, category, excerpt*, content*, cover_image, meta_*, related_services, related_locations, published."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Auth guard working (401 without cookie). Validation working: missing slug/title → 400 'slug and title are required', invalid slug pattern → 400 'may only contain a-z, 0-9 and hyphens', existing slug → 409 'already exists (including soft-deleted)'. Create draft: POST with published=false → 201 with UUID id, timestamps, all sent fields present, no _id. Draft hidden from public list (count still 13). Create published: POST with published=true → 201, appears in public list (count 14). Whitelist enforcement working."
+
+  - task: "PUT /api/blog/{slug} (update)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only. Slug immutable. Sets updated_at. revalidatePath for /blog/{slug} + /en/blog/{slug} + /blog + /en/blog + /sitemap.xml. 404 on unknown slug."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Auth guard working (401 without cookie). Draft ↔ publish workflow working: PUT published=true on draft → post appears in public list. PUT published=false on published post → post hidden from public list. Partial update working: PUT title + content + meta_title → 200, other fields (category, excerpt) unchanged. Whitelist enforcement working: PUT slug/_id/deleted_at/password_hash → 200, all ignored (slug unchanged). PUT /api/blog/does-not-exist → 404 'Blog post not found'."
+
+  - task: "DELETE /api/blog/{slug} (soft delete)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Admin-only. Sets deleted_at. Doc stays in Mongo. Public GET on soft-deleted -> 404. Second DELETE -> 404 'not found or already deleted'."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Auth guard working (401 without cookie). Soft-delete working: DELETE qa-blog-draft-x → 200 {ok:true, slug, deleted_at} with valid ISO timestamp. GET /api/blog/{slug} after delete → 404. Public list no longer includes soft-deleted post (count back to 13). DELETE already-deleted → 404 'Blog post not found or already deleted'. Hard-delete cleanup successful: mongosh deleted 2 test posts, production baseline restored (13 posts). All 13 production posts present, no deleted_at set."
 
 backend_phase2_models_cms:
   - task: "GET /api/models (filters soft-deleted)"
@@ -910,3 +971,98 @@ agent_communication:
         
         All 4 Models CMS tasks marked as working=true, needs_retesting=false.
         No issues found. Phase 2 Models CMS implementation is production-ready.
+
+    - agent: "testing"
+      message: |
+        ✅ PHASE 2 BLOG CMS — COMPREHENSIVE CRUD + DRAFT/PUBLISH + SOFT-DELETE TESTING COMPLETE - ALL TESTS PASSED (29/29)
+        
+        Comprehensive 29-step test of Blog CMS CRUD operations with draft/publish semantics and soft-delete completed successfully.
+        Base URL: https://noir-migration.preview.emergentagent.com
+        Test slugs: qa-blog-draft-x, qa-blog-live-y (hard-deleted after tests)
+        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        
+        Test Results by Section:
+        
+        SECTION 1: READ PATH (3/3 passed)
+        ✅ GET /api/blog → 200 with exactly 13 production posts
+        ✅ All posts have slug, title, category, cover_image, excerpt, published=true, no _id, no deleted_at
+        ✅ Drafts (published=false) correctly hidden from public list
+        ✅ Soft-deleted posts correctly hidden from public list
+        ✅ GET /api/blog/{production_slug} → 200 with all required fields (slug, title, category, content, published=true)
+        ✅ GET /api/blog/does-not-exist → 404 'Blog post not found'
+        
+        SECTION 2: AUTH GUARDS (4/4 passed)
+        ✅ POST /api/blog without cookie → 401 'Not authenticated'
+        ✅ PUT /api/blog/{slug} without cookie → 401
+        ✅ DELETE /api/blog/{slug} without cookie → 401
+        ✅ Admin login successful → access_token cookie
+        
+        SECTION 3: POST VALIDATION (4/4 passed)
+        ✅ POST missing slug → 400 'slug and title are required'
+        ✅ POST missing title → 400 'slug and title are required'
+        ✅ POST invalid slug pattern (Has Spaces) → 400 'may only contain a-z, 0-9 and hyphens'
+        ✅ POST existing slug → 409 'already exists (including soft-deleted)'
+        
+        SECTION 4: POST CREATE (DRAFT) (3/3 passed)
+        ✅ POST qa-blog-draft-x with published=false → 201 with UUID id, timestamps, all sent fields present, no _id
+        ✅ GET /api/blog → count STILL 13 (draft hidden from public list)
+        ✅ GET /api/blog/qa-blog-draft-x → 404 (drafts hidden from public detail too)
+        
+        SECTION 5: POST CREATE (PUBLISHED) (3/3 passed)
+        ✅ POST qa-blog-live-y with published=true → 201
+        ✅ GET /api/blog → count now 14 (qa-blog-live-y IS in the list, first/newest)
+        ✅ GET /api/blog/qa-blog-live-y → 200
+        
+        SECTION 6: PUT (DRAFT ↔ PUBLISH WORKFLOW) (3/3 passed)
+        ✅ PUT qa-blog-draft-x published=true → 200, GET /api/blog → 15 items, qa-blog-draft-x now visible
+        ✅ PUT qa-blog-live-y published=false → 200, GET /api/blog → 14 items, qa-blog-live-y hidden
+        ✅ PUT qa-blog-draft-x (update title, content, meta_title) → 200, all three fields persisted, other fields unchanged
+        
+        SECTION 7: WHITELIST ENFORCEMENT (1/1 passed)
+        ✅ PUT qa-blog-draft-x with slug/HACK/_id/HACK/deleted_at/password_hash → 200, all ignored (slug still qa-blog-draft-x)
+        
+        SECTION 8: 404 HANDLING (1/1 passed)
+        ✅ PUT /api/blog/does-not-exist → 404 'Blog post not found'
+        
+        SECTION 9: DELETE (SOFT-DELETE) (4/4 passed)
+        ✅ DELETE qa-blog-draft-x → 200 {ok:true, slug, deleted_at} with valid ISO timestamp
+        ✅ GET /api/blog → back to 13 (qa-blog-draft-x soft-deleted, qa-blog-live-y still unpublished)
+        ✅ DELETE qa-blog-draft-x again → 404 'Blog post not found or already deleted'
+        ✅ DELETE qa-blog-live-y → 200, GET /api/blog → exactly 13 items (production baseline)
+        
+        SECTION 10: CLEANUP (HARD-DELETE) (1/1 passed)
+        ✅ Hard-deleted qa-blog-draft-x and qa-blog-live-y from MongoDB via mongosh
+        ✅ mongosh output: { acknowledged: true, deletedCount: 2 }
+        ✅ MongoDB blog collection count: 13
+        ✅ GET /api/blog → count still 13 (production baseline restored)
+        
+        SECTION 11: REGRESSION CHECKS (7/7 passed)
+        ✅ GET /api/health → 200
+        ✅ GET /api/auth/me (with cookie) → 200
+        ✅ GET /api/service-content → 200 with 8 items
+        ✅ GET /api/area-content → 200 with 18 items
+        ✅ GET /api/models → 200 with 14 items
+        ✅ GET /api/pages → 200 with 3 items
+        ✅ GET /api/settings → 200
+        
+        SECTION 12: FINAL VERIFICATION (2/2 passed)
+        ✅ No production post has deleted_at set
+        ✅ Production post wie-buche-ich-einen-escort-in-hamburg-ihre-fragen-ehrlich-beantwortet still accessible (200)
+        
+        Critical Verifications:
+        • Public list correctly filters drafts (published=false) AND soft-deleted posts (deleted_at not null)
+        • Public detail GET correctly returns 404 for drafts and soft-deleted posts
+        • Sort order correct: created_at desc (newest first)
+        • Auth guards working on all write endpoints (requireAdmin)
+        • POST validation working: slug/title required, slug pattern ^[a-z0-9-]+$, uniqueness check includes soft-deleted
+        • POST create working: assigns UUID id, timestamps, defaults published=false (drafts by default)
+        • Draft ↔ publish workflow working: can toggle published status via PUT
+        • Whitelist enforcement working: BLOG_FIELDS whitelist excludes slug (cannot change via PUT), _id, deleted_at, password_hash
+        • PUT update working: partial updates, whitelist enforcement, 404 on unknown slug
+        • DELETE soft-delete working: sets deleted_at + updated_at, hides from public list, 404 on already-deleted
+        • Hard-delete cleanup successful: test posts removed from MongoDB, production baseline restored
+        • Regression checks passed: all Phase 1 and Phase 2 endpoints still working
+        • CRITICAL: Production data safe - all 13 production posts present, no deleted_at set
+        
+        All 4 Blog CMS tasks marked as working=true, needs_retesting=false.
+        No issues found. Phase 2 Blog CMS implementation is production-ready.
