@@ -5,6 +5,7 @@ import JsonLd from '@/components/site/JsonLd'
 import { listServiceContent } from '@/lib/service-content'
 import { buildMetadata, siteUrl } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
+import { resolveHomeHero } from '@/lib/home_hero'
 
 export const revalidate = 300
 
@@ -19,7 +20,7 @@ export async function generateMetadata() {
 
 export default async function HomeEn() {
   const lang = 'en'
-  const services = await listServiceContent()
+  const [services, hero] = await Promise.all([listServiceContent(), resolveHomeHero()])
   const jsonLd = [
     { '@context': 'https://schema.org', '@type': 'Organization', name: 'Noir Hamburg', url: siteUrl(), logo: `${siteUrl()}/logo.png` },
     { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Noir Hamburg', url: siteUrl(), inLanguage: 'en' },
@@ -29,17 +30,28 @@ export default async function HomeEn() {
       <Header lang={lang} currentPath="/en" />
       <main id="main">
         <JsonLd data={jsonLd} />
-        <section className="px-6 md:px-12 lg:px-16 pt-24 pb-16 max-w-6xl">
-          <span className="overline">Premium Escort Hamburg</span>
-          <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
-            Noir <em className="italic accent-text">Hamburg</em>
-          </h1>
-          <p className="mt-6 text-lg font-light text-[#6B5F5F] max-w-2xl leading-relaxed">
-            Discreet, stylish companionship for discerning gentlemen in Hamburg. Quality over quantity — personal, individual, professional.
-          </p>
-          <div className="mt-10 flex gap-4 flex-wrap">
-            <Link href="/en/services" className="btn-primary">Explore services</Link>
-            <Link href="/en/models" className="btn-ghost">Models</Link>
+        <section className="px-6 md:px-12 lg:px-16 pt-16 lg:pt-24 pb-16" data-testid="home-hero">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center max-w-7xl">
+            <div className="lg:col-span-7 order-1">
+              <span className="overline">Premium Escort Hamburg</span>
+              <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
+                Noir <em className="italic accent-text">Hamburg</em>
+              </h1>
+              <p className="mt-6 text-lg font-light text-[#6B5F5F] max-w-2xl leading-relaxed">
+                Discreet, stylish companionship for discerning gentlemen in Hamburg. Quality over quantity — personal, individual, professional.
+              </p>
+              <div className="mt-10 flex gap-4 flex-wrap">
+                <Link href="/en/services" className="btn-primary">Explore services</Link>
+                <Link href="/en/models" className="btn-ghost">Models</Link>
+              </div>
+            </div>
+            {hero && (
+              <div className="lg:col-span-5 order-2" data-testid="home-hero-image">
+                <div className="editorial-image aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
+                  <img src={hero.image} alt={hero.alt} fetchPriority="high" className="w-full h-full object-cover" />
+                </div>
+              </div>
+            )}
           </div>
         </section>
         <section className="px-6 md:px-12 lg:px-16 py-16 border-t border-[#1A1414]/8">

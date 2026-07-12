@@ -14,7 +14,7 @@ export default function ContactBody({ lang, services = [], settings = {} }) {
   const path = localePath(lang, '/kontakt')
   const homeHref = lang === 'en' ? '/en' : '/'
   const phone = settings.phone || '+49 40 0000 0000'
-  const email = settings.email || 'kontakt@noir-hamburg.de'
+  const email = settings.email || 'kontakt@noir-hamburg.com'
   const waNumber = (settings.whatsapp_number || '4940000000000').replace(/[^\d]/g, '')
   const waHref = `https://wa.me/${waNumber}`
 

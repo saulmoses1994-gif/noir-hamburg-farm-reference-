@@ -34,6 +34,13 @@ export default async function Footer({ lang = 'de' }) {
             <li><a href={brand.phoneHref} className="hover:text-white" data-testid="footer-phone">{brand.phone}</a></li>
             <li><a href={brand.emailHref} className="hover:text-white" data-testid="footer-email">{brand.email}</a></li>
             <li><a href={brand.whatsappUrl} className="hover:text-white" target="_blank" rel="noreferrer nofollow" data-testid="footer-whatsapp">WhatsApp</a></li>
+            {brand.recruitmentWhatsappUrl && (
+              <li>
+                <a href={brand.recruitmentWhatsappUrl} target="_blank" rel="noreferrer nofollow" className="inline-flex items-center gap-1 mt-1 px-3 py-1 border border-white/30 text-white hover:bg-white hover:text-[#1A1414] transition-colors text-xs uppercase tracking-widest rounded-full" data-testid="footer-work-with-us">
+                  {lang === 'en' ? 'Work with us' : 'Bewerben'}
+                </a>
+              </li>
+            )}
           </ul>
           {socialLinks.length > 0 && (
             <ul className="mt-4 space-y-2 text-sm">

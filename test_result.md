@@ -517,16 +517,95 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "3.9"
-  test_sequence: 31
+  version: "4.0"
+  test_sequence: 32
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Pre-cutover polish v2: 404 + a11y trio"
+    - "Pre-cutover bundle v3: .com wiring + work-with-us button + homepage hero"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+pre_cutover_bundle_v3:
+  - task: "Pre-cutover bundle v3: .com wiring + work-with-us button + homepage hero"
+    implemented: true
+    working: true
+    file: ".env + 9 source files (site.js, seo.js, brand.js, sitemap.js, robots.js, layout.js, (de)/layout.js, (en)/layout.js, ContactBody.js) + Header.js + Footer.js + (de)/page.js + (en)/en/page.js + lib/home_hero.js + i18n.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+            Bundle v3 shipped. All 3 changes landed + verified.
+
+            1) DOMAIN .de -> .com SWEEP
+              * .env: NEXT_PUBLIC_SITE_URL + SITE_BASE_URL now
+                https://noir-hamburg.com. NEXT_PUBLIC_BASE_URL left alone
+                (protected).
+              * sed sweep across 9 source files replacing noir-hamburg.de ->
+                noir-hamburg.com and kontakt@noir-hamburg.de ->
+                kontakt@noir-hamburg.com.
+              * Left alone by design: admin login default email
+                (admin@noir-hamburg.de is the real credential) + settings.email
+                DB value (user-editable via Admin -> Einstellungen).
+              * Verified: canonical, hreflang, sitemap, robots.txt Host directive,
+                metadataBase — all now emit noir-hamburg.com.
+
+            2) WORK-WITH-US BUTTON
+              * Reads brand.recruitmentWhatsappUrl (already exposed by
+                lib/brand.js from settings.recruitment_whatsapp_number).
+              * Header: outlined dark pill next to Termin. data-testid
+                header-work-with-us. Auto-hides when field empty.
+              * Footer: outlined light pill in the Contact block.
+                data-testid footer-work-with-us. Same auto-hide.
+              * Labels: "Bewerben" DE / "Work with us" EN.
+              * i18n.js gained cta.workWithUs in both locales.
+              * E2E verified: PUT recruitment_whatsapp_number=+49 40 555 22 33
+                -> wa.me/49405552233 URL rendered on both DE + EN, revert to
+                empty -> buttons disappear.
+
+            3) HOMEPAGE HERO IMAGE
+              * NEW lib/home_hero.js -> resolveHomeHero() with 3-tier
+                fallback: settings.homepage_hero_image -> first featured
+                model cover_image -> first model cover_image -> null.
+              * Both (de)/page.js and (en)/en/page.js reworked to a
+                12-column grid: 7-col prose block left, 5-col aspect-3/4
+                image right at lg+, stack on mobile with image below CTAs.
+              * <img fetchPriority="high"> for LCP. testid home-hero + 
+                home-hero-image; hero-image div only renders when hero
+                data resolves.
+              * Verified: DE and EN homepages render the image on the right
+                using the first featured model's cover_image (settings has
+                no homepage_hero_image override).
+
+            4) CONTENT EDITABILITY CONFIRMATION
+              * Impressum: settings.impressum_content editable in Admin ->
+                Einstellungen (chunk d5), renders on /impressum + /en/imprint
+                via ImpressumBody with bundled default fallback. VERIFIED WORKING.
+              * Diskretion: /p/diskretion (slug alias) renders the `pages`
+                collection doc, NOT settings.diskretion_content. The
+                settings.diskretion_content field exists but is unwired to
+                any public page. Correct edit path: Admin -> Pages ->
+                diskretion-und-datenschutz-noir-hamburg -> content. FLAGGED FOR
+                USER — not a bug per se (deliberate CMS split) but the
+                Einstellungen -> Diskretion field is dead. Recommend
+                either (a) removing it from Settings UI post-launch or
+                (b) rewiring the page to prefer settings.diskretion_content
+                over pages doc. No code change now.
+
+            REGRESSION SPOT-CHECK
+              * / /en /blog /kontakt /faq /impressum /p/diskretion
+                /en/services/luxury-escort-hamburg /does-not-exist all
+                return correct status.
+              * Zero German UI-string leaks on /en, /en/faq, /en/blog.
+              * All canonicals + hreflang + sitemap + robots emit .com.
+              * Home hero image slot renders on both locales.
+
+            DB clean. Ready for domain cutover.
 
 pre_cutover_polish_v2:
   - task: "Pre-cutover polish v2: 404 + a11y trio"

@@ -1,4 +1,4 @@
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.de'
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.com'
 
 export default function robots() {
   return {

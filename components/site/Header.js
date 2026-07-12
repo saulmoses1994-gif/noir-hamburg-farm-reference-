@@ -50,6 +50,17 @@ export default async function Header({ lang = 'de', currentPath = '/' }) {
             <Link href={localePath(lang, '/kontakt')} className="btn-primary whitespace-nowrap !px-4 !py-1.5 !text-xs">
               {t(lang, 'cta.book')}
             </Link>
+            {brand.recruitmentWhatsappUrl && (
+              <a
+                href={brand.recruitmentWhatsappUrl}
+                target="_blank"
+                rel="noreferrer nofollow"
+                className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#1A1414] text-[#1A1414] text-[11px] 2xl:text-xs font-semibold tracking-widest uppercase rounded-full hover:bg-[#1A1414] hover:text-white transition-colors whitespace-nowrap"
+                data-testid="header-work-with-us"
+              >
+                {t(lang, 'cta.workWithUs')}
+              </a>
+            )}
           </div>
           {/*
             Mobile hamburger scaffold — hidden until a mobile nav ships.

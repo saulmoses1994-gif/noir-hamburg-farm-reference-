@@ -3,7 +3,7 @@ import { listPublicModels } from '@/lib/models'
 import { listPublicBlog } from '@/lib/blog'
 import { listPublicPages } from '@/lib/pages'
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.de'
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.com'
 
 export default async function sitemap() {
   const [services, areas, models, blog, pages] = await Promise.all([
