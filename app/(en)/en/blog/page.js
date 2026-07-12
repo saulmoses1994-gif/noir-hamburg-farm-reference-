@@ -3,7 +3,7 @@ import { listPublicBlog } from '@/lib/blog'
 import { buildMetadata } from '@/lib/seo'
 import { t } from '@/lib/i18n'
 
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata() {
   const lang = 'en'

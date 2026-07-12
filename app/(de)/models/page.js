@@ -7,7 +7,7 @@ import { listPublicModels } from '@/lib/models'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata() {
   return buildMetadata({

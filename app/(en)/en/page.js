@@ -7,7 +7,7 @@ import { buildMetadata, siteUrl } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 import { resolveHomeHero } from '@/lib/home_hero'
 
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata() {
   return buildMetadata({

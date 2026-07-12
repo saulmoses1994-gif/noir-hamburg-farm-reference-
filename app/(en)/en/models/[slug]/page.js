@@ -4,7 +4,7 @@ import { buildMetadata } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 import { ModelDetailBody } from '@/app/(de)/models/[slug]/page'
 
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
 export async function generateStaticParams() {
