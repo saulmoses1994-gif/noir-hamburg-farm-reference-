@@ -583,6 +583,83 @@ async function route(request, ctx, method) {
       return j(cleanDoc(result))
     }
 
+    // ---------- Media (Cloudinary) ----------
+    // Sign an upload for the browser. Never exposes CLOUDINARY_API_SECRET.
+    if (p === '/cloudinary/sign' && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const body = await readJson(request)
+      const { signUploadParams } = await import('@/lib/cloudinary')
+      const folder = (body.folder && String(body.folder)) || 'noir-hamburg/misc'
+      const tags = Array.isArray(body.tags) ? body.tags.join(',') : (body.tags || 'admin,media')
+      const timestamp = Math.floor(Date.now() / 1000)
+      const upload_preset = process.env.CLOUDINARY_UPLOAD_PRESET || 'admin_media_signed'
+      const paramsToSign = { timestamp, folder, tags, upload_preset }
+      const signature = signUploadParams(paramsToSign)
+      return j({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        timestamp, signature, folder, tags, upload_preset,
+      })
+    }
+
+    if (p === '/media' && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const body = await readJson(request)
+      if (!body.public_id) return j({ detail: 'public_id required' }, { status: 400 })
+      const { buildMediaUrl, buildThumbUrl } = await import('@/lib/cloudinary')
+      const doc = {
+        public_id: body.public_id,
+        url: body.secure_url || body.url || buildMediaUrl(body.public_id),
+        thumbnail_url: buildThumbUrl(body.public_id),
+        width: body.width || null,
+        height: body.height || null,
+        format: body.format || null,
+        size_bytes: body.bytes || 0,
+        folder: body.folder || (body.asset_folder || ''),
+        tags: Array.isArray(body.tags) ? body.tags : [],
+        uploaded_at: body.created_at ? new Date(body.created_at) : new Date(),
+        uploaded_by: guard.user?.email || null,
+      }
+      const db = await getDb()
+      await db.collection('media_assets').updateOne(
+        { public_id: doc.public_id }, { $set: doc }, { upsert: true }
+      )
+      return j({ ok: true, media: doc }, { status: 201 })
+    }
+
+    if (p === '/media' && method === 'GET') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const url = new URL(request.url)
+      const tag = url.searchParams.get('tag')
+      const folder = url.searchParams.get('folder')
+      const q = {}
+      if (tag) q.tags = tag
+      if (folder) q.folder = folder
+      const db = await getDb()
+      const items = await db.collection('media_assets')
+        .find(q)
+        .sort({ uploaded_at: -1 })
+        .limit(500)
+        .toArray()
+      return j({ items: items.map(cleanDoc) })
+    }
+
+    if (p === '/media' && method === 'DELETE') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const url = new URL(request.url)
+      const publicId = url.searchParams.get('public_id')
+      if (!publicId) return j({ detail: 'public_id required' }, { status: 400 })
+      const { destroyAsset } = await import('@/lib/cloudinary')
+      try { await destroyAsset(publicId) } catch (e) { console.warn('[media] cloudinary destroy failed:', e?.message) }
+      const db = await getDb()
+      await db.collection('media_assets').deleteOne({ public_id: publicId })
+      return j({ ok: true })
+    }
+
     // ---------- Sitemap status ----------
     if (p === '/sitemap/status' && method === 'GET') {
       const svc = await listServiceContent()

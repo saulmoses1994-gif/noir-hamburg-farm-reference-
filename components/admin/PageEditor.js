@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { Field, StringArrayEditor, SaveToolbar, cls } from '@/components/admin/FormFields'
+import CloudinaryImageField from '@/components/admin/CloudinaryImageField'
 
 function slugify(s) {
   return String(s || '').toLowerCase()
@@ -140,7 +141,13 @@ export default function PageEditor({ mode, initial }) {
               <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">/p/{doc.slug || '…'}</div>
             </div>
             <Field label="H1 (Hero)" name="h1" type="input" value={doc.h1} onChange={set} />
-            <Field label="Hero-Bild URL" name="hero_image" type="input" value={doc.hero_image} onChange={set} />
+            <CloudinaryImageField
+              label="Hero-Bild"
+              name="hero_image"
+              value={doc.hero_image}
+              onChange={set}
+              folder="noir-hamburg/pages"
+            />
             <div className="md:col-span-2"><Field label="Intro" name="intro" type="textarea" value={doc.intro} onChange={set} /></div>
           </div>
         </section>

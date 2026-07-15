@@ -2,6 +2,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Field, SaveToolbar, cls } from '@/components/admin/FormFields'
+import CloudinaryImageField from '@/components/admin/CloudinaryImageField'
 
 // Simple slug->URL map editor.  Used for service_images and area_images which
 // are objects keyed by slug in the DB.
@@ -139,10 +140,38 @@ export default function SettingsEditor({ initial, serviceSlugs = [], areaSlugs =
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">Bilder</h2>
           <div className="space-y-5">
-            <Field label="Homepage Hero-Bild URL" name="homepage_hero_image" type="input" value={doc.homepage_hero_image} onChange={set} />
-            <Field label="Escort Hamburg (Hub) Hero URL" name="escort_hamburg_image" type="input" value={doc.escort_hamburg_image} onChange={set} />
-            <Field label="About / Wir Bild URL" name="about_image" type="input" value={doc.about_image} onChange={set} />
-            <Field label="Social Share Image (og:image) URL" name="social_share_image" type="input" value={doc.social_share_image} onChange={set} />
+            <CloudinaryImageField
+              label="Homepage Hero-Bild"
+              name="homepage_hero_image"
+              value={doc.homepage_hero_image}
+              onChange={set}
+              folder="noir-hamburg/settings"
+              helpText="Erscheint auf der Startseite als Hauptbild."
+            />
+            <CloudinaryImageField
+              label="Escort Hamburg (Hub) Hero"
+              name="escort_hamburg_image"
+              value={doc.escort_hamburg_image}
+              onChange={set}
+              folder="noir-hamburg/settings"
+              helpText="Für /escort-hamburg und /en/escort-hamburg."
+            />
+            <CloudinaryImageField
+              label="About / Wir Bild"
+              name="about_image"
+              value={doc.about_image}
+              onChange={set}
+              folder="noir-hamburg/settings"
+              helpText="Erscheint auf /ueber-uns und /en/about."
+            />
+            <CloudinaryImageField
+              label="Social Share Image (og:image)"
+              name="social_share_image"
+              value={doc.social_share_image}
+              onChange={set}
+              folder="noir-hamburg/settings"
+              helpText="Empfohlen 1200×630 · wird beim Teilen in Facebook/LinkedIn/WhatsApp angezeigt."
+            />
           </div>
         </section>
 

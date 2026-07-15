@@ -2,6 +2,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Field, StringArrayEditor, SaveToolbar, cls } from '@/components/admin/FormFields'
+import CloudinaryImageField from '@/components/admin/CloudinaryImageField'
 
 function slugify(s) {
   return String(s || '').toLowerCase()
@@ -193,9 +194,16 @@ export default function ModelEditor({ mode, initial, serviceSlugs = [], areaSlug
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">Bilder</h2>
           <div className="space-y-5">
-            <Field label="Cover-Bild URL" name="cover_image" type="input" value={doc.cover_image} onChange={set} />
-            {doc.cover_image && <img src={doc.cover_image} alt="cover preview" className="h-40 rounded-md object-cover" />}
+            <CloudinaryImageField
+              label="Cover-Bild"
+              name="cover_image"
+              value={doc.cover_image}
+              onChange={set}
+              folder="noir-hamburg/models"
+              helpText="10 MB max · JPG/PNG/WebP · auto-optimized on delivery"
+            />
             <StringArrayEditor label="Gallery (Bild-URLs)" items={doc.gallery} onChange={(v) => set('gallery', v)} placeholder="https://…" />
+            <p className="text-xs text-[#6B5F5F]">Tip: upload gallery images at <a href="/admin/media" className="accent-text underline">/admin/media</a> and paste their URLs here.</p>
           </div>
         </section>
 

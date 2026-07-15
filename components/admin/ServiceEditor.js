@@ -1,6 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import CloudinaryImageField from '@/components/admin/CloudinaryImageField'
 
 // Editable whitelist — must match the server-side whitelist in the PUT handler.
 const SIMPLE_FIELDS = [
@@ -229,7 +230,15 @@ export default function ServiceEditor({ initial }) {
             <div className="md:col-span-2"><Field label="H1 (Hero)" name="h1" type="input" value={doc.h1} onChange={set} /></div>
             <Field label="Tagline (DE)" name="tagline" type="input" value={doc.tagline} onChange={set} />
             <Field label="Tagline (EN)" name="tagline_en" type="input" value={doc.tagline_en} onChange={set} />
-            <div className="md:col-span-2"><Field label="Hero-Bild URL" name="image" type="input" value={doc.image} onChange={set} /></div>
+            <div className="md:col-span-2">
+              <CloudinaryImageField
+                label="Hero-Bild"
+                name="image"
+                value={doc.image}
+                onChange={set}
+                folder="noir-hamburg/services"
+              />
+            </div>
             <Field label="Alt (DE)" name="image_alt" type="input" value={doc.image_alt} onChange={set} />
             <Field label="Alt (EN)" name="image_alt_en" type="input" value={doc.image_alt_en} onChange={set} />
           </div>

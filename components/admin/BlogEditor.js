@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { Field, StringArrayEditor, SaveToolbar, cls } from '@/components/admin/FormFields'
+import CloudinaryImageField from '@/components/admin/CloudinaryImageField'
 
 function slugify(s) {
   return String(s || '').toLowerCase()
@@ -199,8 +200,13 @@ export default function BlogEditor({ mode, initial }) {
               </select>
             </div>
             <div className="md:col-span-2">
-              <Field label="Cover-Bild URL" name="cover_image" type="input" value={doc.cover_image} onChange={set} />
-              {doc.cover_image && <img src={doc.cover_image} alt="cover" className="mt-3 h-40 rounded-md object-cover" />}
+              <CloudinaryImageField
+                label="Cover-Bild"
+                name="cover_image"
+                value={doc.cover_image}
+                onChange={set}
+                folder="noir-hamburg/blog"
+              />
             </div>
             <Field label="Excerpt (DE)" name="excerpt" type="textarea" value={doc.excerpt} onChange={set} />
             <Field label="Excerpt (EN)" name="excerpt_en" type="textarea" value={doc.excerpt_en} onChange={set} />

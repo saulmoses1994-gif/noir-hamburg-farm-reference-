@@ -2,6 +2,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Field, StringArrayEditor, ParagraphArrayEditor, FaqsEditor, SaveToolbar } from '@/components/admin/FormFields'
+import CloudinaryImageField from '@/components/admin/CloudinaryImageField'
 
 export default function AreaEditor({ initial }) {
   const router = useRouter()
@@ -84,7 +85,13 @@ export default function AreaEditor({ initial }) {
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">Hero-Bild</h2>
           <div className="grid grid-cols-1 gap-5">
-            <Field label="Bild URL" name="image" type="input" value={doc.image} onChange={set} />
+            <CloudinaryImageField
+              label="Bild"
+              name="image"
+              value={doc.image}
+              onChange={set}
+              folder="noir-hamburg/areas"
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Field label="Alt (DE)" name="image_alt" type="input" value={doc.image_alt} onChange={set} />
               <Field label="Alt (EN)" name="image_alt_en" type="input" value={doc.image_alt_en} onChange={set} />
