@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getPublicModel, listPublicModels } from '@/lib/models'
+import { getBrand } from '@/lib/brand'
 import { buildMetadata } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 import { ModelDetailBody } from '@/app/(de)/models/[slug]/page'
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ModelDetailEn({ params }) {
   const { slug } = await params
-  const m = await getPublicModel(slug)
+  const [m, brand] = await Promise.all([getPublicModel(slug), getBrand('en')])
   if (!m) notFound()
-  return <ModelDetailBody m={m} lang="en" slug={slug} />
+  return <ModelDetailBody m={m} lang="en" slug={slug} brand={brand} />
 }

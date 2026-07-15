@@ -5,6 +5,7 @@ import Footer from '@/components/site/Footer'
 import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { getServiceContent, listServiceContent } from '@/lib/service-content'
+import { getBrand } from '@/lib/brand'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 
@@ -35,7 +36,7 @@ export async function generateMetadata({ params }) {
 export default async function ServiceDetail({ params }) {
   const { slug } = await params
   const lang = 'de'
-  const s = await getServiceContent(slug)
+  const [s, brand] = await Promise.all([getServiceContent(slug), getBrand(lang)])
   if (!s) notFound()
 
   const sections = s.sections || []
@@ -136,7 +137,20 @@ export default async function ServiceDetail({ params }) {
 
               <div className="mt-16 flex gap-4 flex-wrap">
                 <Link href="/kontakt" className="btn-primary">Termin buchen →</Link>
-                <a href="https://wa.me/4940000000000" target="_blank" rel="noreferrer nofollow" className="btn-whatsapp">WhatsApp</a>
+                {brand?.whatsappUrl && (
+                  <a href={brand.whatsappUrl} target="_blank" rel="noreferrer nofollow" className="btn-whatsapp">WhatsApp</a>
+                )}
+                {brand?.recruitmentWhatsappUrl && (
+                  <a
+                    href={brand.recruitmentWhatsappUrl}
+                    target="_blank"
+                    rel="noreferrer nofollow"
+                    className="inline-flex items-center gap-1 px-5 py-2 border border-[#1A1414] text-[#1A1414] text-xs font-semibold tracking-widest uppercase rounded-full hover:bg-[#1A1414] hover:text-white transition-colors"
+                    data-testid="service-cta-work-with-us"
+                  >
+                    Work with us
+                  </a>
+                )}
                 <Link href="/models" className="btn-ghost">Models entdecken</Link>
               </div>
             </div>

@@ -5,6 +5,7 @@ import Footer from '@/components/site/Footer'
 import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { getPublicModel, listPublicModels } from '@/lib/models'
+import { getBrand } from '@/lib/brand'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
 import { pick, t, translateAttribute } from '@/lib/i18n'
 
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }) {
   })
 }
 
-function ModelDetailBody({ m, lang, slug }) {
+function ModelDetailBody({ m, lang, slug, brand }) {
   const jsonLd = [
     { '@context': 'https://schema.org', '@type': 'Person',
       name: m.name, description: pick(m, 'bio', lang),
@@ -102,7 +103,28 @@ function ModelDetailBody({ m, lang, slug }) {
 
             <div className="mt-10 flex gap-3 flex-wrap">
               <Link href={contactHref} className="btn-primary">{t(lang, 'cta.bookNowArrow')}</Link>
-              <a href="https://wa.me/4940000000000" target="_blank" rel="noreferrer nofollow" className="btn-whatsapp">{t(lang, 'cta.whatsapp')}</a>
+              {brand?.whatsappUrl && (
+                <a
+                  href={brand.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer nofollow"
+                  className="btn-whatsapp"
+                  data-testid="model-cta-whatsapp"
+                >
+                  {t(lang, 'cta.whatsapp')}
+                </a>
+              )}
+              {brand?.recruitmentWhatsappUrl && (
+                <a
+                  href={brand.recruitmentWhatsappUrl}
+                  target="_blank"
+                  rel="noreferrer nofollow"
+                  className="inline-flex items-center gap-1 px-5 py-2 border border-[#1A1414] text-[#1A1414] text-xs font-semibold tracking-widest uppercase rounded-full hover:bg-[#1A1414] hover:text-white transition-colors"
+                  data-testid="model-cta-work-with-us"
+                >
+                  {t(lang, 'cta.workWithUs')}
+                </a>
+              )}
             </div>
 
             {(m.services || []).length > 0 && (
@@ -125,9 +147,9 @@ function ModelDetailBody({ m, lang, slug }) {
 
 export default async function ModelDetail({ params }) {
   const { slug } = await params
-  const m = await getPublicModel(slug)
+  const [m, brand] = await Promise.all([getPublicModel(slug), getBrand('de')])
   if (!m) notFound()
-  return <ModelDetailBody m={m} lang="de" slug={slug} />
+  return <ModelDetailBody m={m} lang="de" slug={slug} brand={brand} />
 }
 
 export { ModelDetailBody }
