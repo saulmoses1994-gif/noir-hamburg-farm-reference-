@@ -6,6 +6,8 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { getServiceContent, listServiceContent } from '@/lib/service-content'
 import { getBrand } from '@/lib/brand'
+import { getSettings } from '@/lib/settings'
+import { optimizeImageUrl } from '@/lib/cloudinary'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 
@@ -36,8 +38,16 @@ export async function generateMetadata({ params }) {
 export default async function ServiceDetailEn({ params }) {
   const { slug } = await params
   const lang = 'en'
-  const [s, brand] = await Promise.all([getServiceContent(slug), getBrand(lang)])
+  const [s, brand, settings] = await Promise.all([
+    getServiceContent(slug),
+    getBrand(lang),
+    getSettings().catch(() => ({})),
+  ])
   if (!s) notFound()
+
+  // Same override pattern as /en/services list — Settings → Service-Bilder wins.
+  const heroRaw = (settings?.service_images || {})[slug] || s.image
+  const heroImage = optimizeImageUrl(heroRaw, { w: 2000, ar: '16:9', crop: 'fill' })
 
   const sections = s.sections || []
   const faqs = s.faqs || []
@@ -49,7 +59,7 @@ export default async function ServiceDetailEn({ params }) {
       description: pick(s, 'meta_description', lang) || pick(s, 'description', lang),
       provider: { '@type': 'LocalBusiness', name: 'Noir Hamburg', areaServed: 'Hamburg' },
       areaServed: { '@type': 'City', name: 'Hamburg' },
-      serviceType: s.short_label, image: s.image,
+      serviceType: s.short_label, image: heroImage,
       url: `${siteUrl()}/en/services/${slug}`,
     },
     breadcrumbSchema([
@@ -76,7 +86,7 @@ export default async function ServiceDetailEn({ params }) {
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
           <div className="absolute inset-0">
-            {s.image && <img src={s.image} alt={heroAlt} className="w-full h-full object-cover" />}
+            {heroImage && <img src={heroImage} alt={heroAlt} className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

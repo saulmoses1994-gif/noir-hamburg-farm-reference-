@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { listServiceContent } from '@/lib/service-content'
 import { getSettings } from '@/lib/settings'
+import { optimizeImageUrl } from '@/lib/cloudinary'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 
@@ -57,7 +58,8 @@ export default async function ServicesList() {
         <section className="px-6 md:px-12 lg:px-16 pb-32">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#1A1414]/5">
             {services.map((s, i) => {
-              const img = serviceImages[s.slug] || s.image
+              const rawImg = serviceImages[s.slug] || s.image
+              const img = optimizeImageUrl(rawImg, { w: 1200, ar: '16:10', crop: 'fill' })
               return (
                 <Link key={s.slug} href={`/services/${s.slug}`} className="bg-white hover:bg-[#FBF7F4] transition-colors duration-500 group block relative overflow-hidden">
                   <div className="aspect-[16/10] overflow-hidden">
