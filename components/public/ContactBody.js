@@ -51,21 +51,21 @@ export default function ContactBody({ lang, services = [], settings = {} }) {
       <main id="main">
         <JsonLd data={jsonLd} />
 
-        <section className="px-6 md:px-12 lg:px-16 pt-12 pb-8" data-testid="contact-page">
+        <section className="px-6 md:px-12 lg:px-16 pt-8 md:pt-12 pb-8" data-testid="contact-page">
           <Breadcrumbs items={[{ label: t(lang, 'crumb.home'), href: homeHref }, { label: t(lang, 'contact.crumb') }]} />
           <div className="mt-8 max-w-3xl">
             <span className="overline">{t(lang, 'contact.overline')}</span>
-            <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-light tracking-tighter leading-[1.05] mt-4">
               {t(lang, 'contact.h1a')} <em className="italic accent-text">{t(lang, 'contact.h1b')}</em>
             </h1>
-            <p className="mt-6 text-lg font-light text-[#6B5F5F] leading-relaxed">
+            <p className="mt-6 text-base sm:text-lg font-light text-[#6B5F5F] leading-relaxed">
               {t(lang, 'contact.intro')}
             </p>
           </div>
         </section>
 
-        <section className="px-6 md:px-12 lg:px-16 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <section className="px-6 md:px-12 lg:px-16 py-8 md:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-12">
             <ContactForm lang={lang} services={serviceOptions} />
             <aside className="lg:col-span-4 lg:col-start-9 space-y-8">
               <div>

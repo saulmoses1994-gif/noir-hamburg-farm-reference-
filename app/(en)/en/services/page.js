@@ -40,19 +40,19 @@ export default async function ServicesListEn() {
       <Header lang={lang} currentPath="/en/services" />
       <main id="main">
         <JsonLd data={jsonLd} />
-        <section className="px-6 md:px-12 lg:px-16 pt-12 pb-8">
+        <section className="px-6 md:px-12 lg:px-16 pt-8 md:pt-12 pb-8">
           <Breadcrumbs items={[{ label: 'Home', href: '/en' }, { label: 'Services' }]} />
           <div className="mt-8 max-w-3xl">
             <span className="overline">Service Portfolio</span>
-            <h1 className="font-heading text-5xl lg:text-7xl font-light tracking-tighter leading-none mt-4">
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-light tracking-tighter leading-[1.05] mt-4">
               Escort <em className="italic accent-text">Services</em>
             </h1>
-            <p className="mt-6 text-lg font-light text-[#6B5F5F] leading-relaxed">
+            <p className="mt-6 text-base sm:text-lg font-light text-[#6B5F5F] leading-relaxed">
               Eight carefully defined companion categories — so every encounter finds its proper setting.
             </p>
           </div>
         </section>
-        <section className="px-6 md:px-12 lg:px-16 pb-32">
+        <section className="px-6 md:px-12 lg:px-16 pb-24 md:pb-32">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#1A1414]/5">
             {services.map((s, i) => {
               const rawImg = serviceImages[s.slug] || s.image
@@ -62,12 +62,12 @@ export default async function ServicesListEn() {
                   <div className="aspect-[16/10] overflow-hidden">
                     {img && <img src={img} alt={pick(s, 'image_alt', lang) || s.title} className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" loading="lazy" />}
                   </div>
-                  <div className="p-8 lg:p-12">
+                  <div className="p-6 md:p-8 lg:p-12">
                     <span className="overline accent-text">0{i + 1}</span>
-                    <h2 className="font-heading text-3xl lg:text-4xl mt-3">{s.title}</h2>
-                    <p className="font-heading italic text-[#6B5F5F] mt-1">{pick(s, 'tagline', lang)}</p>
-                    <p className="mt-5 text-sm font-light text-[#6B5F5F] leading-relaxed">{pick(s, 'description', lang)}</p>
-                    <div className="mt-8 inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] accent-text">View details →</div>
+                    <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl mt-3 leading-tight">{s.title}</h2>
+                    <p className="font-heading italic text-[#6B5F5F] mt-1 text-sm md:text-base">{pick(s, 'tagline', lang)}</p>
+                    <p className="mt-4 md:mt-5 text-sm font-light text-[#6B5F5F] leading-relaxed">{pick(s, 'description', lang)}</p>
+                    <div className="mt-6 md:mt-8 inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] accent-text">View details →</div>
                   </div>
                 </Link>
               )

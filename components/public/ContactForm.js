@@ -95,8 +95,10 @@ export default function ContactForm({ lang, services = [] }) {
     )
   }
 
+  // Mobile-optimized: text-base (16px+) prevents iOS Safari auto-zoom on focus,
+  // py-3.5 gives a 44px+ touch target (WCAG 2.5.5 / Apple HIG minimum).
   const inputCls = (k) =>
-    `w-full bg-transparent border ${errors[k] ? 'border-[#8B1538]' : 'border-[#1A1414]/15'} focus:border-[#8B1538] outline-none p-3 font-light text-[#1A1414]`
+    `w-full bg-transparent border ${errors[k] ? 'border-[#8B1538]' : 'border-[#1A1414]/15'} focus:border-[#8B1538] outline-none px-3 py-3.5 text-base font-light text-[#1A1414]`
 
   // Screen-reader helpers: give every validated input a stable id, wire
   // aria-invalid + aria-describedby to the error <p> so assistive tech
@@ -119,6 +121,7 @@ export default function ContactForm({ lang, services = [] }) {
             onChange={(e) => setField('name', e.target.value)}
             className={inputCls('name')}
             data-testid="contact-name"
+            autoComplete="name"
             required
             {...inputA11y('name')}
           />
@@ -132,6 +135,8 @@ export default function ContactForm({ lang, services = [] }) {
             onChange={(e) => setField('email', e.target.value)}
             className={inputCls('email')}
             data-testid="contact-email"
+            autoComplete="email"
+            inputMode="email"
             required
             {...inputA11y('email')}
           />
@@ -145,6 +150,8 @@ export default function ContactForm({ lang, services = [] }) {
             onChange={(e) => setField('phone', e.target.value)}
             className={inputCls('phone')}
             data-testid="contact-phone"
+            autoComplete="tel"
+            inputMode="tel"
           />
         </div>
         <div>
@@ -215,7 +222,7 @@ export default function ContactForm({ lang, services = [] }) {
         <p className="text-sm text-[#8B1538]" data-testid="err-network" role="alert" aria-live="assertive">{networkError}</p>
       )}
 
-      <button type="submit" disabled={sending} className="btn-primary disabled:opacity-50" data-testid="contact-submit">
+      <button type="submit" disabled={sending} className="btn-primary disabled:opacity-50 w-full sm:w-auto min-h-[48px] text-base" data-testid="contact-submit">
         {sending ? t(lang, 'contact.form.sending') : t(lang, 'contact.form.submit')} →
       </button>
 
