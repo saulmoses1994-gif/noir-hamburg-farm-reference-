@@ -37,7 +37,7 @@ export default async function Footer({ lang = 'de' }) {
             {brand.recruitmentWhatsappUrl && (
               <li>
                 <a href={brand.recruitmentWhatsappUrl} target="_blank" rel="noreferrer nofollow" className="inline-flex items-center gap-1 mt-1 px-3 py-1 border border-white/30 text-white hover:bg-white hover:text-[#1A1414] transition-colors text-xs uppercase tracking-widest rounded-full" data-testid="footer-work-with-us">
-                  {lang === 'en' ? 'Work with us' : 'Bewerben'}
+                  {lang === 'en' ? 'Work with us' : 'Arbeite mit uns'}
                 </a>
               </li>
             )}

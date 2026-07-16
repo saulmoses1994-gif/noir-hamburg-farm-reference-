@@ -4,6 +4,7 @@ import Header from '@/components/site/Header'
 import Footer from '@/components/site/Footer'
 import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
+import ModelGallery from '@/components/public/ModelGallery'
 import { getPublicModel, listPublicModels } from '@/lib/models'
 import { getBrand } from '@/lib/brand'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
@@ -55,14 +56,11 @@ function ModelDetailBody({ m, lang, slug, brand }) {
         </section>
         <section className="px-6 md:px-12 lg:px-16 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-7">
-            {m.cover_image && <div className="aspect-[3/4] overflow-hidden bg-[#F2EAE4] mb-3"><img src={m.cover_image} alt={m.name} className="w-full h-full object-cover" /></div>}
-            {(m.gallery || []).length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-3">
-                {m.gallery.map((g, i) => (
-                  <div key={i} className="aspect-[3/4] overflow-hidden bg-[#F2EAE4]"><img src={g} alt={`${m.name} ${i + 1}`} className="w-full h-full object-cover" loading="lazy" /></div>
-                ))}
-              </div>
-            )}
+            <ModelGallery
+              images={[m.cover_image, ...(m.gallery || [])].filter(Boolean)}
+              alt={m.name}
+              counterLabel={lang === 'en' ? 'photo' : 'Foto'}
+            />
           </div>
           <div className="lg:col-span-5">
             <span className="overline">{t(lang, 'model.overline')}</span>
