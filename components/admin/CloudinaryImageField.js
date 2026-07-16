@@ -20,6 +20,7 @@ export default function CloudinaryImageField({
   const fileRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [justUploaded, setJustUploaded] = useState(false)
 
   async function onPick(e) {
     const file = e.target.files?.[0]
@@ -30,16 +31,25 @@ export default function CloudinaryImageField({
       return
     }
     setError('')
+    setJustUploaded(false)
     setUploading(true)
     try {
       const uploaded = await uploadOne(file, folder)
       onChange(name, uploaded.secure_url)
+      setJustUploaded(true)
     } catch (err) {
       setError(String(err.message || err))
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''
     }
+  }
+
+  // Clear the "just uploaded" indicator when the user manually edits the field
+  // or after successful save (parent unmounts / re-mounts on router.refresh()).
+  function onManualChange(newValue) {
+    setJustUploaded(false)
+    onChange(name, newValue)
   }
 
   return (
@@ -53,7 +63,7 @@ export default function CloudinaryImageField({
         <input
           type="text"
           value={value || ''}
-          onChange={(e) => onChange(name, e.target.value)}
+          onChange={(e) => onManualChange(e.target.value)}
           placeholder={placeholder}
           className="flex-1 min-w-0 h-9 px-3 border border-[#1A1414]/15 rounded-md text-sm bg-white focus:outline-none focus:border-[#8B1538]"
         />
@@ -74,13 +84,28 @@ export default function CloudinaryImageField({
           {uploading ? 'Uploading…' : 'Upload'}
         </button>
       </div>
+
+      {justUploaded && (
+        <div
+          className="mt-2 flex items-start gap-2 p-2.5 border-l-4 border-amber-500 bg-amber-50 rounded"
+          role="status"
+          data-testid={`upload-hint-${name}`}
+        >
+          <span className="text-lg leading-none">⚠️</span>
+          <div className="text-xs text-amber-900 leading-snug">
+            <strong>Upload complete — not published yet.</strong>{' '}
+            Click the black <strong>Speichern</strong> button at the top-right of this page to save the change. Otherwise the new photo won&apos;t appear on the public site.
+          </div>
+        </div>
+      )}
+
       {value && (
         <div className="pt-2">
           <img src={value} alt="preview" className="h-32 rounded-md object-cover border border-[#1A1414]/10" />
         </div>
       )}
       {error && <p className="text-xs text-red-700">{error}</p>}
-      {helpText && !error && <p className="text-xs text-[#6B5F5F]">{helpText}</p>}
+      {helpText && !error && !justUploaded && <p className="text-xs text-[#6B5F5F]">{helpText}</p>}
     </div>
   )
 }
