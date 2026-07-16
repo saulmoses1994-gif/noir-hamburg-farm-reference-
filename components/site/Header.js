@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { NAV } from '@/lib/site'
 import { t, localePath, swappedPath } from '@/lib/i18n'
 import { getBrand } from '@/lib/brand'
+import MobileNav from '@/components/site/MobileNav'
 
 // Async server component. Reads live site_settings on every request; the
 // Settings PUT handler already fires revalidatePath('/', 'layout') so edits
@@ -9,6 +10,19 @@ import { getBrand } from '@/lib/brand'
 export default async function Header({ lang = 'de', currentPath = '/' }) {
   const brand = await getBrand(lang)
   const swap = swappedPath(currentPath, lang)
+  const navItems = NAV.map((n) => ({
+    href: localePath(lang, n.to),
+    label: lang === 'en' ? n.enLabel : n.deLabel,
+  }))
+  const mobileLabels = {
+    open: lang === 'en' ? 'Open menu' : 'Men\u00fc \u00f6ffnen',
+    close: lang === 'en' ? 'Close menu' : 'Men\u00fc schlie\u00dfen',
+    menu: lang === 'en' ? 'Mobile navigation' : 'Mobile Navigation',
+    whatsapp: t(lang, 'cta.whatsapp'),
+    book: t(lang, 'cta.book'),
+    workWithUs: t(lang, 'cta.workWithUs'),
+    langSwitch: t(lang, 'lang.switch'),
+  }
   return (
     <>
       <div className="hidden md:block bg-[#1A1414] text-white text-xs py-2 px-6 md:px-12 lg:px-16" data-testid="topbar">
@@ -63,23 +77,18 @@ export default async function Header({ lang = 'de', currentPath = '/' }) {
             )}
           </div>
           {/*
-            Mobile hamburger scaffold — hidden until a mobile nav ships.
-            When wiring it, use a client subcomponent that toggles a local
-            `open` state and mirrors it onto both aria-expanded (below) and
-            aria-controls pointing at the drawer id. This static markup keeps
-            the AT contract stable for screen readers and future audits.
+            Mobile navigation drawer — client component. Hidden on xl (>= 1280px)
+            where the full nav is visible; shown on smaller viewports. The
+            drawer contains every nav link + WhatsApp / Book / Work-with-us
+            CTAs + language switcher so mobile users have parity with desktop.
           */}
-          <button
-            type="button"
-            className="xl:hidden inline-flex items-center justify-center w-10 h-10 border border-[#1A1414]/15"
-            aria-expanded="false"
-            aria-controls="mobile-nav"
-            aria-label={lang === 'en' ? 'Open menu' : 'Men\u00fc \u00f6ffnen'}
-            data-testid="mobile-nav-toggle"
-            data-nav-open="false"
-          >
-            <span aria-hidden="true" className="block w-4 h-[2px] bg-[#1A1414] relative before:content-[''] before:absolute before:-top-1.5 before:left-0 before:w-4 before:h-[2px] before:bg-[#1A1414] after:content-[''] after:absolute after:top-1.5 after:left-0 after:w-4 after:h-[2px] after:bg-[#1A1414]" />
-          </button>
+          <MobileNav
+            lang={lang}
+            brand={brand}
+            swap={swap}
+            labels={mobileLabels}
+            navItems={navItems}
+          />
         </div>
       </header>
     </>
