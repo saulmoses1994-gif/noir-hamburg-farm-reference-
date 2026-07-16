@@ -103,8 +103,11 @@ export default function MobileNav({
 
         <div className="border-t border-[#1A1414]/8 p-6 space-y-3">
           <div className="flex items-center gap-3 text-sm">
-            <a href={brand.phoneHref} className="flex-1 text-[#1A1414] hover:accent-text truncate" data-testid="mobile-phone">
-              {brand.phone}
+            <a href={brand.phoneHref} className="flex-1 inline-flex items-center gap-1.5 text-[#1A1414] hover:accent-text truncate" data-testid="mobile-phone">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="w-4 h-4 fill-current flex-shrink-0">
+                <path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24 11.72 11.72 0 003.68.59 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.72 11.72 0 00.59 3.68 1 1 0 01-.24 1.02l-2.23 2.09z"/>
+              </svg>
+              <span className="truncate">{brand.phone}</span>
             </a>
             <Link
               href={swap}

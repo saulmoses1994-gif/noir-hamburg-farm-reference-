@@ -28,8 +28,18 @@ export default async function Header({ lang = 'de', currentPath = '/' }) {
       <div className="hidden md:block bg-[#1A1414] text-white text-xs py-2 px-6 md:px-12 lg:px-16" data-testid="topbar">
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-5 text-white/90">
-            <a href={brand.phoneHref} className="hover:text-[#E5A5B5]" data-testid="topbar-phone">{brand.phone}</a>
-            <a href={brand.emailHref} className="hover:text-[#E5A5B5]" data-testid="topbar-email">{brand.email}</a>
+            <a href={brand.phoneHref} className="inline-flex items-center gap-1.5 hover:text-[#E5A5B5]" data-testid="topbar-phone">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" data-testid="topbar-phone-icon">
+                <path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24 11.72 11.72 0 003.68.59 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.72 11.72 0 00.59 3.68 1 1 0 01-.24 1.02l-2.23 2.09z"/>
+              </svg>
+              <span>{brand.phone}</span>
+            </a>
+            <a href={brand.emailHref} className="inline-flex items-center gap-1.5 hover:text-[#E5A5B5]" data-testid="topbar-email">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" data-testid="topbar-email-icon">
+                <path d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+              </svg>
+              <span>{brand.email}</span>
+            </a>
           </div>
           <div className="text-white/70 tracking-wide" data-testid="topbar-hours">
             {brand.hours}
