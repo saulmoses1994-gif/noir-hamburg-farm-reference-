@@ -61,20 +61,22 @@ export default async function ModelsList() {
                     {m.featured && (
                       <span className="absolute top-4 left-4 px-2 py-0.5 bg-white/90 backdrop-blur text-[10px] font-mono uppercase tracking-[0.2em] accent-text rounded-full">Featured</span>
                     )}
-                    {hourPrice && (
-                      <span
-                        className="absolute bottom-3 right-3 px-3 py-1.5 bg-[#1A1414]/85 backdrop-blur text-white text-[11px] font-mono tracking-widest rounded-full"
-                        data-testid={`model-price-${m.slug}`}
-                      >
-                        ab {hourPrice} <span className="text-white/70">· 1 Std.</span>
-                      </span>
-                    )}
                   </div>
                   <div className="pt-5">
                     <div className="flex items-baseline justify-between gap-3 flex-wrap">
                       <h2 className="font-heading text-2xl group-hover:accent-text transition-colors">{m.name}</h2>
                       <div className="text-xs font-mono text-[#6B5F5F]">{m.age ? `${m.age} J.` : ''}{m.height_cm ? ` · ${m.height_cm} cm` : ''}</div>
                     </div>
+                    {hourPrice && (
+                      <div
+                        className="mt-1.5 text-xs font-mono uppercase tracking-widest text-[#8B1538]"
+                        data-testid={`model-price-${m.slug}`}
+                      >
+                        <span className="opacity-60">ab</span>{' '}
+                        <strong className="font-semibold">{hourPrice}</strong>{' '}
+                        <span className="opacity-60">/ 1 Std.</span>
+                      </div>
+                    )}
                     {pick(m, 'short_tagline', lang) && (
                       <p className="font-heading italic text-[#6B5F5F] mt-1 text-sm">{pick(m, 'short_tagline', lang)}</p>
                     )}
