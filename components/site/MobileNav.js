@@ -122,14 +122,14 @@ export default function MobileNav({
               href={brand.whatsappUrl}
               target="_blank"
               rel="noreferrer nofollow"
-              className="btn-whatsapp !text-xs !py-2 !px-3 text-center"
+              className="btn-whatsapp inline-flex items-center justify-center !text-xs !py-2 !px-3 text-center min-h-[44px]"
               data-testid="mobile-whatsapp"
             >
               {labels.whatsapp}
             </a>
             <Link
               href={lang === 'en' ? '/en/contact' : '/kontakt'}
-              className="btn-primary !text-xs !py-2 !px-3 text-center"
+              className="btn-primary inline-flex items-center justify-center !text-xs !py-2 !px-3 text-center min-h-[44px]"
               data-testid="mobile-book"
             >
               {labels.book}
@@ -140,7 +140,7 @@ export default function MobileNav({
               href={brand.recruitmentWhatsappUrl}
               target="_blank"
               rel="noreferrer nofollow"
-              className="w-full inline-flex items-center justify-center gap-1 px-4 py-2 border border-[#1A1414] text-[#1A1414] text-[11px] font-semibold tracking-widest uppercase rounded-full hover:bg-[#1A1414] hover:text-white transition-colors"
+              className="w-full inline-flex items-center justify-center gap-1 px-4 py-2 min-h-[44px] border border-[#1A1414] text-[#1A1414] text-[11px] font-semibold tracking-widest uppercase rounded-full hover:bg-[#1A1414] hover:text-white transition-colors"
               data-testid="mobile-work-with-us"
             >
               {labels.workWithUs}
