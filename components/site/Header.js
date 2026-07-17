@@ -41,8 +41,33 @@ export default async function Header({ lang = 'de', currentPath = '/' }) {
               <span>{brand.email}</span>
             </a>
           </div>
-          <div className="text-white/70 tracking-wide" data-testid="topbar-hours">
-            {brand.hours}
+          <div className="flex items-center gap-5">
+            <div className="text-white/70 tracking-wide" data-testid="topbar-hours">
+              {brand.hours}
+            </div>
+            {/*
+              Partner backlink to EuroGirlsEscort — proper follow link (no rel=nofollow)
+              so the outbound SEO juice reaches the partner. Native banner is 120x60;
+              we scale height to 32px to match the topbar rhythm. Aspect-ratio preserved.
+            */}
+            <a
+              href="https://www.eurogirlsescort.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="EuroGirlsEscort.com"
+              className="shrink-0 inline-flex items-center hover:opacity-80 transition-opacity"
+              data-testid="topbar-partner-eurogirls"
+              aria-label="EuroGirlsEscort.com"
+            >
+              <img
+                src="https://www.eurogirlsescort.com/dist/images/banners/120X60.jpg"
+                alt="EuroGirlsEscort.com"
+                width="120"
+                height="60"
+                loading="lazy"
+                className="h-8 w-auto"
+              />
+            </a>
           </div>
         </div>
       </div>
