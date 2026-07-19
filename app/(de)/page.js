@@ -3,7 +3,8 @@ import Header from '@/components/site/Header'
 import Footer from '@/components/site/Footer'
 import JsonLd from '@/components/site/JsonLd'
 import { listServiceContent } from '@/lib/service-content'
-import { buildMetadata, siteUrl } from '@/lib/seo'
+import { buildMetadata, siteUrl, organizationSchema } from '@/lib/seo'
+import { getSettings } from '@/lib/settings'
 import { pick } from '@/lib/i18n'
 import { resolveHomeHero } from '@/lib/home_hero'
 
@@ -20,10 +21,10 @@ export async function generateMetadata() {
 
 export default async function Home() {
   const lang = 'de'
-  const [services, hero] = await Promise.all([listServiceContent(), resolveHomeHero()])
+  const [services, hero, settings] = await Promise.all([listServiceContent(), resolveHomeHero(), getSettings().catch(() => ({}))])
   const jsonLd = [
-    { '@context': 'https://schema.org', '@type': 'Organization', name: 'Noir Hamburg', url: siteUrl(), logo: `${siteUrl()}/logo.png` },
-    { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Noir Hamburg', url: siteUrl(), inLanguage: 'de-DE' },
+    organizationSchema(settings),
+    { '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${siteUrl()}/#website`, name: 'Noir Hamburg', url: siteUrl(), inLanguage: 'de-DE', publisher: { '@id': `${siteUrl()}/#organization` } },
   ]
   return (
     <>

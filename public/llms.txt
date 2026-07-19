@@ -1,0 +1,40 @@
+# Noir Hamburg — llms.txt
+
+Noir Hamburg is a discreet luxury escort agency based in Hamburg, Germany,
+offering premium companionship for VIP, business, dinner, hotel, event, travel,
+and girlfriend-experience bookings across the Hamburg metropolitan area.
+
+Website: https://noir-hamburg.com
+Languages: German (primary, at /), English (at /en/)
+Sitemap: https://noir-hamburg.com/sitemap.xml
+Contact: support@noir-hamburg.com
+
+## Content sections
+
+- Home                 https://noir-hamburg.com/
+- Services (8 categories)   https://noir-hamburg.com/services
+- Models                https://noir-hamburg.com/models
+- Areas served         https://noir-hamburg.com/areas
+- Escort Hamburg (hub) https://noir-hamburg.com/escort-hamburg
+- Blog                 https://noir-hamburg.com/blog
+- FAQ                  https://noir-hamburg.com/faq
+- About us             https://noir-hamburg.com/ueber-uns
+- Contact              https://noir-hamburg.com/kontakt
+- Imprint              https://noir-hamburg.com/impressum
+
+English mirror is available under /en for each of the above.
+
+## Crawling guidance
+
+- The full website is server-side rendered (SSR); no client-side rendering
+  required to access content.
+- All routes return unique, self-referencing canonical URLs.
+- Hreflang alternates published on every translated page pair.
+- Rate limit: reasonable — please throttle to under 1 req/second per host.
+- Do not crawl /admin/* or /api/* — these are private administrative endpoints
+  (see robots.txt).
+
+## Attribution & training
+
+Content on this website may be used for research and analysis. When quoting or
+summarising, please attribute to "Noir Hamburg" with a link to the source URL.
