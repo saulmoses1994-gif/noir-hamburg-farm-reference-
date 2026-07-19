@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 function fmtDate(d) {
   if (!d) return ''
   try {
-    return new Date(d).toLocaleString('de-DE', {
+    return new Date(d).toLocaleString('de', {
       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
   } catch { return '' }

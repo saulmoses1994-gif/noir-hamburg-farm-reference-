@@ -30,7 +30,7 @@ export default function ContactBody({ lang, services = [], settings = {} }) {
       name: t(lang, 'contact.metaTitle'),
       description: t(lang, 'contact.metaDesc'),
       url: `${siteUrl()}${path}`,
-      inLanguage: lang === 'en' ? 'en' : 'de-DE',
+      inLanguage: lang === 'en' ? 'en' : 'de',
       mainEntity: {
         '@type': 'Organization',
         name: 'Noir Hamburg',

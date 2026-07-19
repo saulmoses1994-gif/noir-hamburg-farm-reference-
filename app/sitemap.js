@@ -5,6 +5,33 @@ import { listPublicPages } from '@/lib/pages'
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.com'
 
+// Slug pairs where the EN URL differs from the DE URL.
+const EN_SLUG_MAP = { '/ueber-uns': '/about', '/kontakt': '/contact', '/impressum': '/imprint' }
+
+// Language codes must match on-page hreflang tags exactly. We emit language-
+// only codes (`de`, `en`) to prevent SEMrush "language mismatch" warnings.
+function alternates(dePath, enPath) {
+  return {
+    languages: {
+      de: `${BASE}${dePath}`,
+      en: `${BASE}${enPath}`,
+      'x-default': `${BASE}${dePath}`,
+    },
+  }
+}
+
+// Emit BOTH the DE and EN URL as their own `<url>` entries (each with the same
+// reciprocal alternates). This satisfies Google/SEMrush's requirement that
+// every hreflang-referenced URL exists as its own sitemap entry.
+function pair(dePath, enPath, { changeFrequency = 'weekly', priority = 0.7, lastModified } = {}) {
+  const alts = alternates(dePath, enPath)
+  const lm = lastModified || new Date()
+  return [
+    { url: `${BASE}${dePath}`, lastModified: lm, changeFrequency, priority, alternates: alts },
+    { url: `${BASE}${enPath}`, lastModified: lm, changeFrequency, priority, alternates: alts },
+  ]
+}
+
 export default async function sitemap() {
   const [services, areas, models, blog, pages] = await Promise.all([
     listServiceContent().catch(() => []),
@@ -14,103 +41,50 @@ export default async function sitemap() {
     listPublicPages().catch(() => []),
   ])
 
-  const staticDE = [
-    '', '/models', '/services', '/escort-hamburg', '/areas',
-    '/blog', '/faq', '/ueber-uns', '/kontakt', '/impressum', '/p/diskretion',
-  ]
-  const staticEN = [
-    '/en', '/en/models', '/en/services', '/en/escort-hamburg', '/en/areas',
-    '/en/blog', '/en/faq', '/en/about', '/en/contact', '/en/imprint', '/en/p/diskretion',
+  const staticDePaths = [
+    { de: '/', priority: 1 },
+    { de: '/models', priority: 0.7 },
+    { de: '/services', priority: 0.7 },
+    { de: '/escort-hamburg', priority: 0.7 },
+    { de: '/areas', priority: 0.7 },
+    { de: '/blog', priority: 0.7 },
+    { de: '/faq', priority: 0.7 },
+    { de: '/ueber-uns', priority: 0.7 },
+    { de: '/kontakt', priority: 0.7 },
+    { de: '/impressum', priority: 0.5 },
+    { de: '/p/diskretion', priority: 0.5 },
   ]
 
-  const staticEntries = staticDE.map((p) => {
-    const dePath = p || '/'
-    const enSlug = { '/ueber-uns': '/about', '/kontakt': '/contact', '/impressum': '/imprint' }[dePath] || dePath
+  const staticEntries = staticDePaths.flatMap(({ de, priority }) => {
+    const enSlug = EN_SLUG_MAP[de] || de
     const enPath = `/en${enSlug === '/' ? '' : enSlug}`
-    return {
-      url: `${BASE}${dePath}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: dePath === '/' ? 1 : 0.7,
-      alternates: {
-        languages: {
-          'de-DE': `${BASE}${dePath}`,
-          en: `${BASE}${enPath}`,
-          'x-default': `${BASE}${dePath}`,
-        },
-      },
-    }
+    return pair(de, enPath, { priority })
   })
 
-  const serviceEntries = services.map((s) => ({
-    url: `${BASE}/services/${s.slug}`,
-    lastModified: s.updated_at ? new Date(s.updated_at) : new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-    alternates: {
-      languages: {
-        'de-DE': `${BASE}/services/${s.slug}`,
-        en: `${BASE}/en/services/${s.slug}`,
-        'x-default': `${BASE}/services/${s.slug}`,
-      },
-    },
-  }))
+  const serviceEntries = services.flatMap((s) => pair(
+    `/services/${s.slug}`, `/en/services/${s.slug}`,
+    { priority: 0.8, lastModified: s.updated_at ? new Date(s.updated_at) : new Date() },
+  ))
 
-  const areaEntries = areas.map((a) => ({
-    url: `${BASE}/escort/${a.slug}`,
-    lastModified: a.updated_at ? new Date(a.updated_at) : new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.7,
-    alternates: {
-      languages: {
-        'de-DE': `${BASE}/escort/${a.slug}`,
-        en: `${BASE}/en/escort/${a.slug}`,
-        'x-default': `${BASE}/escort/${a.slug}`,
-      },
-    },
-  }))
+  const areaEntries = areas.flatMap((a) => pair(
+    `/escort/${a.slug}`, `/en/escort/${a.slug}`,
+    { priority: 0.7, lastModified: a.updated_at ? new Date(a.updated_at) : new Date() },
+  ))
 
-  const modelEntries = models.map((m) => ({
-    url: `${BASE}/models/${m.slug}`,
-    lastModified: m.updated_at ? new Date(m.updated_at) : new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-    alternates: {
-      languages: {
-        'de-DE': `${BASE}/models/${m.slug}`,
-        en: `${BASE}/en/models/${m.slug}`,
-        'x-default': `${BASE}/models/${m.slug}`,
-      },
-    },
-  }))
+  const modelEntries = models.flatMap((m) => pair(
+    `/models/${m.slug}`, `/en/models/${m.slug}`,
+    { priority: 0.8, lastModified: m.updated_at ? new Date(m.updated_at) : new Date() },
+  ))
 
-  const blogEntries = blog.map((b) => ({
-    url: `${BASE}/blog/${b.slug}`,
-    lastModified: b.updated_at ? new Date(b.updated_at) : new Date(),
-    changeFrequency: 'monthly',
-    priority: 0.6,
-    alternates: {
-      languages: {
-        'de-DE': `${BASE}/blog/${b.slug}`,
-        en: `${BASE}/en/blog/${b.slug}`,
-        'x-default': `${BASE}/blog/${b.slug}`,
-      },
-    },
-  }))
+  const blogEntries = blog.flatMap((b) => pair(
+    `/blog/${b.slug}`, `/en/blog/${b.slug}`,
+    { priority: 0.6, changeFrequency: 'monthly', lastModified: b.updated_at ? new Date(b.updated_at) : new Date() },
+  ))
 
-  const pageEntries = pages.map((p) => ({
-    url: `${BASE}/p/${p.slug}`,
-    lastModified: p.updated_at ? new Date(p.updated_at) : new Date(),
-    changeFrequency: 'monthly',
-    priority: 0.5,
-    alternates: {
-      languages: {
-        'de-DE': `${BASE}/p/${p.slug}`,
-        en: `${BASE}/en/p/${p.slug}`,
-        'x-default': `${BASE}/p/${p.slug}`,
-      },
-    },
-  }))
+  const pageEntries = pages.flatMap((p) => pair(
+    `/p/${p.slug}`, `/en/p/${p.slug}`,
+    { priority: 0.5, changeFrequency: 'monthly', lastModified: p.updated_at ? new Date(p.updated_at) : new Date() },
+  ))
 
   return [...staticEntries, ...serviceEntries, ...areaEntries, ...modelEntries, ...blogEntries, ...pageEntries]
 }

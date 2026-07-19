@@ -26,7 +26,7 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
       name: t(lang, 'hub.metaTitle'),
       description: t(lang, 'hub.metaDesc'),
       url: `${siteUrl()}${path}`,
-      inLanguage: isEn ? 'en' : 'de-DE',
+      inLanguage: isEn ? 'en' : 'de',
       about: { '@type': 'Place', name: 'Hamburg', address: { '@type': 'PostalAddress', addressLocality: 'Hamburg', addressCountry: 'DE' } },
     },
     breadcrumbSchema([

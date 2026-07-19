@@ -71,7 +71,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
       dateModified: post.updated_at || post.created_at,
       author: { '@type': 'Organization', name: 'Noir Hamburg' },
       publisher: { '@type': 'Organization', name: 'Noir Hamburg' },
-      inLanguage: isEn && post.content_en ? 'en' : 'de-DE',
+      inLanguage: isEn && post.content_en ? 'en' : 'de',
       articleSection: post.category || undefined,
       mainEntityOfPage: { '@type': 'WebPage', '@id': `${siteUrl()}${detailPath}` },
     },
@@ -96,7 +96,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
   const dateFmt = (d) => {
     if (!d) return ''
     try {
-      return new Date(d).toLocaleDateString(isEn ? 'en-US' : 'de-DE', {
+      return new Date(d).toLocaleDateString(isEn ? 'en-US' : 'de', {
         year: 'numeric', month: 'long', day: 'numeric',
       })
     } catch { return '' }

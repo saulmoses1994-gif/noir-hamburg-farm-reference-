@@ -25,7 +25,7 @@ export default function FaqBody({ lang }) {
       '@type': 'FAQPage',
       name: t(lang, 'faq.metaTitle'),
       url: `${siteUrl()}${path}`,
-      inLanguage: isEn ? 'en' : 'de-DE',
+      inLanguage: isEn ? 'en' : 'de',
       mainEntity: FAQS_DEFAULT.map((f) => ({
         '@type': 'Question',
         name: q(f),

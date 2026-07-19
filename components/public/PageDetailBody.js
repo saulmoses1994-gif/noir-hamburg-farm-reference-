@@ -26,7 +26,7 @@ export default function PageDetailBody({ lang, page, relatedServices = [], relat
       name: title,
       description: pick(page, 'meta_description', lang) || intro || undefined,
       url: `${siteUrl()}${detailPath}`,
-      inLanguage: isEn && page.content_en ? 'en' : 'de-DE',
+      inLanguage: isEn && page.content_en ? 'en' : 'de',
       image: page.hero_image || undefined,
     },
     breadcrumbSchema([

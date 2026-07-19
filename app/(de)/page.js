@@ -24,7 +24,7 @@ export default async function Home() {
   const [services, hero, settings] = await Promise.all([listServiceContent(), resolveHomeHero(), getSettings().catch(() => ({}))])
   const jsonLd = [
     organizationSchema(settings),
-    { '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${siteUrl()}/#website`, name: 'Noir Hamburg', url: siteUrl(), inLanguage: 'de-DE', publisher: { '@id': `${siteUrl()}/#organization` } },
+    { '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${siteUrl()}/#website`, name: 'Noir Hamburg', url: siteUrl(), inLanguage: 'de', publisher: { '@id': `${siteUrl()}/#organization` } },
   ]
   return (
     <>

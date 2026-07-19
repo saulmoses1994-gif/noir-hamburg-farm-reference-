@@ -26,7 +26,7 @@ export default function ImpressumBody({ lang, settings = {} }) {
       name: t(lang, 'impressum.metaTitle'),
       description: t(lang, 'impressum.metaDesc'),
       url: `${siteUrl()}${path}`,
-      inLanguage: 'de-DE',
+      inLanguage: 'de',
     },
     breadcrumbSchema([
       { name: t(lang, 'crumb.home'), url: homeHref },

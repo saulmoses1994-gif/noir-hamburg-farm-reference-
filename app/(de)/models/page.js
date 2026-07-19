@@ -52,7 +52,7 @@ export default async function ModelsList() {
             {models.map((m) => {
               const hour = Array.isArray(m.prices) ? m.prices.find((p) => p.unit === 'hour') : null
               const hourPrice = hour
-                ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: hour.currency || 'EUR', maximumFractionDigits: 0 }).format(hour.amount)
+                ? new Intl.NumberFormat('de', { style: 'currency', currency: hour.currency || 'EUR', maximumFractionDigits: 0 }).format(hour.amount)
                 : null
               return (
                 <Link key={m.slug} href={`/models/${m.slug}`} className="group block">

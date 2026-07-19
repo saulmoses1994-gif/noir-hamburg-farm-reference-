@@ -39,7 +39,7 @@ export default function AboutBody({ lang, settings = {} }) {
       name: t(lang, 'about.metaTitle'),
       description: t(lang, 'about.metaDesc'),
       url: `${siteUrl()}${path}`,
-      inLanguage: isEn && (settings.about_content_en || !settings.about_content) ? 'en' : 'de-DE',
+      inLanguage: isEn && (settings.about_content_en || !settings.about_content) ? 'en' : 'de',
       about: {
         '@type': 'Organization',
         name: 'Noir Hamburg',

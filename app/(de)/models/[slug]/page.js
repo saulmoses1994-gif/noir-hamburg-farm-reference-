@@ -92,7 +92,7 @@ function ModelDetailBody({ m, lang, slug, brand }) {
                   {m.prices.map((p, i) => (
                     <li key={i} className="flex justify-between py-3">
                       <span>{translateAttribute(p.label, lang)}</span>
-                      <span className="font-mono">{p.amount?.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE')} €</span>
+                      <span className="font-mono">{p.amount?.toLocaleString(lang === 'en' ? 'en-US' : 'de')} €</span>
                     </li>
                   ))}
                 </ul>

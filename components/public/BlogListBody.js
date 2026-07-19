@@ -24,7 +24,7 @@ export default function BlogListBody({ lang, posts, categories, activeCategory }
       '@type': 'Blog',
       name: t(lang, 'blog.list.metaTitle'),
       url: `${siteUrl()}${blogHref}`,
-      inLanguage: isEn ? 'en' : 'de-DE',
+      inLanguage: isEn ? 'en' : 'de',
       blogPost: posts.slice(0, 20).map((p) => ({
         '@type': 'BlogPosting',
         headline: pick(p, 'title', lang),
@@ -39,7 +39,7 @@ export default function BlogListBody({ lang, posts, categories, activeCategory }
   const dateFmt = (d) => {
     if (!d) return ''
     try {
-      return new Date(d).toLocaleDateString(isEn ? 'en-US' : 'de-DE', {
+      return new Date(d).toLocaleDateString(isEn ? 'en-US' : 'de', {
         year: 'numeric', month: 'long', day: 'numeric',
       })
     } catch { return '' }

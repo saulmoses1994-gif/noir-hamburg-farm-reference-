@@ -20,7 +20,7 @@ export default function AreasBody({ lang, areas = [], settings = {} }) {
       name: t(lang, 'areas.metaTitle'),
       description: t(lang, 'areas.metaDesc'),
       url: `${siteUrl()}${path}`,
-      inLanguage: isEn ? 'en' : 'de-DE',
+      inLanguage: isEn ? 'en' : 'de',
       hasPart: areas.map((a) => ({
         '@type': 'Place',
         name: a.name,

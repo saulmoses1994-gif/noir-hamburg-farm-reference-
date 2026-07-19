@@ -8,7 +8,7 @@ import { getServiceContent, listServiceContent } from '@/lib/service-content'
 import { getBrand } from '@/lib/brand'
 import { getSettings } from '@/lib/settings'
 import { optimizeImageUrl } from '@/lib/cloudinary'
-import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
+import { buildMetadata, breadcrumbSchema, siteUrl, organizationRef } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
@@ -57,7 +57,11 @@ export default async function ServiceDetailEn({ params }) {
     { '@context': 'https://schema.org', '@type': 'Service',
       name: s.title,
       description: pick(s, 'meta_description', lang) || pick(s, 'description', lang),
-      provider: { '@type': 'LocalBusiness', name: 'Noir Hamburg', areaServed: 'Hamburg' },
+      // Reference the centralized, validated Organization entity (defined
+      // globally on every page). Emitting an inline `LocalBusiness` without a
+      // complete `PostalAddress` triggers SEMrush "Invalid LocalBusiness"
+      // errors — `@id` referencing keeps the graph consistent instead.
+      provider: organizationRef(),
       areaServed: { '@type': 'City', name: 'Hamburg' },
       serviceType: s.short_label, image: heroImage,
       url: `${siteUrl()}/en/services/${slug}`,
