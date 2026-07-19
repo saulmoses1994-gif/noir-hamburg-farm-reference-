@@ -24,6 +24,10 @@ export async function generateMetadata({ params }) {
   const lang = 'de'
   const title = pick(p, 'meta_title', lang) || `${pick(p, 'title', lang)} | Noir Hamburg`
   const description = pick(p, 'meta_description', lang) || pick(p, 'intro', lang) || ''
+  // If no EN translation exists in the CMS, suppress the EN hreflang alternate.
+  // The paired /en/p/{slug} route is noindexed in that case, so pointing to it
+  // creates a "hreflang → noindex" conflict flagged by SEMrush.
+  const hasEnAlternate = !!(p.title_en || p.meta_title_en || p.content_en || p.intro_en)
   return buildMetadata({
     title,
     description,
@@ -33,6 +37,7 @@ export async function generateMetadata({ params }) {
     // long DB slug but the URL the user visits is what we canonicalise).
     path: `/p/${slug}`,
     lang,
+    hasEnAlternate,
   })
 }
 

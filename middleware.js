@@ -7,6 +7,16 @@ import { NextResponse } from 'next/server'
 // while our hreflang tags advertise the non-www domain.
 const CANONICAL_HOST = 'noir-hamburg.com'
 
+// Legacy / alias slug redirects — some CMS pages historically had a shorter
+// marketing slug that resolves to the same content via a code-level alias in
+// `lib/pages.js`. Serving both URLs with the same body triggers SEMrush's
+// "duplicate content" error. Redirect the short alias to the canonical long
+// slug so there is exactly one indexable URL per page.
+const ALIAS_301_REDIRECTS = {
+  '/p/diskretion': '/p/diskretion-und-datenschutz-noir-hamburg',
+  '/en/p/diskretion': '/en/p/diskretion-und-datenschutz-noir-hamburg',
+}
+
 // Detect the hostname the *client* sent, not the internal proxy hostname.
 // On Emergent's Cloud Run setup, the front-door proxy rewrites the `Host:`
 // header to the origin's internal `*.run.app` name and puts the original
@@ -33,6 +43,15 @@ export function middleware(request) {
     // Diagnostic: expose what the middleware saw so we can verify in curl.
     res.headers.set('x-mw-detected-host', clientHost)
     res.headers.set('x-mw-action', 'redirect-www-to-apex')
+    return res
+  }
+
+  // ── Alias 301s: collapse duplicate-content URLs to their canonical slug ──
+  const aliasTarget = ALIAS_301_REDIRECTS[url.pathname]
+  if (aliasTarget) {
+    const redirectUrl = new URL(aliasTarget + url.search, url.origin)
+    const res = NextResponse.redirect(redirectUrl, 301)
+    res.headers.set('x-mw-action', 'redirect-alias')
     return res
   }
 

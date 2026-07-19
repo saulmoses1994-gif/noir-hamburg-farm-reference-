@@ -22,7 +22,8 @@ export async function generateMetadata({ params }) {
   const p = await getPublicPageWithAlias(slug)
   if (!p) return { title: t('en', 'page.notFound') }
   const lang = 'en'
-  const title = pick(p, 'meta_title', lang) || `${pick(p, 'title', lang)} | Noir Hamburg`
+  const noindex = !(p.title_en || p.meta_title_en || p.content_en || p.intro_en)
+  const title = pick(p, 'meta_title', lang) || `${pick(p, 'title', lang)} — EN | Noir Hamburg`
   const description = pick(p, 'meta_description', lang) || pick(p, 'intro', lang) || ''
   return buildMetadata({
     title,
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }) {
     imageAlt: pick(p, 'title', lang),
     path: `/p/${slug}`,
     lang,
+    noindex,
   })
 }
 

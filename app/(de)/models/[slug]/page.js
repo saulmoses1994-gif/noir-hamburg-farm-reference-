@@ -21,11 +21,17 @@ export async function generateMetadata({ params }) {
   const { slug } = await params
   const m = await getPublicModel(slug)
   if (!m) return { title: 'Model nicht gefunden' }
+  // Suppress the EN hreflang alternate when this model has no EN translation
+  // (bio_en/meta_title_en/meta_description_en all empty). The paired /en/
+  // route is noindexed in that case, so pointing to it would trigger
+  // SEMrush's "hreflang → noindex" conflict.
+  const hasEnAlternate = !!(m.meta_title_en || m.meta_description_en || m.bio_en)
   return buildMetadata({
     title: m.meta_title || `${m.name} — Escort Hamburg | Noir Hamburg`,
     description: m.meta_description || pick(m, 'bio', 'de'),
     image: m.cover_image, imageAlt: m.name,
     path: `/models/${slug}`, lang: 'de',
+    hasEnAlternate,
   })
 }
 

@@ -25,6 +25,10 @@ export async function generateMetadata({ params }) {
   const lang = 'de'
   const title = pick(p, 'meta_title', lang) || `${pick(p, 'title', lang)} | Noir Hamburg`
   const description = pick(p, 'meta_description', lang) || pick(p, 'excerpt', lang) || ''
+  // Suppress the EN hreflang alternate when the EN version has no real
+  // content — the /en/blog/{slug} route is noindexed in that case and
+  // pointing to it would create a "hreflang → noindex" conflict.
+  const hasEnAlternate = !!(p.title_en || p.meta_title_en || p.content_en || p.excerpt_en)
   return buildMetadata({
     title,
     description,
@@ -32,6 +36,7 @@ export async function generateMetadata({ params }) {
     imageAlt: pick(p, 'title', lang),
     path: `/blog/${slug}`,
     lang,
+    hasEnAlternate,
   })
 }
 

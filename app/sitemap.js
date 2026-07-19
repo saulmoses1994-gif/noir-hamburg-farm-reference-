@@ -10,27 +10,31 @@ const EN_SLUG_MAP = { '/ueber-uns': '/about', '/kontakt': '/contact', '/impressu
 
 // Language codes must match on-page hreflang tags exactly. We emit language-
 // only codes (`de`, `en`) to prevent SEMrush "language mismatch" warnings.
-function alternates(dePath, enPath) {
-  return {
-    languages: {
-      de: `${BASE}${dePath}`,
-      en: `${BASE}${enPath}`,
-      'x-default': `${BASE}${dePath}`,
-    },
-  }
+function alternates(dePath, enPath, { hasEnAlternate = true } = {}) {
+  const languages = { de: `${BASE}${dePath}` }
+  if (hasEnAlternate) languages.en = `${BASE}${enPath}`
+  languages['x-default'] = `${BASE}${dePath}`
+  return { languages }
 }
 
-// Emit BOTH the DE and EN URL as their own `<url>` entries (each with the same
-// reciprocal alternates). This satisfies Google/SEMrush's requirement that
-// every hreflang-referenced URL exists as its own sitemap entry.
-function pair(dePath, enPath, { changeFrequency = 'weekly', priority = 0.7, lastModified } = {}) {
-  const alts = alternates(dePath, enPath)
+// Emit the DE URL always. Emit the EN URL only when the EN counterpart is
+// indexable — otherwise Google would fetch the noindex page and treat the
+// hreflang chain as broken.
+function pair(dePath, enPath, opts = {}) {
+  const { changeFrequency = 'weekly', priority = 0.7, lastModified, hasEnAlternate = true } = opts
   const lm = lastModified || new Date()
-  return [
-    { url: `${BASE}${dePath}`, lastModified: lm, changeFrequency, priority, alternates: alts },
-    { url: `${BASE}${enPath}`, lastModified: lm, changeFrequency, priority, alternates: alts },
-  ]
+  const alts = alternates(dePath, enPath, { hasEnAlternate })
+  const entries = [{ url: `${BASE}${dePath}`, lastModified: lm, changeFrequency, priority, alternates: alts }]
+  if (hasEnAlternate) {
+    entries.push({ url: `${BASE}${enPath}`, lastModified: lm, changeFrequency, priority, alternates: alts })
+  }
+  return entries
 }
+
+// Helper predicates: does a CMS doc actually have real localized copy?
+const hasEnModel = (m) => !!(m.meta_title_en || m.meta_description_en || m.bio_en)
+const hasEnBlog = (b) => !!(b.title_en || b.meta_title_en || b.content_en || b.excerpt_en)
+const hasEnPage = (p) => !!(p.title_en || p.meta_title_en || p.content_en || p.intro_en)
 
 export default async function sitemap() {
   const [services, areas, models, blog, pages] = await Promise.all([
@@ -52,7 +56,6 @@ export default async function sitemap() {
     { de: '/ueber-uns', priority: 0.7 },
     { de: '/kontakt', priority: 0.7 },
     { de: '/impressum', priority: 0.5 },
-    { de: '/p/diskretion', priority: 0.5 },
   ]
 
   const staticEntries = staticDePaths.flatMap(({ de, priority }) => {
@@ -73,17 +76,17 @@ export default async function sitemap() {
 
   const modelEntries = models.flatMap((m) => pair(
     `/models/${m.slug}`, `/en/models/${m.slug}`,
-    { priority: 0.8, lastModified: m.updated_at ? new Date(m.updated_at) : new Date() },
+    { priority: 0.8, lastModified: m.updated_at ? new Date(m.updated_at) : new Date(), hasEnAlternate: hasEnModel(m) },
   ))
 
   const blogEntries = blog.flatMap((b) => pair(
     `/blog/${b.slug}`, `/en/blog/${b.slug}`,
-    { priority: 0.6, changeFrequency: 'monthly', lastModified: b.updated_at ? new Date(b.updated_at) : new Date() },
+    { priority: 0.6, changeFrequency: 'monthly', lastModified: b.updated_at ? new Date(b.updated_at) : new Date(), hasEnAlternate: hasEnBlog(b) },
   ))
 
   const pageEntries = pages.flatMap((p) => pair(
     `/p/${p.slug}`, `/en/p/${p.slug}`,
-    { priority: 0.5, changeFrequency: 'monthly', lastModified: p.updated_at ? new Date(p.updated_at) : new Date() },
+    { priority: 0.5, changeFrequency: 'monthly', lastModified: p.updated_at ? new Date(p.updated_at) : new Date(), hasEnAlternate: hasEnPage(p) },
   ))
 
   return [...staticEntries, ...serviceEntries, ...areaEntries, ...modelEntries, ...blogEntries, ...pageEntries]
