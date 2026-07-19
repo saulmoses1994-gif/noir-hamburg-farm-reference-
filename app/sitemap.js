@@ -10,10 +10,17 @@ const EN_SLUG_MAP = { '/ueber-uns': '/about', '/kontakt': '/contact', '/impressu
 
 // Language codes must match on-page hreflang tags exactly. We emit language-
 // only codes (`de`, `en`) to prevent SEMrush "language mismatch" warnings.
+// URL construction uses NO trailing slash on the homepage — we align with the
+// canonical tag emitted by `lib/seo.js` (`${SITE_URL}${path === '/' ? '' : path}`)
+// so that SEMrush sees the same absolute URL in both places.
+function abs(path) {
+  return `${BASE}${path === '/' ? '' : path}`
+}
+
 function alternates(dePath, enPath, { hasEnAlternate = true } = {}) {
-  const languages = { de: `${BASE}${dePath}` }
-  if (hasEnAlternate) languages.en = `${BASE}${enPath}`
-  languages['x-default'] = `${BASE}${dePath}`
+  const languages = { de: abs(dePath) }
+  if (hasEnAlternate) languages.en = abs(enPath)
+  languages['x-default'] = abs(dePath)
   return { languages }
 }
 
@@ -24,9 +31,9 @@ function pair(dePath, enPath, opts = {}) {
   const { changeFrequency = 'weekly', priority = 0.7, lastModified, hasEnAlternate = true } = opts
   const lm = lastModified || new Date()
   const alts = alternates(dePath, enPath, { hasEnAlternate })
-  const entries = [{ url: `${BASE}${dePath}`, lastModified: lm, changeFrequency, priority, alternates: alts }]
+  const entries = [{ url: abs(dePath), lastModified: lm, changeFrequency, priority, alternates: alts }]
   if (hasEnAlternate) {
-    entries.push({ url: `${BASE}${enPath}`, lastModified: lm, changeFrequency, priority, alternates: alts })
+    entries.push({ url: abs(enPath), lastModified: lm, changeFrequency, priority, alternates: alts })
   }
   return entries
 }

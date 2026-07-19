@@ -5,8 +5,7 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
-
-// Reusable body for the CMS-driven /p/[slug] custom pages.
+import { optimizeImageUrl } from '@/lib/cloudinary'
 // EN fallback follows rule (a): if _en fields are empty, we render DE and
 // show a small "EN preview" banner above the article.
 export default function PageDetailBody({ lang, page, relatedServices = [], relatedLocations = [] }) {
@@ -44,7 +43,7 @@ export default function PageDetailBody({ lang, page, relatedServices = [], relat
         {page.hero_image ? (
           <section className="relative h-[55vh] flex items-end" data-testid="page-hero">
             <div className="absolute inset-0">
-              <img src={page.hero_image} alt={title} className="w-full h-full object-cover" />
+              <img src={optimizeImageUrl(page.hero_image, { w: 1800, ar: '16/9', crop: 'fill' })} alt={title} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/55 to-transparent" />
             </div>
             <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

@@ -62,10 +62,15 @@ export default async function Footer({ lang = 'de' }) {
           </ul>
         </div>
         <div>
-          <div className="overline text-white/60 mb-3">{lang === 'en' ? 'Legal' : 'Rechtliches'}</div>
+          <div className="overline text-white/60 mb-3">{lang === 'en' ? 'Legal & Info' : 'Rechtliches & Info'}</div>
           <ul className="space-y-2 text-sm">
             <li><Link href={localePath(lang, '/impressum')} className="hover:text-white">{lang === 'en' ? 'Imprint' : 'Impressum'}</Link></li>
-            <li><Link href={localePath(lang, '/p/diskretion')} className="hover:text-white">{lang === 'en' ? 'Discretion' : 'Diskretion'}</Link></li>
+            {/* Link straight to the canonical slug — avoiding the /p/diskretion */}
+            {/* alias saves one 301 hop for crawlers and eliminates the "hreflang */}
+            {/* to redirected URL" warning class in SEMrush. */}
+            <li><Link href={localePath(lang, '/p/diskretion-und-datenschutz-noir-hamburg')} className="hover:text-white">{lang === 'en' ? 'Discretion & Privacy' : 'Diskretion & Datenschutz'}</Link></li>
+            <li><Link href={localePath(lang, '/p/professionelle-standards-noir-hamburg')} className="hover:text-white">{lang === 'en' ? 'Professional Standards' : 'Professionelle Standards'}</Link></li>
+            <li><Link href={localePath(lang, '/p/so-funktioniert-eine-buchung-noir-hamburg')} className="hover:text-white">{lang === 'en' ? 'How Booking Works' : 'So funktioniert eine Buchung'}</Link></li>
           </ul>
         </div>
       </div>

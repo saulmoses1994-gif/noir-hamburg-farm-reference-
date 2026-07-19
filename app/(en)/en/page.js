@@ -7,6 +7,7 @@ import { buildMetadata, siteUrl, organizationSchema } from '@/lib/seo'
 import { getSettings } from '@/lib/settings'
 import { pick } from '@/lib/i18n'
 import { resolveHomeHero } from '@/lib/home_hero'
+import { optimizeImageUrl } from '@/lib/cloudinary'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,7 @@ export default async function HomeEn() {
             {hero && (
               <div className="lg:col-span-5 order-1 lg:order-2" data-testid="home-hero-image">
                 <div className="editorial-image aspect-[4/5] sm:aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
-                  <img src={hero.image} alt={hero.alt} fetchPriority="high" className="w-full h-full object-cover object-[center_20%]" />
+                  <img src={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} alt={hero.alt} loading="eager" fetchPriority="high" className="w-full h-full object-cover object-[center_20%]" />
                 </div>
               </div>
             )}

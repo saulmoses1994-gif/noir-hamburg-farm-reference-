@@ -210,7 +210,7 @@ export default function ContactForm({ lang, services = [] }) {
         />
         <span className="text-sm font-light text-[#3F3838] leading-relaxed">
           {t(lang, 'contact.form.consent')}{' '}
-          <Link href={localePath(lang, '/p/diskretion')} className="underline decoration-[#8B1538]/50 hover:decoration-[#8B1538]">
+          <Link href={localePath(lang, '/p/diskretion-und-datenschutz-noir-hamburg')} className="underline decoration-[#8B1538]/50 hover:decoration-[#8B1538]">
             {t(lang, 'contact.form.consentLink')}
           </Link>{' '}
           {t(lang, 'contact.form.consentTail')}

@@ -102,7 +102,7 @@ export default function ContactBody({ lang, services = [], settings = {} }) {
               <div className="text-sm font-light text-[#6B5F5F] leading-relaxed">
                 <span className="overline accent-text mb-3 block">{t(lang, 'contact.privacy.title')}</span>
                 {t(lang, 'contact.privacy.body')}{' '}
-                <Link href={localePath(lang, '/p/diskretion')} className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">
+                <Link href={localePath(lang, '/p/diskretion-und-datenschutz-noir-hamburg')} className="underline decoration-[#8B1538]/40 hover:decoration-[#8B1538]">
                   {t(lang, 'contact.form.consentLink')} →
                 </Link>
               </div>

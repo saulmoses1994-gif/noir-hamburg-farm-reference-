@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { t, localePath, pick } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
+import { optimizeImageUrl } from '@/lib/cloudinary'
 
 const FALLBACK_HERO =
   'https://images.pexels.com/photos/31222489/pexels-photo-31222489.jpeg?auto=compress&cs=tinysrgb&w=2400'
@@ -43,7 +44,7 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
 
         <section className="relative h-[70vh] flex items-end" data-testid="escort-hamburg-page">
           <div className="absolute inset-0">
-            <img src={heroImage} alt="Hamburg" className="w-full h-full object-cover" data-testid="escort-hamburg-hero-image" />
+            <img src={optimizeImageUrl(heroImage, { w: 2000, ar: '16/9', crop: 'fill' })} alt="Hamburg" loading="eager" fetchPriority="high" className="w-full h-full object-cover" data-testid="escort-hamburg-hero-image" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/50 to-[#1A1414]/25" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-16 max-w-5xl text-white">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { optimizeImageUrl } from '@/lib/cloudinary-url'
 
 // Interactive photo gallery with lightbox. Renders:
 //   - A large cover (index 0) + a 3-col thumbnail grid for the rest
@@ -62,8 +63,10 @@ export default function ModelGallery({ images, alt, counterLabel = 'photo' }) {
         data-testid="gallery-cover"
       >
         <img
-          src={list[0]}
+          src={optimizeImageUrl(list[0], { w: 1200, ar: '3/4', crop: 'fill' })}
           alt={alt}
+          loading="eager"
+          fetchPriority="high"
           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
         />
       </button>
@@ -81,7 +84,7 @@ export default function ModelGallery({ images, alt, counterLabel = 'photo' }) {
               data-testid={`gallery-thumb-${i + 1}`}
             >
               <img
-                src={src}
+                src={optimizeImageUrl(src, { w: 600, ar: '3/4', crop: 'fill' })}
                 alt={`${alt} ${i + 2}`}
                 className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
                 loading="lazy"
@@ -140,7 +143,7 @@ export default function ModelGallery({ images, alt, counterLabel = 'photo' }) {
 
           {/* Image (stop propagation so tapping the photo doesn't close) */}
           <img
-            src={list[openIndex]}
+            src={optimizeImageUrl(list[openIndex], { w: 2000 })}
             alt={`${alt} ${openIndex + 1} / ${list.length}`}
             onClick={(e) => e.stopPropagation()}
             className="max-w-[92vw] max-h-[86vh] object-contain select-none"

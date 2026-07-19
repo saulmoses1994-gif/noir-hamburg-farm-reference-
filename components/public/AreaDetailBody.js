@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
+import { optimizeImageUrl } from '@/lib/cloudinary'
 import GENERIC_AREA_FAQS from '@/lib/generic_area_faqs_seed.json'
 
 // Resolves per-area FAQs. Preference: CMS-authored faqs → generic seed with
@@ -85,7 +86,7 @@ export default function AreaDetailBody({ lang, area, services = [], models = [],
         <section className="relative h-[60vh] flex items-end" data-testid="area-hero">
           <div className="absolute inset-0">
             {heroImage && (
-              <img src={heroImage} alt={heroAlt} className="w-full h-full object-cover" />
+              <img src={optimizeImageUrl(heroImage, { w: 1800, ar: '16/9', crop: 'fill' })} alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>

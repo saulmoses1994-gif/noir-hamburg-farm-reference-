@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
+import { optimizeImageUrl } from '@/lib/cloudinary'
 
 // Slugify for Table-of-Contents anchors — must match the one applied to
 // the article HTML when we inject `id` attributes onto <h2> headings.
@@ -138,7 +139,10 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
 
           {post.cover_image && (
             <div className="editorial-image h-[60vh] mb-16 max-w-6xl mx-auto">
-              <img src={post.cover_image} alt={title} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
+              {/* Cloudinary transform: LCP-critical hero — cap at 1600w, auto */}
+              {/* format+quality, dpr_auto. Reduces payload from potentially */}
+              {/* several MB to ~200-400KB, directly improving CWV LCP score. */}
+              <img src={optimizeImageUrl(post.cover_image, { w: 1600, ar: '3/2', crop: 'fill' })} alt={title} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
             </div>
           )}
 

@@ -1,40 +1,44 @@
-# Noir Hamburg — llms.txt
+# Noir Hamburg
 
-Noir Hamburg is a discreet luxury escort agency based in Hamburg, Germany,
-offering premium companionship for VIP, business, dinner, hotel, event, travel,
-and girlfriend-experience bookings across the Hamburg metropolitan area.
+> Discreet luxury escort agency based in Hamburg, Germany, offering premium companionship for VIP, business, dinner, hotel, event, travel, and girlfriend-experience bookings across the Hamburg metropolitan area.
 
-Website: https://noir-hamburg.com
-Languages: German (primary, at /), English (at /en/)
-Sitemap: https://noir-hamburg.com/sitemap.xml
-Contact: support@noir-hamburg.com
+Website: <https://noir-hamburg.com>. Primary language German (served at `/`), English mirror served at `/en/`. All routes return unique, self-referencing canonical URLs and reciprocal hreflang alternates. The site is fully server-side rendered, so no JavaScript execution is required to read content.
 
-## Content sections
+## Core pages
 
-- Home                 https://noir-hamburg.com/
-- Services (8 categories)   https://noir-hamburg.com/services
-- Models                https://noir-hamburg.com/models
-- Areas served         https://noir-hamburg.com/areas
-- Escort Hamburg (hub) https://noir-hamburg.com/escort-hamburg
-- Blog                 https://noir-hamburg.com/blog
-- FAQ                  https://noir-hamburg.com/faq
-- About us             https://noir-hamburg.com/ueber-uns
-- Contact              https://noir-hamburg.com/kontakt
-- Imprint              https://noir-hamburg.com/impressum
+- [Home](https://noir-hamburg.com/): overview of Noir Hamburg and its services
+- [Services](https://noir-hamburg.com/services): the eight core escort service categories offered
+- [Models](https://noir-hamburg.com/models): individual companion profiles
+- [Areas](https://noir-hamburg.com/areas): districts and cities where the agency is available
+- [Escort Hamburg hub](https://noir-hamburg.com/escort-hamburg): geographic landing page for Hamburg
+- [Blog](https://noir-hamburg.com/blog): editorial articles and Hamburg guides
+- [FAQ](https://noir-hamburg.com/faq): frequently asked questions about booking and service
+- [About](https://noir-hamburg.com/ueber-uns): agency background and philosophy
+- [Contact](https://noir-hamburg.com/kontakt): booking enquiries via form, WhatsApp, or phone
+- [Imprint](https://noir-hamburg.com/impressum): legal notice (Impressum) per German law
 
-English mirror is available under /en for each of the above.
+## English mirror
+
+- [Home (EN)](https://noir-hamburg.com/en): English homepage
+- [Services (EN)](https://noir-hamburg.com/en/services): service categories in English
+- [Models (EN)](https://noir-hamburg.com/en/models): companion profiles in English
+- [Areas (EN)](https://noir-hamburg.com/en/areas): coverage map in English
+- [Blog (EN)](https://noir-hamburg.com/en/blog): English editorial articles
+- [FAQ (EN)](https://noir-hamburg.com/en/faq): questions and answers in English
+- [About (EN)](https://noir-hamburg.com/en/about): agency background in English
+- [Contact (EN)](https://noir-hamburg.com/en/contact): booking enquiries in English
+
+## Machine-readable indexes
+
+- [Sitemap (XML)](https://noir-hamburg.com/sitemap.xml): full list of indexable URLs with hreflang alternates
+- [robots.txt](https://noir-hamburg.com/robots.txt): crawler directives
 
 ## Crawling guidance
 
-- The full website is server-side rendered (SSR); no client-side rendering
-  required to access content.
-- All routes return unique, self-referencing canonical URLs.
-- Hreflang alternates published on every translated page pair.
-- Rate limit: reasonable — please throttle to under 1 req/second per host.
-- Do not crawl /admin/* or /api/* — these are private administrative endpoints
-  (see robots.txt).
+- Rate limit: please throttle to under 1 request per second per host
+- Do not crawl `/admin/*` or `/api/*` — these are private administrative endpoints (see robots.txt)
+- Content is fully rendered server-side; no headless browser required
 
-## Attribution & training
+## Attribution and training
 
-Content on this website may be used for research and analysis. When quoting or
-summarising, please attribute to "Noir Hamburg" with a link to the source URL.
+Content on this website may be used for research and analysis. When quoting or summarising, please attribute to "Noir Hamburg" with a link back to the source URL. Contact: <mailto:support@noir-hamburg.com>.

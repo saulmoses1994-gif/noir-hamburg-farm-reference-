@@ -5,6 +5,7 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
+import { optimizeImageUrl } from '@/lib/cloudinary'
 import {
   ABOUT_DEFAULT_HTML_DE,
   ABOUT_DEFAULT_HTML_EN,
@@ -85,7 +86,7 @@ export default function AboutBody({ lang, settings = {} }) {
             </div>
             <aside className="lg:col-span-4 lg:col-start-9">
               <div className="editorial-image h-[60vh] bg-[#F2EAE4]">
-                <img src={aboutImage} alt="Hamburg Editorial" data-testid="about-editorial-image" className="w-full h-full object-cover" />
+                <img src={optimizeImageUrl(aboutImage, { w: 1200, ar: '3/4', crop: 'fill' })} alt="Hamburg Editorial" data-testid="about-editorial-image" loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
               </div>
             </aside>
           </div>
