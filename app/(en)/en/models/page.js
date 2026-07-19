@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: 'Models — Premium Escort Hamburg | Noir Hamburg',
+    title: 'Our Companions — Premium Escort Hamburg | Noir Hamburg',
     description: 'Handpicked companion models from Noir Hamburg. Discreet, stylish ladies for business, dinner, events and travel in Hamburg.',
     path: '/models',
     lang: 'en',
