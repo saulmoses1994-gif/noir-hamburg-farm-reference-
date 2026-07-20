@@ -9,7 +9,8 @@ import { pick } from '@/lib/i18n'
 import { resolveHomeHero } from '@/lib/home_hero'
 import { optimizeImageUrl } from '@/lib/cloudinary'
 
-export const dynamic = 'force-dynamic'
+// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
+export const revalidate = 300
 
 export async function generateMetadata() {
   return buildMetadata({
@@ -36,6 +37,8 @@ export default async function HomeEn() {
           rel="preload"
           as="image"
           href={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
+          imageSrcSet={`${optimizeImageUrl(hero.image, { w: 600, ar: '4/5', crop: 'fill' })} 600w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w`}
+          imageSizes="(max-width: 1024px) 100vw, 42vw"
           fetchPriority="high"
         />
       )}
@@ -59,7 +62,15 @@ export default async function HomeEn() {
             {hero && (
               <div className="lg:col-span-5 order-1 lg:order-2" data-testid="home-hero-image">
                 <div className="editorial-image aspect-[4/5] sm:aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
-                  <img src={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} alt={hero.alt} loading="eager" fetchPriority="high" className="w-full h-full object-cover object-[center_20%]" />
+                  <img
+                    src={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
+                    srcSet={`${optimizeImageUrl(hero.image, { w: 600, ar: '4/5', crop: 'fill' })} 600w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w`}
+                    sizes="(max-width: 1024px) 100vw, 42vw"
+                    alt={hero.alt}
+                    loading="eager"
+                    fetchPriority="high"
+                    className="w-full h-full object-cover object-[center_20%]"
+                  />
                 </div>
               </div>
             )}

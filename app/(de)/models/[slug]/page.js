@@ -10,7 +10,8 @@ import { getBrand } from '@/lib/brand'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
 import { pick, t, translateAttribute } from '@/lib/i18n'
 
-export const dynamic = 'force-dynamic'
+// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
+export const revalidate = 300
 export const dynamicParams = true
 
 export async function generateStaticParams() {

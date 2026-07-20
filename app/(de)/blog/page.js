@@ -3,7 +3,8 @@ import { listPublicBlog } from '@/lib/blog'
 import { buildMetadata } from '@/lib/seo'
 import { t } from '@/lib/i18n'
 
-export const dynamic = 'force-dynamic'
+// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
+export const revalidate = 300
 
 export async function generateMetadata({ searchParams }) {
   const lang = 'de'

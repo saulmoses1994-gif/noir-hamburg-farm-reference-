@@ -11,7 +11,8 @@ import { optimizeImageUrl } from '@/lib/cloudinary'
 import { buildMetadata, breadcrumbSchema, siteUrl, organizationRef } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 
-export const dynamic = 'force-dynamic'
+// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
+export const revalidate = 300
 export const dynamicParams = true
 
 export async function generateStaticParams() {
@@ -47,7 +48,11 @@ export default async function ServiceDetailEn({ params }) {
 
   // Same override pattern as /en/services list — Settings → Service-Bilder wins.
   const heroRaw = (settings?.service_images || {})[slug] || s.image
-  const heroImage = optimizeImageUrl(heroRaw, { w: 2000, ar: '16:9', crop: 'fill' })
+  // PERF: Responsive srcset — see DE counterpart for rationale.
+  const heroMobile = optimizeImageUrl(heroRaw, { w: 900, ar: '16:9', crop: 'fill' })
+  const heroDesktop = optimizeImageUrl(heroRaw, { w: 1600, ar: '16:9', crop: 'fill' })
+  const heroSrcSet = `${heroMobile} 900w, ${heroDesktop} 1600w`
+  const heroImage = heroDesktop
 
   const sections = s.sections || []
   const faqs = s.faqs || []
@@ -86,12 +91,16 @@ export default async function ServiceDetailEn({ params }) {
   return (
     <>
       <Header lang={lang} currentPath={`/en/services/${slug}`} />
-      {/* LCP hero preload — see DE counterpart for rationale. */}
+      {/* LCP hero preload — see DE counterpart for rationale. imageSrcSet
+          mirrors <img srcset/sizes> so the preload targets the exact bytes
+          the browser will render for the current viewport. */}
       {heroImage && (
         <link
           rel="preload"
           as="image"
-          href={heroImage}
+          href={heroDesktop}
+          imageSrcSet={heroSrcSet}
+          imageSizes="100vw"
           fetchPriority="high"
         />
       )}
@@ -99,7 +108,7 @@ export default async function ServiceDetailEn({ params }) {
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
           <div className="absolute inset-0">
-            {heroImage && <img src={heroImage} alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
+            {heroImage && <img src={heroDesktop} srcSet={heroSrcSet} sizes="100vw" alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

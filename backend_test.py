@@ -1,567 +1,939 @@
 #!/usr/bin/env python3
 """
-Final Performance Sprint Verification Test Suite
-Tests next/font migration + service page hero preload
-Target: http://localhost:3000
+LCP Sprint P0 — Regression Testing after major SSR performance refactor
+Test base URL: http://localhost:3000
+
+Comprehensive curl-only regression test covering:
+- Multi-root layouts (DE/EN)
+- ISR conversion (revalidate=300)
+- Request-scoped React cache()
+- Responsive hero srcset
 """
 
-import subprocess
+import requests
+import json
 import re
-import sys
+from typing import Dict, List, Tuple
 
 BASE_URL = "http://localhost:3000"
 
-def curl_get(path):
-    """Execute curl GET request and return (status_code, response_body)"""
+# Test results tracking
+passed_tests = []
+failed_tests = []
+
+def log_pass(test_id: str, message: str):
+    """Log a passing test"""
+    passed_tests.append((test_id, message))
+    print(f"✅ {test_id}: {message}")
+
+def log_fail(test_id: str, message: str, expected: str = "", actual: str = ""):
+    """Log a failing test"""
+    failed_tests.append((test_id, message, expected, actual))
+    print(f"❌ {test_id}: {message}")
+    if expected:
+        print(f"   Expected: {expected}")
+    if actual:
+        print(f"   Actual: {actual}")
+
+def get_html(path: str, max_retries: int = 3) -> Tuple[int, str]:
+    """Fetch HTML from a path and return status code and content with retries"""
+    import time
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(f"{BASE_URL}{path}", timeout=30, allow_redirects=False)
+            time.sleep(0.2)  # Small delay between requests
+            return response.status_code, response.text
+        except requests.exceptions.ConnectionError as e:
+            if attempt < max_retries - 1:
+                print(f"   Connection error on {path}, retrying in 3s... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(3)  # Wait for server to restart
+            else:
+                return 0, str(e)
+        except Exception as e:
+            return 0, str(e)
+    return 0, "Max retries exceeded"
+
+def count_occurrences(html: str, pattern: str) -> int:
+    """Count occurrences of a pattern in HTML"""
+    return len(re.findall(pattern, html, re.IGNORECASE))
+
+def contains_pattern(html: str, pattern: str) -> bool:
+    """Check if HTML contains a pattern (case-insensitive)"""
+    return bool(re.search(pattern, html, re.IGNORECASE))
+
+print("=" * 80)
+print("LCP SPRINT P0 — REGRESSION TEST SUITE")
+print("=" * 80)
+print()
+
+# ============================================================================
+# SECTION A — Language attribute (multi-root)
+# ============================================================================
+print("SECTION A — Language attribute (multi-root)")
+print("-" * 80)
+
+# A1: GET / → status 200, HTML contains <html lang="de" and NOT <html lang="en"
+status, html = get_html("/")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="de"'):
+        if not contains_pattern(html, r'<html[^>]*lang="en"'):
+            log_pass("A1", "/ has lang='de' and NOT lang='en'")
+        else:
+            log_fail("A1", "/ contains both lang='de' and lang='en'")
+    else:
+        log_fail("A1", "/ missing lang='de'")
+else:
+    log_fail("A1", f"/ returned status {status}, expected 200")
+
+# A2: GET /en → status 200, HTML contains <html lang="en" and NOT <html lang="de"
+status, html = get_html("/en")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="en"'):
+        if not contains_pattern(html, r'<html[^>]*lang="de"'):
+            log_pass("A2", "/en has lang='en' and NOT lang='de'")
+        else:
+            log_fail("A2", "/en contains both lang='en' and lang='de'")
+    else:
+        log_fail("A2", "/en missing lang='en'")
+else:
+    log_fail("A2", f"/en returned status {status}, expected 200")
+
+# A3: GET /services → 200, lang="de"
+status, html = get_html("/services")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="de"'):
+        log_pass("A3", "/services has lang='de'")
+    else:
+        log_fail("A3", "/services missing lang='de'")
+else:
+    log_fail("A3", f"/services returned status {status}, expected 200")
+
+# A4: GET /en/services → 200, lang="en"
+status, html = get_html("/en/services")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="en"'):
+        log_pass("A4", "/en/services has lang='en'")
+    else:
+        log_fail("A4", "/en/services missing lang='en'")
+else:
+    log_fail("A4", f"/en/services returned status {status}, expected 200")
+
+# A5: GET /services/vip-escort-hamburg → 200, lang="de"
+status, html = get_html("/services/vip-escort-hamburg")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="de"'):
+        log_pass("A5", "/services/vip-escort-hamburg has lang='de'")
+    else:
+        log_fail("A5", "/services/vip-escort-hamburg missing lang='de'")
+else:
+    log_fail("A5", f"/services/vip-escort-hamburg returned status {status}, expected 200")
+
+# A6: GET /en/services/vip-escort-hamburg → 200, lang="en"
+status, html = get_html("/en/services/vip-escort-hamburg")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="en"'):
+        log_pass("A6", "/en/services/vip-escort-hamburg has lang='en'")
+    else:
+        log_fail("A6", "/en/services/vip-escort-hamburg missing lang='en'")
+else:
+    log_fail("A6", f"/en/services/vip-escort-hamburg returned status {status}, expected 200")
+
+# A7: GET /blog → 200, lang="de"
+status, html = get_html("/blog")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="de"'):
+        log_pass("A7", "/blog has lang='de'")
+    else:
+        log_fail("A7", "/blog missing lang='de'")
+else:
+    log_fail("A7", f"/blog returned status {status}, expected 200")
+
+# A8: GET /en/blog → 200, lang="en"
+status, html = get_html("/en/blog")
+if status == 200:
+    if contains_pattern(html, r'<html[^>]*lang="en"'):
+        log_pass("A8", "/en/blog has lang='en'")
+    else:
+        log_fail("A8", "/en/blog missing lang='en'")
+else:
+    log_fail("A8", f"/en/blog returned status {status}, expected 200")
+
+print()
+
+# ============================================================================
+# SECTION B — next/font persisted after root layout refactor
+# ============================================================================
+print("SECTION B — next/font persisted after root layout refactor")
+print("-" * 80)
+
+# B9: GET / → HTML <html> tag class attribute contains three __variable_ prefixes
+status, html = get_html("/")
+if status == 200:
+    html_tag_match = re.search(r'<html[^>]*class="([^"]*)"', html)
+    if html_tag_match:
+        class_attr = html_tag_match.group(1)
+        variable_count = len(re.findall(r'__variable_\w+', class_attr))
+        if variable_count >= 3:
+            log_pass("B9", f"/ has {variable_count} __variable_ classes (≥3)")
+        else:
+            log_fail("B9", f"/ has only {variable_count} __variable_ classes", "≥3", str(variable_count))
+    else:
+        log_fail("B9", "/ <html> tag missing class attribute")
+else:
+    log_fail("B9", f"/ returned status {status}, expected 200")
+
+# B10: GET /en → same as B9
+status, html = get_html("/en")
+if status == 200:
+    html_tag_match = re.search(r'<html[^>]*class="([^"]*)"', html)
+    if html_tag_match:
+        class_attr = html_tag_match.group(1)
+        variable_count = len(re.findall(r'__variable_\w+', class_attr))
+        if variable_count >= 3:
+            log_pass("B10", f"/en has {variable_count} __variable_ classes (≥3)")
+        else:
+            log_fail("B10", f"/en has only {variable_count} __variable_ classes", "≥3", str(variable_count))
+    else:
+        log_fail("B10", "/en <html> tag missing class attribute")
+else:
+    log_fail("B10", f"/en returned status {status}, expected 200")
+
+# B11: GET / → HTML contains "res.cloudinary.com" preconnect
+status, html = get_html("/")
+if status == 200:
+    if contains_pattern(html, r'<link[^>]*rel="preconnect"[^>]*href="https://res\.cloudinary\.com"'):
+        log_pass("B11", "/ has Cloudinary preconnect")
+    else:
+        log_fail("B11", "/ missing Cloudinary preconnect")
+else:
+    log_fail("B11", f"/ returned status {status}, expected 200")
+
+# B12: GET / → HTML does NOT contain "fonts.googleapis.com" or "fonts.gstatic.com"
+status, html = get_html("/")
+if status == 200:
+    has_google_fonts = contains_pattern(html, r'fonts\.googleapis\.com')
+    has_gstatic = contains_pattern(html, r'fonts\.gstatic\.com')
+    if not has_google_fonts and not has_gstatic:
+        log_pass("B12", "/ does NOT contain Google Fonts URLs")
+    else:
+        issues = []
+        if has_google_fonts:
+            issues.append("fonts.googleapis.com")
+        if has_gstatic:
+            issues.append("fonts.gstatic.com")
+        log_fail("B12", f"/ contains: {', '.join(issues)}")
+else:
+    log_fail("B12", f"/ returned status {status}, expected 200")
+
+# B13: GET / → HTML does NOT contain @import url('https://fonts.googleapis
+status, html = get_html("/")
+if status == 200:
+    if not contains_pattern(html, r'@import\s+url\([\'"]https://fonts\.googleapis'):
+        log_pass("B13", "/ does NOT contain @import for Google Fonts")
+    else:
+        log_fail("B13", "/ contains @import for Google Fonts")
+else:
+    log_fail("B13", f"/ returned status {status}, expected 200")
+
+print()
+
+# ============================================================================
+# SECTION C — SEO artifacts unchanged
+# ============================================================================
+print("SECTION C — SEO artifacts unchanged")
+print("-" * 80)
+
+# C14: GET / → contains exactly ONE <link rel="canonical" with href https://noir-hamburg.com
+status, html = get_html("/")
+if status == 200:
+    canonical_matches = re.findall(r'<link[^>]*rel="canonical"[^>]*>', html, re.IGNORECASE)
+    if len(canonical_matches) == 1:
+        if contains_pattern(html, r'<link[^>]*rel="canonical"[^>]*href="https://noir-hamburg\.com"'):
+            log_pass("C14", "/ has exactly ONE canonical pointing to https://noir-hamburg.com")
+        else:
+            log_fail("C14", "/ canonical href incorrect")
+    else:
+        log_fail("C14", f"/ has {len(canonical_matches)} canonical tags", "1", str(len(canonical_matches)))
+else:
+    log_fail("C14", f"/ returned status {status}, expected 200")
+
+# C15: GET /en → canonical https://noir-hamburg.com/en
+status, html = get_html("/en")
+if status == 200:
+    if contains_pattern(html, r'<link[^>]*rel="canonical"[^>]*href="https://noir-hamburg\.com/en"'):
+        log_pass("C15", "/en canonical points to https://noir-hamburg.com/en")
+    else:
+        log_fail("C15", "/en canonical href incorrect")
+else:
+    log_fail("C15", f"/en returned status {status}, expected 200")
+
+# C16: GET / → 3 hreflang tags: de, en, x-default
+status, html = get_html("/")
+if status == 200:
+    hreflang_matches = re.findall(r'<link[^>]*rel="alternate"[^>]*hreflang="([^"]*)"', html, re.IGNORECASE)
+    has_de = any('de' in h for h in hreflang_matches)
+    has_en = 'en' in hreflang_matches
+    has_x_default = 'x-default' in hreflang_matches
+    
+    if has_de and has_en and has_x_default:
+        log_pass("C16", "/ has hreflang tags for de, en, x-default")
+    else:
+        missing = []
+        if not has_de:
+            missing.append("de")
+        if not has_en:
+            missing.append("en")
+        if not has_x_default:
+            missing.append("x-default")
+        log_fail("C16", f"/ missing hreflang tags: {', '.join(missing)}")
+else:
+    log_fail("C16", f"/ returned status {status}, expected 200")
+
+# C17: GET /services/vip-escort-hamburg → hreflang de → /services/vip-escort-hamburg, hreflang en → /en/services/vip-escort-hamburg
+status, html = get_html("/services/vip-escort-hamburg")
+if status == 200:
+    # Check for DE hreflang
+    has_de_hreflang = contains_pattern(html, r'<link[^>]*hreflang="de[^"]*"[^>]*href="[^"]*\/services\/vip-escort-hamburg"')
+    # Check for EN hreflang
+    has_en_hreflang = contains_pattern(html, r'<link[^>]*hreflang="en"[^>]*href="[^"]*\/en\/services\/vip-escort-hamburg"')
+    
+    if has_de_hreflang and has_en_hreflang:
+        log_pass("C17", "/services/vip-escort-hamburg has correct DE and EN hreflang")
+    else:
+        issues = []
+        if not has_de_hreflang:
+            issues.append("missing DE hreflang")
+        if not has_en_hreflang:
+            issues.append("missing EN hreflang")
+        log_fail("C17", f"/services/vip-escort-hamburg: {', '.join(issues)}")
+else:
+    log_fail("C17", f"/services/vip-escort-hamburg returned status {status}, expected 200")
+
+# C18: GET /sitemap.xml → 200, at least 100 <loc> entries, uses hreflang="de" (not de-DE)
+status, xml = get_html("/sitemap.xml")
+if status == 200:
+    loc_count = len(re.findall(r'<loc>', xml))
+    has_hreflang_de = contains_pattern(xml, r'hreflang="de"')
+    has_hreflang_de_DE = contains_pattern(xml, r'hreflang="de-DE"')
+    
+    if loc_count >= 100:
+        if has_hreflang_de and not has_hreflang_de_DE:
+            log_pass("C18", f"/sitemap.xml has {loc_count} <loc> entries with hreflang='de' (not de-DE)")
+        elif has_hreflang_de_DE:
+            log_fail("C18", "/sitemap.xml uses hreflang='de-DE' instead of 'de'")
+        else:
+            log_fail("C18", "/sitemap.xml missing hreflang='de'")
+    else:
+        log_fail("C18", f"/sitemap.xml has only {loc_count} <loc> entries", "≥100", str(loc_count))
+else:
+    log_fail("C18", f"/sitemap.xml returned status {status}, expected 200")
+
+# C19: GET /robots.txt → 200, contains "Sitemap:" directive, does NOT contain "Host:"
+status, txt = get_html("/robots.txt")
+if status == 200:
+    has_sitemap = contains_pattern(txt, r'Sitemap:')
+    has_host = contains_pattern(txt, r'Host:')
+    
+    if has_sitemap and not has_host:
+        log_pass("C19", "/robots.txt has Sitemap: and does NOT have Host:")
+    else:
+        issues = []
+        if not has_sitemap:
+            issues.append("missing Sitemap:")
+        if has_host:
+            issues.append("contains Host:")
+        log_fail("C19", f"/robots.txt: {', '.join(issues)}")
+else:
+    log_fail("C19", f"/robots.txt returned status {status}, expected 200")
+
+# C20: GET /llms.txt → 200, content-type includes "text/plain"
+import time
+for attempt in range(3):
     try:
-        result = subprocess.run(
-            ["curl", "-s", "-w", "\\nHTTP_STATUS:%{http_code}", f"{BASE_URL}{path}", "--max-time", "10"],
-            capture_output=True,
-            text=True,
-            timeout=15
-        )
-        output = result.stdout
-        # Extract status code from the end
-        if "HTTP_STATUS:" in output:
-            parts = output.rsplit("HTTP_STATUS:", 1)
-            body = parts[0]
-            status = int(parts[1].strip())
-            return status, body
-        return 0, output
+        response = requests.get(f"{BASE_URL}/llms.txt", timeout=30)
+        time.sleep(0.2)
+        if response.status_code == 200:
+            content_type = response.headers.get('content-type', '')
+            if 'text/plain' in content_type:
+                log_pass("C20", "/llms.txt returns 200 with content-type text/plain")
+            else:
+                log_fail("C20", f"/llms.txt content-type is '{content_type}'", "text/plain", content_type)
+        else:
+            log_fail("C20", f"/llms.txt returned status {response.status_code}", "200", str(response.status_code))
+        break
+    except requests.exceptions.ConnectionError as e:
+        if attempt < 2:
+            print(f"   Connection error on /llms.txt, retrying in 3s...")
+            time.sleep(3)
+        else:
+            log_fail("C20", f"/llms.txt request failed: {str(e)}")
     except Exception as e:
-        print(f"ERROR: curl failed for {path}: {e}")
-        return 0, ""
+        log_fail("C20", f"/llms.txt request failed: {str(e)}")
+        break
 
-def test_section_a():
-    """SECTION A — next/font migration"""
-    print("\n" + "="*80)
-    print("SECTION A — next/font migration")
-    print("="*80)
-    
-    results = []
-    
-    # A1: Check for three __variable_ CSS classes in <html> tag
-    print("\n[A1] Testing for three __variable_ CSS classes in <html> tag...")
-    status, body = curl_get("/")
-    if status == 200:
-        # Extract <html> tag
-        html_match = re.search(r'<html[^>]*>', body, re.IGNORECASE)
-        if html_match:
-            html_tag = html_match.group(0)
-            # Find className attribute
-            class_match = re.search(r'class="([^"]*)"', html_tag)
-            if class_match:
-                class_value = class_match.group(1)
-                # Count __variable_ occurrences
-                variable_count = len(re.findall(r'__variable_\w+', class_value))
-                if variable_count >= 3:
-                    print(f"✅ PASS: Found {variable_count} __variable_ classes")
-                    print(f"   Observed: {class_value}")
-                    results.append(("A1", True, f"Found {variable_count} __variable_ classes"))
-                else:
-                    print(f"❌ FAIL: Found only {variable_count} __variable_ classes (expected 3)")
-                    print(f"   Observed: {class_value}")
-                    results.append(("A1", False, f"Found only {variable_count} __variable_ classes"))
-            else:
-                print("❌ FAIL: No class attribute found in <html> tag")
-                results.append(("A1", False, "No class attribute in <html> tag"))
-        else:
-            print("❌ FAIL: Could not extract <html> tag")
-            results.append(("A1", False, "Could not extract <html> tag"))
+# C21: GET /services/vip-escort-hamburg → contains JSON-LD @type":"Service"
+status, html = get_html("/services/vip-escort-hamburg")
+if status == 200:
+    if contains_pattern(html, r'"@type"\s*:\s*"Service"'):
+        log_pass("C21", "/services/vip-escort-hamburg has JSON-LD @type:Service")
     else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("A1", False, f"GET / returned {status}"))
-    
-    # A2: Check that fonts.googleapis.com and fonts.gstatic.com are NOT present
-    print("\n[A2] Testing that fonts.googleapis.com and fonts.gstatic.com are NOT present...")
-    status, body = curl_get("/")
-    if status == 200:
-        has_googleapis = "fonts.googleapis.com" in body
-        has_gstatic = "fonts.gstatic.com" in body
-        if not has_googleapis and not has_gstatic:
-            print("✅ PASS: No Google Fonts external URLs found")
-            results.append(("A2", True, "No fonts.googleapis.com or fonts.gstatic.com"))
-        else:
-            issues = []
-            if has_googleapis:
-                issues.append("fonts.googleapis.com found")
-            if has_gstatic:
-                issues.append("fonts.gstatic.com found")
-            print(f"❌ FAIL: {', '.join(issues)}")
-            results.append(("A2", False, ', '.join(issues)))
-    else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("A2", False, f"GET / returned {status}"))
-    
-    # A3: Check that @import url('https://fonts.googleapis is NOT present
-    print("\n[A3] Testing that @import url('https://fonts.googleapis is NOT present...")
-    status, body = curl_get("/")
-    if status == 200:
-        has_import = "@import url('https://fonts.googleapis" in body or '@import url("https://fonts.googleapis' in body
-        if not has_import:
-            print("✅ PASS: No @import Google Fonts directive found")
-            results.append(("A3", True, "No @import Google Fonts directive"))
-        else:
-            print("❌ FAIL: @import url('https://fonts.googleapis found in HTML")
-            results.append(("A3", False, "@import Google Fonts directive found"))
-    else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("A3", False, f"GET / returned {status}"))
-    
-    # A4: Check that Cloudinary preconnect IS still present
-    print("\n[A4] Testing that Cloudinary preconnect IS still present...")
-    status, body = curl_get("/")
-    if status == 200:
-        has_cloudinary = 'rel="preconnect"' in body and 'res.cloudinary.com' in body
-        if has_cloudinary:
-            print("✅ PASS: Cloudinary preconnect found")
-            results.append(("A4", True, "Cloudinary preconnect present"))
-        else:
-            print("❌ FAIL: Cloudinary preconnect not found")
-            results.append(("A4", False, "Cloudinary preconnect missing"))
-    else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("A4", False, f"GET / returned {status}"))
-    
-    return results
+        log_fail("C21", "/services/vip-escort-hamburg missing JSON-LD @type:Service")
+else:
+    log_fail("C21", f"/services/vip-escort-hamburg returned status {status}, expected 200")
 
-def test_section_b():
-    """SECTION B — Service page hero preload"""
-    print("\n" + "="*80)
-    print("SECTION B — Service page hero preload")
-    print("="*80)
-    
-    results = []
-    
-    # B1: DE service page has preload with fetchPriority="high"
-    print("\n[B1] Testing DE service page for hero preload...")
-    status, body = curl_get("/services/vip-escort-hamburg")
-    if status == 200:
-        has_preload = 'rel="preload"' in body and 'as="image"' in body
-        has_fetch_priority = 'fetchPriority="high"' in body or 'fetchpriority="high"' in body
-        # Check if href points to cloudinary or unsplash
-        preload_match = re.search(r'<link[^>]*rel="preload"[^>]*as="image"[^>]*>', body, re.IGNORECASE)
-        has_valid_href = False
-        href_value = ""
-        if preload_match:
-            preload_tag = preload_match.group(0)
-            href_match = re.search(r'href="([^"]*)"', preload_tag)
-            if href_match:
-                href_value = href_match.group(1)
-                has_valid_href = 'cloudinary' in href_value.lower() or 'unsplash' in href_value.lower()
+# C22: GET / → contains JSON-LD @type":"Organization"
+status, html = get_html("/")
+if status == 200:
+    if contains_pattern(html, r'"@type"\s*:\s*"Organization"'):
+        log_pass("C22", "/ has JSON-LD @type:Organization")
+    else:
+        log_fail("C22", "/ missing JSON-LD @type:Organization")
+else:
+    log_fail("C22", f"/ returned status {status}, expected 200")
+
+print()
+
+# ============================================================================
+# SECTION D — Titles, metadata unchanged
+# ============================================================================
+print("SECTION D — Titles, metadata unchanged")
+print("-" * 80)
+
+# D23: GET /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen → <title> contains "Zeitalter" and does NOT contain "Datenschutz"
+status, html = get_html("/blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen")
+if status == 200:
+    title_match = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
+    if title_match:
+        title = title_match.group(1)
+        has_zeitalter = 'Zeitalter' in title
+        has_datenschutz = 'Datenschutz' in title
         
-        if has_preload and has_fetch_priority and has_valid_href:
-            print(f"✅ PASS: Hero preload found with fetchPriority='high'")
-            print(f"   Href: {href_value[:80]}...")
-            results.append(("B1", True, f"Hero preload with fetchPriority='high', href={href_value[:50]}..."))
+        if has_zeitalter and not has_datenschutz:
+            log_pass("D23", "Blog post title contains 'Zeitalter' and NOT 'Datenschutz'")
         else:
             issues = []
-            if not has_preload:
-                issues.append("no preload tag")
-            if not has_fetch_priority:
-                issues.append("no fetchPriority='high'")
-            if not has_valid_href:
-                issues.append(f"invalid href (not cloudinary/unsplash): {href_value}")
-            print(f"❌ FAIL: {', '.join(issues)}")
-            results.append(("B1", False, ', '.join(issues)))
+            if not has_zeitalter:
+                issues.append("missing 'Zeitalter'")
+            if has_datenschutz:
+                issues.append("contains 'Datenschutz'")
+            log_fail("D23", f"Blog post title: {', '.join(issues)}", title=title)
     else:
-        print(f"❌ FAIL: GET /services/vip-escort-hamburg returned {status}")
-        results.append(("B1", False, f"GET returned {status}"))
-    
-    # B2: EN service page has preload with fetchPriority="high"
-    print("\n[B2] Testing EN service page for hero preload...")
-    status, body = curl_get("/en/services/vip-escort-hamburg")
-    if status == 200:
-        has_preload = 'rel="preload"' in body and 'as="image"' in body
-        has_fetch_priority = 'fetchPriority="high"' in body or 'fetchpriority="high"' in body
-        preload_match = re.search(r'<link[^>]*rel="preload"[^>]*as="image"[^>]*>', body, re.IGNORECASE)
-        has_valid_href = False
-        href_value = ""
-        if preload_match:
-            preload_tag = preload_match.group(0)
-            href_match = re.search(r'href="([^"]*)"', preload_tag)
-            if href_match:
-                href_value = href_match.group(1)
-                has_valid_href = 'cloudinary' in href_value.lower() or 'unsplash' in href_value.lower()
+        log_fail("D23", "Blog post missing <title> tag")
+else:
+    log_fail("D23", f"Blog post returned status {status}, expected 200")
+
+# D24: GET /p/diskretion-und-datenschutz-noir-hamburg → <title> contains "Diskretion & Datenschutz"
+status, html = get_html("/p/diskretion-und-datenschutz-noir-hamburg")
+if status == 200:
+    title_match = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
+    if title_match:
+        title = title_match.group(1)
+        if 'Diskretion' in title and 'Datenschutz' in title:
+            log_pass("D24", "/p/diskretion-und-datenschutz-noir-hamburg title contains 'Diskretion & Datenschutz'")
+        else:
+            log_fail("D24", f"/p/diskretion-und-datenschutz-noir-hamburg title missing expected text", title=title)
+    else:
+        log_fail("D24", "/p/diskretion-und-datenschutz-noir-hamburg missing <title> tag")
+else:
+    log_fail("D24", f"/p/diskretion-und-datenschutz-noir-hamburg returned status {status}, expected 200")
+
+# D25: GET /services/vip-escort-hamburg → <title> contains "VIP" and "Escort" and "Hamburg"
+status, html = get_html("/services/vip-escort-hamburg")
+if status == 200:
+    title_match = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
+    if title_match:
+        title = title_match.group(1)
+        has_vip = 'VIP' in title or 'vip' in title.lower()
+        has_escort = 'Escort' in title or 'escort' in title.lower()
+        has_hamburg = 'Hamburg' in title
         
-        if has_preload and has_fetch_priority and has_valid_href:
-            print(f"✅ PASS: Hero preload found with fetchPriority='high'")
-            print(f"   Href: {href_value[:80]}...")
-            results.append(("B2", True, f"Hero preload with fetchPriority='high', href={href_value[:50]}..."))
+        if has_vip and has_escort and has_hamburg:
+            log_pass("D25", "/services/vip-escort-hamburg title contains VIP, Escort, Hamburg")
         else:
-            issues = []
-            if not has_preload:
-                issues.append("no preload tag")
-            if not has_fetch_priority:
-                issues.append("no fetchPriority='high'")
-            if not has_valid_href:
-                issues.append(f"invalid href: {href_value}")
-            print(f"❌ FAIL: {', '.join(issues)}")
-            results.append(("B2", False, ', '.join(issues)))
+            missing = []
+            if not has_vip:
+                missing.append("VIP")
+            if not has_escort:
+                missing.append("Escort")
+            if not has_hamburg:
+                missing.append("Hamburg")
+            log_fail("D25", f"/services/vip-escort-hamburg title missing: {', '.join(missing)}", title=title)
     else:
-        print(f"❌ FAIL: GET /en/services/vip-escort-hamburg returned {status}")
-        results.append(("B2", False, f"GET returned {status}"))
-    
-    # B3: DE service page hero <img> has loading="eager" AND fetchPriority="high"
-    print("\n[B3] Testing DE service page hero <img> attributes...")
-    status, body = curl_get("/services/vip-escort-hamburg")
-    if status == 200:
-        # Look for hero img tag (should be early in the page, likely with alt containing service name)
-        img_matches = re.findall(r'<img[^>]*>', body, re.IGNORECASE)
-        found_hero = False
-        for img_tag in img_matches[:5]:  # Check first 5 img tags
-            has_eager = 'loading="eager"' in img_tag or "loading='eager'" in img_tag
-            has_fetch_priority = 'fetchPriority="high"' in img_tag or 'fetchpriority="high"' in img_tag
-            if has_eager and has_fetch_priority:
-                print(f"✅ PASS: Hero <img> has loading='eager' AND fetchPriority='high'")
-                print(f"   Tag: {img_tag[:100]}...")
-                results.append(("B3", True, "Hero <img> has loading='eager' AND fetchPriority='high'"))
-                found_hero = True
-                break
-        if not found_hero:
-            print("❌ FAIL: No <img> tag found with both loading='eager' AND fetchPriority='high'")
-            results.append(("B3", False, "No hero <img> with required attributes"))
-    else:
-        print(f"❌ FAIL: GET /services/vip-escort-hamburg returned {status}")
-        results.append(("B3", False, f"GET returned {status}"))
-    
-    # B4: EN service page hero <img> has loading="eager" AND fetchPriority="high"
-    print("\n[B4] Testing EN service page hero <img> attributes...")
-    status, body = curl_get("/en/services/vip-escort-hamburg")
-    if status == 200:
-        img_matches = re.findall(r'<img[^>]*>', body, re.IGNORECASE)
-        found_hero = False
-        for img_tag in img_matches[:5]:
-            has_eager = 'loading="eager"' in img_tag or "loading='eager'" in img_tag
-            has_fetch_priority = 'fetchPriority="high"' in img_tag or 'fetchpriority="high"' in img_tag
-            if has_eager and has_fetch_priority:
-                print(f"✅ PASS: Hero <img> has loading='eager' AND fetchPriority='high'")
-                print(f"   Tag: {img_tag[:100]}...")
-                results.append(("B4", True, "Hero <img> has loading='eager' AND fetchPriority='high'"))
-                found_hero = True
-                break
-        if not found_hero:
-            print("❌ FAIL: No <img> tag found with both loading='eager' AND fetchPriority='high'")
-            results.append(("B4", False, "No hero <img> with required attributes"))
-    else:
-        print(f"❌ FAIL: GET /en/services/vip-escort-hamburg returned {status}")
-        results.append(("B4", False, f"GET returned {status}"))
-    
-    return results
+        log_fail("D25", "/services/vip-escort-hamburg missing <title> tag")
+else:
+    log_fail("D25", f"/services/vip-escort-hamburg returned status {status}, expected 200")
 
-def test_section_c():
-    """SECTION C — Regression checks"""
-    print("\n" + "="*80)
-    print("SECTION C — Regression checks")
-    print("="*80)
-    
-    results = []
-    
-    # C1: GET / → <html lang="de">
-    print("\n[C1] Testing DE homepage has lang='de'...")
-    status, body = curl_get("/")
-    if status == 200:
-        has_lang_de = '<html lang="de"' in body or "<html lang='de'" in body
-        if has_lang_de:
-            print("✅ PASS: <html lang='de'> found")
-            results.append(("C1", True, "<html lang='de'>"))
+# D26: GET /en/services/vip-escort-hamburg → <title> contains "VIP" or English variant
+status, html = get_html("/en/services/vip-escort-hamburg")
+if status == 200:
+    title_match = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
+    if title_match:
+        title = title_match.group(1)
+        has_vip = 'VIP' in title or 'vip' in title.lower()
+        
+        if has_vip:
+            log_pass("D26", "/en/services/vip-escort-hamburg title contains VIP")
         else:
-            print("❌ FAIL: <html lang='de'> not found")
-            results.append(("C1", False, "<html lang='de'> missing"))
+            log_fail("D26", "/en/services/vip-escort-hamburg title missing VIP", title=title)
     else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("C1", False, f"GET / returned {status}"))
-    
-    # C2: GET /en → <html lang="en">
-    print("\n[C2] Testing EN homepage has lang='en'...")
-    status, body = curl_get("/en")
-    if status == 200:
-        has_lang_en = '<html lang="en"' in body or "<html lang='en'" in body
-        if has_lang_en:
-            print("✅ PASS: <html lang='en'> found")
-            results.append(("C2", True, "<html lang='en'>"))
-        else:
-            print("❌ FAIL: <html lang='en'> not found")
-            results.append(("C2", False, "<html lang='en'> missing"))
-    else:
-        print(f"❌ FAIL: GET /en returned {status}")
-        results.append(("C2", False, f"GET /en returned {status}"))
-    
-    # C3: GET / → has <link rel="canonical" ...>
-    print("\n[C3] Testing DE homepage has canonical link...")
-    status, body = curl_get("/")
-    if status == 200:
-        has_canonical = 'rel="canonical"' in body
-        if has_canonical:
-            canonical_match = re.search(r'<link[^>]*rel="canonical"[^>]*href="([^"]*)"', body)
-            if canonical_match:
-                href = canonical_match.group(1)
-                print(f"✅ PASS: Canonical link found: {href}")
-                results.append(("C3", True, f"Canonical: {href}"))
-            else:
-                print("✅ PASS: Canonical link found (could not extract href)")
-                results.append(("C3", True, "Canonical link present"))
-        else:
-            print("❌ FAIL: No canonical link found")
-            results.append(("C3", False, "No canonical link"))
-    else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("C3", False, f"GET / returned {status}"))
-    
-    # C4: GET / → has at least 3 hreflang tags
-    print("\n[C4] Testing DE homepage has at least 3 hreflang tags...")
-    status, body = curl_get("/")
-    if status == 200:
-        hreflang_count = len(re.findall(r'hreflang=', body, re.IGNORECASE))
-        if hreflang_count >= 3:
-            print(f"✅ PASS: Found {hreflang_count} hreflang tags")
-            results.append(("C4", True, f"Found {hreflang_count} hreflang tags"))
-        else:
-            print(f"❌ FAIL: Found only {hreflang_count} hreflang tags (expected ≥3)")
-            results.append(("C4", False, f"Only {hreflang_count} hreflang tags"))
-    else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("C4", False, f"GET / returned {status}"))
-    
-    # C5: GET /sitemap.xml → 200, contains multiple <loc>
-    print("\n[C5] Testing sitemap.xml...")
-    status, body = curl_get("/sitemap.xml")
-    if status == 200:
-        loc_count = len(re.findall(r'<loc>', body, re.IGNORECASE))
-        if loc_count > 1:
-            print(f"✅ PASS: Sitemap has {loc_count} <loc> entries")
-            results.append(("C5", True, f"Sitemap has {loc_count} <loc> entries"))
-        else:
-            print(f"❌ FAIL: Sitemap has only {loc_count} <loc> entries")
-            results.append(("C5", False, f"Only {loc_count} <loc> entries"))
-    else:
-        print(f"❌ FAIL: GET /sitemap.xml returned {status}")
-        results.append(("C5", False, f"GET /sitemap.xml returned {status}"))
-    
-    # C6: GET /robots.txt → 200, has "Sitemap:", does NOT have "Host:"
-    print("\n[C6] Testing robots.txt...")
-    status, body = curl_get("/robots.txt")
-    if status == 200:
-        has_sitemap = "Sitemap:" in body
-        has_host = "Host:" in body
-        if has_sitemap and not has_host:
-            print("✅ PASS: robots.txt has 'Sitemap:' and no 'Host:'")
-            results.append(("C6", True, "robots.txt correct"))
-        else:
-            issues = []
-            if not has_sitemap:
-                issues.append("missing 'Sitemap:'")
-            if has_host:
-                issues.append("contains 'Host:' (should not)")
-            print(f"❌ FAIL: {', '.join(issues)}")
-            results.append(("C6", False, ', '.join(issues)))
-    else:
-        print(f"❌ FAIL: GET /robots.txt returned {status}")
-        results.append(("C6", False, f"GET /robots.txt returned {status}"))
-    
-    # C7: GET /llms.txt → 200, content-type text/plain
-    print("\n[C7] Testing llms.txt...")
-    result = subprocess.run(
-        ["curl", "-s", "-I", f"{BASE_URL}/llms.txt", "--max-time", "10"],
-        capture_output=True,
-        text=True,
-        timeout=15
-    )
-    headers = result.stdout
-    status_match = re.search(r'HTTP/[\d.]+ (\d+)', headers)
-    status = int(status_match.group(1)) if status_match else 0
-    content_type_match = re.search(r'content-type:\s*([^\r\n]+)', headers, re.IGNORECASE)
-    content_type = content_type_match.group(1).strip() if content_type_match else ""
-    
-    if status == 200:
-        if 'text/plain' in content_type.lower():
-            print(f"✅ PASS: llms.txt returns 200 with content-type: {content_type}")
-            results.append(("C7", True, f"content-type: {content_type}"))
-        else:
-            print(f"❌ FAIL: llms.txt has wrong content-type: {content_type}")
-            results.append(("C7", False, f"Wrong content-type: {content_type}"))
-    else:
-        print(f"❌ FAIL: GET /llms.txt returned {status}")
-        results.append(("C7", False, f"GET /llms.txt returned {status}"))
-    
-    # C8: GET /p/diskretion → 301/308 to /p/diskretion-und-datenschutz-noir-hamburg
-    print("\n[C8] Testing /p/diskretion redirect...")
-    result = subprocess.run(
-        ["curl", "-s", "-I", f"{BASE_URL}/p/diskretion", "--max-time", "10"],
-        capture_output=True,
-        text=True,
-        timeout=15
-    )
-    headers = result.stdout
-    status_match = re.search(r'HTTP/[\d.]+ (\d+)', headers)
-    status = int(status_match.group(1)) if status_match else 0
-    location_match = re.search(r'location:\s*([^\r\n]+)', headers, re.IGNORECASE)
-    location = location_match.group(1).strip() if location_match else ""
-    
-    if status in [301, 308]:
-        if 'diskretion-und-datenschutz-noir-hamburg' in location:
-            print(f"✅ PASS: Redirects {status} to {location}")
-            results.append(("C8", True, f"{status} → {location}"))
-        else:
-            print(f"❌ FAIL: Redirects to wrong location: {location}")
-            results.append(("C8", False, f"Wrong location: {location}"))
-    else:
-        print(f"❌ FAIL: GET /p/diskretion returned {status} (expected 301/308)")
-        results.append(("C8", False, f"Returned {status}, not 301/308"))
-    
-    # C9: GET /en/p/diskretion-und-datenschutz-noir-hamburg → 308 to /p/... (without /en)
-    print("\n[C9] Testing EN privacy page redirect to DE...")
-    result = subprocess.run(
-        ["curl", "-s", "-I", f"{BASE_URL}/en/p/diskretion-und-datenschutz-noir-hamburg", "--max-time", "10"],
-        capture_output=True,
-        text=True,
-        timeout=15
-    )
-    headers = result.stdout
-    status_match = re.search(r'HTTP/[\d.]+ (\d+)', headers)
-    status = int(status_match.group(1)) if status_match else 0
-    location_match = re.search(r'location:\s*([^\r\n]+)', headers, re.IGNORECASE)
-    location = location_match.group(1).strip() if location_match else ""
-    
-    if status == 308:
-        # Check that location does NOT contain /en prefix
-        if '/p/diskretion-und-datenschutz-noir-hamburg' in location and '/en/p/' not in location:
-            print(f"✅ PASS: Redirects 308 to DE version: {location}")
-            results.append(("C9", True, f"308 → {location} (no /en prefix)"))
-        else:
-            print(f"❌ FAIL: Redirects to wrong location: {location}")
-            results.append(("C9", False, f"Wrong location: {location}"))
-    else:
-        print(f"❌ FAIL: GET /en/p/diskretion-und-datenschutz-noir-hamburg returned {status} (expected 308)")
-        results.append(("C9", False, f"Returned {status}, not 308"))
-    
-    # C10: GET /blog/diskretion-im-zeitalter-digitaler-spuren-... → title contains "Zeitalter" NOT "Datenschutz"
-    print("\n[C10] Testing blog post title uniqueness...")
-    status, body = curl_get("/blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen")
-    if status == 200:
-        title_match = re.search(r'<title>([^<]+)</title>', body, re.IGNORECASE)
-        if title_match:
-            title = title_match.group(1)
-            has_zeitalter = "Zeitalter" in title
-            has_datenschutz = "Datenschutz" in title
-            if has_zeitalter and not has_datenschutz:
-                print(f"✅ PASS: Title contains 'Zeitalter' and NOT 'Datenschutz'")
-                print(f"   Title: {title}")
-                results.append(("C10", True, f"Title: {title[:60]}..."))
-            else:
-                issues = []
-                if not has_zeitalter:
-                    issues.append("missing 'Zeitalter'")
-                if has_datenschutz:
-                    issues.append("contains 'Datenschutz' (should not)")
-                print(f"❌ FAIL: {', '.join(issues)}")
-                print(f"   Title: {title}")
-                results.append(("C10", False, f"{', '.join(issues)}: {title[:60]}..."))
-        else:
-            print("❌ FAIL: Could not extract <title> tag")
-            results.append(("C10", False, "Could not extract <title>"))
-    else:
-        print(f"❌ FAIL: GET /blog/diskretion-im-zeitalter... returned {status}")
-        results.append(("C10", False, f"GET returned {status}"))
-    
-    # C11: GET / → <h1> contains "Noir" and "Hamburg"
-    print("\n[C11] Testing homepage H1 content...")
-    status, body = curl_get("/")
-    if status == 200:
-        # Match H1 with nested elements (like <em>)
-        h1_match = re.search(r'<h1[^>]*>(.*?)</h1>', body, re.IGNORECASE | re.DOTALL)
-        if h1_match:
-            h1_content = h1_match.group(1)
-            # Strip HTML tags to get text content
-            h1_text = re.sub(r'<[^>]+>', '', h1_content)
-            has_noir = "Noir" in h1_text
-            has_hamburg = "Hamburg" in h1_text
-            if has_noir and has_hamburg:
-                print(f"✅ PASS: H1 contains 'Noir' and 'Hamburg'")
-                print(f"   H1: {h1_text.strip()}")
-                results.append(("C11", True, f"H1: {h1_text.strip()[:60]}..."))
-            else:
-                issues = []
-                if not has_noir:
-                    issues.append("missing 'Noir'")
-                if not has_hamburg:
-                    issues.append("missing 'Hamburg'")
-                print(f"❌ FAIL: {', '.join(issues)}")
-                print(f"   H1: {h1_text.strip()}")
-                results.append(("C11", False, f"{', '.join(issues)}: {h1_text.strip()[:60]}..."))
-        else:
-            print("❌ FAIL: Could not extract <h1> tag")
-            results.append(("C11", False, "Could not extract <h1>"))
-    else:
-        print(f"❌ FAIL: GET / returned {status}")
-        results.append(("C11", False, f"GET / returned {status}"))
-    
-    # C12: GET /models → 200
-    print("\n[C12] Testing /models page...")
-    status, body = curl_get("/models")
-    if status == 200:
-        print("✅ PASS: /models returns 200")
-        results.append(("C12", True, "200 OK"))
-    else:
-        print(f"❌ FAIL: GET /models returned {status}")
-        results.append(("C12", False, f"Returned {status}"))
-    
-    # C13: GET /services/vip-escort-hamburg → 200
-    print("\n[C13] Testing /services/vip-escort-hamburg page...")
-    status, body = curl_get("/services/vip-escort-hamburg")
-    if status == 200:
-        print("✅ PASS: /services/vip-escort-hamburg returns 200")
-        results.append(("C13", True, "200 OK"))
-    else:
-        print(f"❌ FAIL: GET /services/vip-escort-hamburg returned {status}")
-        results.append(("C13", False, f"Returned {status}"))
-    
-    return results
+        log_fail("D26", "/en/services/vip-escort-hamburg missing <title> tag")
+else:
+    log_fail("D26", f"/en/services/vip-escort-hamburg returned status {status}, expected 200")
 
-def print_summary(all_results):
-    """Print final summary"""
-    print("\n" + "="*80)
-    print("FINAL SUMMARY")
-    print("="*80)
-    
-    section_a = [r for r in all_results if r[0].startswith('A')]
-    section_b = [r for r in all_results if r[0].startswith('B')]
-    section_c = [r for r in all_results if r[0].startswith('C')]
-    
-    def print_section(name, results):
-        passed = sum(1 for r in results if r[1])
-        total = len(results)
-        print(f"\n{name}: {passed}/{total} passed")
-        for test_id, passed, detail in results:
-            status = "✅" if passed else "❌"
-            print(f"  {status} {test_id}: {detail}")
-    
-    print_section("SECTION A — next/font migration", section_a)
-    print_section("SECTION B — Service page hero preload", section_b)
-    print_section("SECTION C — Regression checks", section_c)
-    
-    total_passed = sum(1 for r in all_results if r[1])
-    total_tests = len(all_results)
-    print(f"\n{'='*80}")
-    print(f"OVERALL: {total_passed}/{total_tests} tests passed")
-    print(f"{'='*80}\n")
-    
-    return total_passed == total_tests
+# D27: All 13 blog posts have UNIQUE titles
+import time
+for attempt in range(3):
+    try:
+        response = requests.get(f"{BASE_URL}/api/blog", timeout=30)
+        time.sleep(0.2)
+        if response.status_code == 200:
+            blog_posts = response.json()
+            titles = []
+            for post in blog_posts:
+                slug = post.get('slug', '')
+                status, html = get_html(f"/blog/{slug}")
+                if status == 200:
+                    title_match = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
+                    if title_match:
+                        titles.append(title_match.group(1))
+            
+            if len(titles) == len(set(titles)):
+                log_pass("D27", f"All {len(titles)} blog posts have UNIQUE titles")
+            else:
+                duplicates = [t for t in titles if titles.count(t) > 1]
+                log_fail("D27", f"Found duplicate titles: {set(duplicates)}")
+        else:
+            log_fail("D27", f"/api/blog returned status {response.status_code}", "200", str(response.status_code))
+        break
+    except requests.exceptions.ConnectionError as e:
+        if attempt < 2:
+            print(f"   Connection error on /api/blog, retrying in 3s...")
+            time.sleep(3)
+        else:
+            log_fail("D27", f"Blog title uniqueness check failed: {str(e)}")
+    except Exception as e:
+        log_fail("D27", f"Blog title uniqueness check failed: {str(e)}")
+        break
 
-if __name__ == "__main__":
-    print("="*80)
-    print("FINAL PERFORMANCE SPRINT VERIFICATION")
-    print("Target: http://localhost:3000")
-    print("="*80)
+print()
+
+# ============================================================================
+# SECTION E — Redirects still fire (middleware unchanged)
+# ============================================================================
+print("SECTION E — Redirects still fire (middleware unchanged)")
+print("-" * 80)
+
+# E28: GET /p/diskretion → 301/308 to /p/diskretion-und-datenschutz-noir-hamburg
+import time
+for attempt in range(3):
+    try:
+        response = requests.get(f"{BASE_URL}/p/diskretion", timeout=30, allow_redirects=False)
+        time.sleep(0.2)
+        if response.status_code in [301, 308]:
+            location = response.headers.get('location', '')
+            if 'diskretion-und-datenschutz-noir-hamburg' in location:
+                log_pass("E28", f"/p/diskretion redirects ({response.status_code}) to full slug")
+            else:
+                log_fail("E28", f"/p/diskretion redirects to wrong location: {location}")
+        else:
+            log_fail("E28", f"/p/diskretion returned status {response.status_code}", "301 or 308", str(response.status_code))
+        break
+    except requests.exceptions.ConnectionError as e:
+        if attempt < 2:
+            print(f"   Connection error on /p/diskretion, retrying in 3s...")
+            time.sleep(3)
+        else:
+            log_fail("E28", f"/p/diskretion request failed: {str(e)}")
+    except Exception as e:
+        log_fail("E28", f"/p/diskretion request failed: {str(e)}")
+        break
+
+# E29: GET /en/p/diskretion → 301/308 to /en/p/diskretion-und-datenschutz-noir-hamburg
+for attempt in range(3):
+    try:
+        response = requests.get(f"{BASE_URL}/en/p/diskretion", timeout=30, allow_redirects=False)
+        time.sleep(0.2)
+        if response.status_code in [301, 308]:
+            location = response.headers.get('location', '')
+            if 'diskretion-und-datenschutz-noir-hamburg' in location:
+                log_pass("E29", f"/en/p/diskretion redirects ({response.status_code}) to full slug")
+            else:
+                log_fail("E29", f"/en/p/diskretion redirects to wrong location: {location}")
+        else:
+            log_fail("E29", f"/en/p/diskretion returned status {response.status_code}", "301 or 308", str(response.status_code))
+        break
+    except requests.exceptions.ConnectionError as e:
+        if attempt < 2:
+            print(f"   Connection error on /en/p/diskretion, retrying in 3s...")
+            time.sleep(3)
+        else:
+            log_fail("E29", f"/en/p/diskretion request failed: {str(e)}")
+    except Exception as e:
+        log_fail("E29", f"/en/p/diskretion request failed: {str(e)}")
+        break
+
+# E30: GET /en/p/diskretion-und-datenschutz-noir-hamburg → 308 to DE version
+for attempt in range(3):
+    try:
+        response = requests.get(f"{BASE_URL}/en/p/diskretion-und-datenschutz-noir-hamburg", timeout=30, allow_redirects=False)
+        time.sleep(0.2)
+        if response.status_code == 308:
+            location = response.headers.get('location', '')
+            if '/p/diskretion' in location and '/en/' not in location:
+                log_pass("E30", "/en/p/diskretion-und-datenschutz-noir-hamburg redirects (308) to DE version")
+            else:
+                log_fail("E30", f"/en/p/diskretion-und-datenschutz-noir-hamburg redirects to wrong location: {location}")
+        else:
+            log_fail("E30", f"/en/p/diskretion-und-datenschutz-noir-hamburg returned status {response.status_code}", "308", str(response.status_code))
+        break
+    except requests.exceptions.ConnectionError as e:
+        if attempt < 2:
+            print(f"   Connection error on /en/p/diskretion-und-datenschutz-noir-hamburg, retrying in 3s...")
+            time.sleep(3)
+        else:
+            log_fail("E30", f"/en/p/diskretion-und-datenschutz-noir-hamburg request failed: {str(e)}")
+    except Exception as e:
+        log_fail("E30", f"/en/p/diskretion-und-datenschutz-noir-hamburg request failed: {str(e)}")
+        break
+
+print()
+
+# ============================================================================
+# SECTION F — 404 flows
+# ============================================================================
+print("SECTION F — 404 flows")
+print("-" * 80)
+
+# F31: GET /does-not-exist → status 404 AND response body contains data-testid="not-found"
+status, html = get_html("/does-not-exist")
+if status == 404:
+    if contains_pattern(html, r'data-testid="not-found"'):
+        log_pass("F31", "/does-not-exist returns 404 with custom NotFoundBody")
+    else:
+        log_fail("F31", "/does-not-exist returns 404 but missing custom NotFoundBody")
+else:
+    log_fail("F31", f"/does-not-exist returned status {status}", "404", str(status))
+
+# F32: GET /en/does-not-exist → status 404 AND contains data-testid="not-found"
+status, html = get_html("/en/does-not-exist")
+if status == 404:
+    if contains_pattern(html, r'data-testid="not-found"'):
+        log_pass("F32", "/en/does-not-exist returns 404 with custom NotFoundBody")
+    else:
+        log_fail("F32", "/en/does-not-exist returns 404 but missing custom NotFoundBody")
+else:
+    log_fail("F32", f"/en/does-not-exist returned status {status}", "404", str(status))
+
+# F33: GET /some/deep/nonexistent/path → status 404 AND contains custom NotFoundBody
+status, html = get_html("/some/deep/nonexistent/path")
+if status == 404:
+    if contains_pattern(html, r'data-testid="not-found"'):
+        log_pass("F33", "/some/deep/nonexistent/path returns 404 with custom NotFoundBody")
+    else:
+        log_fail("F33", "/some/deep/nonexistent/path returns 404 but missing custom NotFoundBody")
+else:
+    log_fail("F33", f"/some/deep/nonexistent/path returned status {status}", "404", str(status))
+
+# F34: GET /services/nonexistent-slug → 404 AND contains custom NotFoundBody
+status, html = get_html("/services/nonexistent-slug")
+if status == 404:
+    if contains_pattern(html, r'data-testid="not-found"'):
+        log_pass("F34", "/services/nonexistent-slug returns 404 with custom NotFoundBody")
+    else:
+        log_fail("F34", "/services/nonexistent-slug returns 404 but missing custom NotFoundBody")
+else:
+    log_fail("F34", f"/services/nonexistent-slug returned status {status}", "404", str(status))
+
+# F35: GET /models/nonexistent-slug → 404 AND contains custom NotFoundBody
+status, html = get_html("/models/nonexistent-slug")
+if status == 404:
+    if contains_pattern(html, r'data-testid="not-found"'):
+        log_pass("F35", "/models/nonexistent-slug returns 404 with custom NotFoundBody")
+    else:
+        log_fail("F35", "/models/nonexistent-slug returns 404 but missing custom NotFoundBody")
+else:
+    log_fail("F35", f"/models/nonexistent-slug returned status {status}", "404", str(status))
+
+# F36: GET /blog/nonexistent-slug → 404 AND contains custom NotFoundBody
+status, html = get_html("/blog/nonexistent-slug")
+if status == 404:
+    if contains_pattern(html, r'data-testid="not-found"'):
+        log_pass("F36", "/blog/nonexistent-slug returns 404 with custom NotFoundBody")
+    else:
+        log_fail("F36", "/blog/nonexistent-slug returns 404 but missing custom NotFoundBody")
+else:
+    log_fail("F36", f"/blog/nonexistent-slug returned status {status}", "404", str(status))
+
+print()
+
+# ============================================================================
+# SECTION G — Hero image responsive srcset (verify HTML)
+# ============================================================================
+print("SECTION G — Hero image responsive srcset (verify HTML)")
+print("-" * 80)
+
+# G37: GET / → HTML contains <img> with fetchPriority="high" AND srcSet containing "600w" AND "900w" AND sizes containing "100vw"
+status, html = get_html("/")
+if status == 200:
+    # Look for img with fetchPriority="high"
+    has_fetch_priority = contains_pattern(html, r'<img[^>]*fetchpriority="high"[^>]*>')
+    has_srcset_600w = contains_pattern(html, r'srcset="[^"]*\bw=600[^"]*600w')
+    has_srcset_900w = contains_pattern(html, r'srcset="[^"]*\bw=900[^"]*900w')
+    has_sizes_100vw = contains_pattern(html, r'sizes="[^"]*100vw')
     
-    all_results = []
+    if has_fetch_priority and has_srcset_600w and has_srcset_900w and has_sizes_100vw:
+        log_pass("G37", "/ has hero img with fetchPriority='high', srcSet (600w, 900w), sizes (100vw)")
+    else:
+        issues = []
+        if not has_fetch_priority:
+            issues.append("missing fetchPriority='high'")
+        if not has_srcset_600w:
+            issues.append("missing srcSet 600w")
+        if not has_srcset_900w:
+            issues.append("missing srcSet 900w")
+        if not has_sizes_100vw:
+            issues.append("missing sizes 100vw")
+        log_fail("G37", f"/ hero image: {', '.join(issues)}")
+else:
+    log_fail("G37", f"/ returned status {status}", "200", str(status))
+
+# G38: GET / → HTML contains <link rel="preload" as="image" with imageSrcSet and imageSizes and fetchPriority="high"
+status, html = get_html("/")
+if status == 200:
+    has_preload = contains_pattern(html, r'<link[^>]*rel="preload"[^>]*as="image"[^>]*>')
+    has_image_srcset = contains_pattern(html, r'<link[^>]*imagesrcset="[^"]*"')
+    has_image_sizes = contains_pattern(html, r'<link[^>]*imagesizes="[^"]*"')
+    has_fetch_priority = contains_pattern(html, r'<link[^>]*fetchpriority="high"[^>]*>')
     
-    # Run all test sections
-    all_results.extend(test_section_a())
-    all_results.extend(test_section_b())
-    all_results.extend(test_section_c())
+    if has_preload and has_image_srcset and has_image_sizes and has_fetch_priority:
+        log_pass("G38", "/ has preload link with as='image', imageSrcSet, imageSizes, fetchPriority='high'")
+    else:
+        issues = []
+        if not has_preload:
+            issues.append("missing preload link")
+        if not has_image_srcset:
+            issues.append("missing imageSrcSet")
+        if not has_image_sizes:
+            issues.append("missing imageSizes")
+        if not has_fetch_priority:
+            issues.append("missing fetchPriority='high'")
+        log_fail("G38", f"/ preload link: {', '.join(issues)}")
+else:
+    log_fail("G38", f"/ returned status {status}", "200", str(status))
+
+# G39: GET /services/vip-escort-hamburg → HTML contains <img fetchpriority="high" with srcSet containing "900w" AND "1600w"
+status, html = get_html("/services/vip-escort-hamburg")
+if status == 200:
+    has_fetch_priority = contains_pattern(html, r'<img[^>]*fetchpriority="high"[^>]*>')
+    has_srcset_900w = contains_pattern(html, r'srcset="[^"]*\bw=900[^"]*900w')
+    has_srcset_1600w = contains_pattern(html, r'srcset="[^"]*\bw=1600[^"]*1600w')
     
-    # Print summary
-    all_passed = print_summary(all_results)
+    if has_fetch_priority and has_srcset_900w and has_srcset_1600w:
+        log_pass("G39", "/services/vip-escort-hamburg has hero img with fetchPriority='high', srcSet (900w, 1600w)")
+    else:
+        issues = []
+        if not has_fetch_priority:
+            issues.append("missing fetchPriority='high'")
+        if not has_srcset_900w:
+            issues.append("missing srcSet 900w")
+        if not has_srcset_1600w:
+            issues.append("missing srcSet 1600w")
+        log_fail("G39", f"/services/vip-escort-hamburg hero image: {', '.join(issues)}")
+else:
+    log_fail("G39", f"/services/vip-escort-hamburg returned status {status}", "200", str(status))
+
+# G40: GET /services/vip-escort-hamburg → HTML contains <link rel="preload" with imageSrcSet containing "900w" and "1600w"
+status, html = get_html("/services/vip-escort-hamburg")
+if status == 200:
+    has_preload = contains_pattern(html, r'<link[^>]*rel="preload"[^>]*as="image"[^>]*>')
+    has_srcset_900w = contains_pattern(html, r'<link[^>]*imagesrcset="[^"]*\bw=900[^"]*900w')
+    has_srcset_1600w = contains_pattern(html, r'<link[^>]*imagesrcset="[^"]*\bw=1600[^"]*1600w')
     
-    sys.exit(0 if all_passed else 1)
+    if has_preload and has_srcset_900w and has_srcset_1600w:
+        log_pass("G40", "/services/vip-escort-hamburg has preload link with imageSrcSet (900w, 1600w)")
+    else:
+        issues = []
+        if not has_preload:
+            issues.append("missing preload link")
+        if not has_srcset_900w:
+            issues.append("missing imageSrcSet 900w")
+        if not has_srcset_1600w:
+            issues.append("missing imageSrcSet 1600w")
+        log_fail("G40", f"/services/vip-escort-hamburg preload link: {', '.join(issues)}")
+else:
+    log_fail("G40", f"/services/vip-escort-hamburg returned status {status}", "200", str(status))
+
+# G41: GET /en/services/vip-escort-hamburg → same as G39 and G40
+status, html = get_html("/en/services/vip-escort-hamburg")
+if status == 200:
+    # Check img
+    has_fetch_priority = contains_pattern(html, r'<img[^>]*fetchpriority="high"[^>]*>')
+    has_srcset_900w_img = contains_pattern(html, r'srcset="[^"]*\bw=900[^"]*900w')
+    has_srcset_1600w_img = contains_pattern(html, r'srcset="[^"]*\bw=1600[^"]*1600w')
+    
+    # Check preload
+    has_preload = contains_pattern(html, r'<link[^>]*rel="preload"[^>]*as="image"[^>]*>')
+    has_srcset_900w_link = contains_pattern(html, r'<link[^>]*imagesrcset="[^"]*\bw=900[^"]*900w')
+    has_srcset_1600w_link = contains_pattern(html, r'<link[^>]*imagesrcset="[^"]*\bw=1600[^"]*1600w')
+    
+    img_ok = has_fetch_priority and has_srcset_900w_img and has_srcset_1600w_img
+    preload_ok = has_preload and has_srcset_900w_link and has_srcset_1600w_link
+    
+    if img_ok and preload_ok:
+        log_pass("G41", "/en/services/vip-escort-hamburg has hero img and preload with correct srcSet")
+    else:
+        issues = []
+        if not img_ok:
+            issues.append("img issues")
+        if not preload_ok:
+            issues.append("preload issues")
+        log_fail("G41", f"/en/services/vip-escort-hamburg: {', '.join(issues)}")
+else:
+    log_fail("G41", f"/en/services/vip-escort-hamburg returned status {status}", "200", str(status))
+
+print()
+
+# ============================================================================
+# SECTION H — Regression sanity
+# ============================================================================
+print("SECTION H — Regression sanity")
+print("-" * 80)
+
+# H42: GET all these URLs return 200
+urls_to_check = [
+    "/", "/en", "/services", "/en/services", "/models", "/en/models", "/blog", "/en/blog",
+    "/faq", "/en/faq", "/impressum", "/en/imprint", "/kontakt", "/en/contact",
+    "/ueber-uns", "/en/about", "/escort-hamburg", "/en/escort-hamburg", "/areas", "/en/areas",
+    "/escort/hafencity", "/en/escort/hafencity", "/p/diskretion-und-datenschutz-noir-hamburg",
+    "/services/luxury-escort-hamburg", "/services/business-escort-hamburg"
+]
+
+all_200 = True
+failed_urls = []
+for url in urls_to_check:
+    status, _ = get_html(url)
+    if status != 200:
+        all_200 = False
+        failed_urls.append(f"{url} ({status})")
+
+if all_200:
+    log_pass("H42", f"All {len(urls_to_check)} regression URLs return 200")
+else:
+    log_fail("H42", f"Some URLs failed: {', '.join(failed_urls)}")
+
+# H43: GET /api/health → 200, JSON with status:"ok"
+import time
+for attempt in range(3):
+    try:
+        response = requests.get(f"{BASE_URL}/api/health", timeout=30)
+        time.sleep(0.2)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'ok':
+                log_pass("H43", "/api/health returns 200 with status:'ok'")
+            else:
+                log_fail("H43", f"/api/health status is '{data.get('status')}'", "ok", str(data.get('status')))
+        else:
+            log_fail("H43", f"/api/health returned status {response.status_code}", "200", str(response.status_code))
+        break
+    except requests.exceptions.ConnectionError as e:
+        if attempt < 2:
+            print(f"   Connection error on /api/health, retrying in 3s...")
+            time.sleep(3)
+        else:
+            log_fail("H43", f"/api/health request failed: {str(e)}")
+    except Exception as e:
+        log_fail("H43", f"/api/health request failed: {str(e)}")
+        break
+
+# H44: GET /admin/login → 200
+status, _ = get_html("/admin/login")
+if status == 200:
+    log_pass("H44", "/admin/login returns 200")
+else:
+    log_fail("H44", f"/admin/login returned status {status}", "200", str(status))
+
+print()
+
+# ============================================================================
+# SECTION I — Admin auth still works
+# ============================================================================
+print("SECTION I — Admin auth still works")
+print("-" * 80)
+
+# I45: POST /api/auth/login with credentials → 200 with access_token cookie
+import time
+for attempt in range(3):
+    try:
+        response = requests.post(
+            f"{BASE_URL}/api/auth/login",
+            json={"email": "admin@noir-hamburg.de", "password": "NoirAdmin2026!"},
+            timeout=30
+        )
+        time.sleep(0.2)
+        if response.status_code == 200:
+            cookies = response.cookies
+            if 'access_token' in cookies:
+                log_pass("I45", "POST /api/auth/login returns 200 with access_token cookie")
+                
+                # I46: Authed GET /admin → 200
+                for admin_attempt in range(3):
+                    try:
+                        admin_response = requests.get(f"{BASE_URL}/admin", cookies=cookies, timeout=30)
+                        time.sleep(0.2)
+                        if admin_response.status_code == 200:
+                            log_pass("I46", "Authed GET /admin returns 200")
+                        else:
+                            log_fail("I46", f"Authed GET /admin returned status {admin_response.status_code}", "200", str(admin_response.status_code))
+                        break
+                    except requests.exceptions.ConnectionError as e:
+                        if admin_attempt < 2:
+                            print(f"   Connection error on /admin, retrying in 3s...")
+                            time.sleep(3)
+                        else:
+                            log_fail("I46", f"Authed GET /admin request failed: {str(e)}")
+                    except Exception as e:
+                        log_fail("I46", f"Authed GET /admin request failed: {str(e)}")
+                        break
+            else:
+                log_fail("I45", "POST /api/auth/login missing access_token cookie")
+        else:
+            log_fail("I45", f"POST /api/auth/login returned status {response.status_code}", "200", str(response.status_code))
+        break
+    except requests.exceptions.ConnectionError as e:
+        if attempt < 2:
+            print(f"   Connection error on /api/auth/login, retrying in 3s...")
+            time.sleep(3)
+        else:
+            log_fail("I45", f"Admin auth test failed: {str(e)}")
+    except Exception as e:
+        log_fail("I45", f"Admin auth test failed: {str(e)}")
+        break
+
+print()
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+print("=" * 80)
+print("TEST SUMMARY")
+print("=" * 80)
+print(f"✅ PASSED: {len(passed_tests)}")
+print(f"❌ FAILED: {len(failed_tests)}")
+print(f"TOTAL: {len(passed_tests) + len(failed_tests)}")
+print()
+
+if failed_tests:
+    print("FAILED TESTS:")
+    print("-" * 80)
+    for test_id, message, expected, actual in failed_tests:
+        print(f"❌ {test_id}: {message}")
+        if expected:
+            print(f"   Expected: {expected}")
+        if actual:
+            print(f"   Actual: {actual}")
+    print()
+
+print("=" * 80)
+print("END OF TEST SUITE")
+print("=" * 80)

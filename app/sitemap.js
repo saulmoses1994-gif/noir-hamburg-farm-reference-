@@ -10,8 +10,10 @@ import { listPublicPages } from '@/lib/pages'
 // while search engines and SEMrush kept discovering the DB-driven detail
 // URLs (models, services, blog, /p/*) via internal crawling and comparing
 // them against a stale sitemap.
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers all call
+// revalidatePath('/sitemap.xml') when content changes, so a 5-minute cache
+// window can never serve a stale sitemap after a real edit.
+export const revalidate = 300
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.com'
 

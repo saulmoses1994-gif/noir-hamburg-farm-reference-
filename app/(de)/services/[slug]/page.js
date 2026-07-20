@@ -11,7 +11,8 @@ import { optimizeImageUrl } from '@/lib/cloudinary'
 import { buildMetadata, breadcrumbSchema, siteUrl, organizationRef } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
 
-export const dynamic = 'force-dynamic'
+// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
+export const revalidate = 300
 export const dynamicParams = true
 
 export async function generateStaticParams() {
@@ -47,7 +48,17 @@ export default async function ServiceDetail({ params }) {
 
   // Same override pattern as /services list — Settings → Service-Bilder wins.
   const heroRaw = (settings?.service_images || {})[slug] || s.image
-  const heroImage = optimizeImageUrl(heroRaw, { w: 2000, ar: '16:9', crop: 'fill' })
+  // PERF: Service pages currently ship w:2000 hero to ALL viewports,
+  // meaning a 375px mobile downloads a 5.3× oversized image
+  // (~108–148 KB). Ship a responsive `srcset` so the browser picks the
+  // correct size per DPR + viewport. The `<link rel="preload">` mirrors
+  // the same set via imageSrcSet/imageSizes so the preload hit matches
+  // the actual <img> request (crucial — a mismatched preload wastes
+  // bandwidth AND fails to accelerate LCP).
+  const heroMobile = optimizeImageUrl(heroRaw, { w: 900, ar: '16:9', crop: 'fill' })
+  const heroDesktop = optimizeImageUrl(heroRaw, { w: 1600, ar: '16:9', crop: 'fill' })
+  const heroSrcSet = `${heroMobile} 900w, ${heroDesktop} 1600w`
+  const heroImage = heroDesktop // used for schema.org + og:image
 
   const sections = s.sections || []
   const faqs = s.faqs || []
@@ -90,12 +101,17 @@ export default async function ServiceDetail({ params }) {
       {/* Preload the LCP hero — service pages are second-most-visited and
           their hero occupies the full above-the-fold viewport. Same rationale
           as the homepage preload. Applied via <link> in the tree; Next.js
-          hoists it into <head> automatically. */}
+          hoists it into <head> automatically.
+          PERF: imageSrcSet + imageSizes match the actual <img srcset/sizes>
+          below so the preload hits the exact bytes the browser will use for
+          the current viewport. A mismatched preload would double-download. */}
       {heroImage && (
         <link
           rel="preload"
           as="image"
-          href={heroImage}
+          href={heroDesktop}
+          imageSrcSet={heroSrcSet}
+          imageSizes="100vw"
           fetchPriority="high"
         />
       )}
@@ -103,7 +119,7 @@ export default async function ServiceDetail({ params }) {
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
           <div className="absolute inset-0">
-            {heroImage && <img src={heroImage} alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
+            {heroImage && <img src={heroDesktop} srcSet={heroSrcSet} sizes="100vw" alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">
