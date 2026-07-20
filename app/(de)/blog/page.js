@@ -5,13 +5,22 @@ import { t } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
-export async function generateMetadata() {
+export async function generateMetadata({ searchParams }) {
   const lang = 'de'
+  const sp = (await searchParams) || {}
+  // Faceted filter URLs (e.g. `/blog?category=Escort+Advice`) must NOT be
+  // indexed as separate pages. They return 200 but their hreflang tags point
+  // to the canonical `/blog` — so SEMrush was flagging them as "No self-
+  // referencing hreflang" (11 URLs, one per category). Adding `noindex, follow`
+  // tells crawlers this is a filter variant of `/blog`, resolving the error
+  // while still allowing them to follow links onward.
+  const noindex = !!sp.category || !!sp.page
   return buildMetadata({
     title: t(lang, 'blog.list.metaTitle'),
     description: t(lang, 'blog.list.metaDesc'),
     path: '/blog',
     lang,
+    noindex,
   })
 }
 

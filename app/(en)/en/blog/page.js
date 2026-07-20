@@ -5,13 +5,18 @@ import { t } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
-export async function generateMetadata() {
+export async function generateMetadata({ searchParams }) {
   const lang = 'en'
+  const sp = (await searchParams) || {}
+  // See DE counterpart — noindex filter variants so SEMrush stops flagging
+  // them as "No self-referencing hreflang".
+  const noindex = !!sp.category || !!sp.page
   return buildMetadata({
     title: t(lang, 'blog.list.metaTitle'),
     description: t(lang, 'blog.list.metaDesc'),
     path: '/blog',
     lang,
+    noindex,
   })
 }
 
