@@ -532,9 +532,9 @@ test_plan:
 seo_duplicate_title_fix:
   - task: "Duplicate title tag safety net — resolveArticleTitle() in lib/seo.js"
     implemented: true
-    working: false
+    working: true
     file: "lib/seo.js + app/(de)/blog/[slug]/page.js + app/(en)/en/blog/[slug]/page.js"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
@@ -631,6 +631,103 @@ seo_duplicate_title_fix:
             SECONDARY ISSUE (data quality):
             Blog post "business-travel-hamburg-der-pragmatische-wegweiser-fuer-den-anspruchsvollen-reisenden" has
             identical meta_title and meta_title_en. This should be fixed in the database or via admin UI.
+        - working: true
+          agent: "main"
+          comment: |
+            STRENGTHENED FIX: Replaced 8-character prefix check with word-overlap ratio algorithm.
+            
+            NEW ALGORITHM (lib/seo.js lines 29-46):
+            * Extracts significant words (length ≥ 5, Unicode-safe for umlauts) from BOTH the article 
+              title and the authored meta_title using regex /[\p{L}\d]+/gu
+            * Computes overlap = (shared_words_count) / (article_words_count)
+            * If overlap ≥ 0.35 (35%) → use authored meta_title (it relates to the article)
+            * Else → fall back to `${articleTitle} | Noir Hamburg`
+            
+            WHY THIS WORKS:
+            * A correctly authored meta shares nearly all article words (ratio ~1.0 or high)
+            * A mistakenly pasted foreign meta shares at most one shared theme word (ratio < 0.2)
+            * Threshold 0.35 is low enough for lightly re-worded metas, high enough to reject collisions
+            
+            EXAMPLE (the flagged bug case):
+            * Article: "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen"
+            * Article words (≥5 chars): ["diskretion", "zeitalter", "digitaler", "spuren", "privatsphäre", "wirklich", "schützen"]
+            * Wrong meta: "Diskretion & Datenschutz | Noir Hamburg Premium Escort"
+            * Meta words (≥5 chars): ["diskretion", "datenschutz", "hamburg", "premium", "escort"]
+            * Shared words: ["diskretion"] = 1
+            * Overlap ratio: 1/7 = 0.14 < 0.35 → FALLBACK TRIGGERED ✓
+            * Result: "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen | Noir Hamburg"
+            
+            Unit-tested 6 cases manually before deployment. Ready for live verification.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive 6-test suite executed with 5/6 tests PASSED. The critical bug is FIXED.
+            Test base URL: http://localhost:3000 (as requested by user)
+            
+            TEST 1 - SPECIFIC BUG FIXED: ✅ PASS
+            GET /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+            → Status: 200
+            → <title>: "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen | Noir Hamburg"
+            → DOES NOT contain the wrong policy page title "Diskretion & Datenschutz | Noir Hamburg Premium Escort"
+            → CONTAINS article-specific words (Zeitalter, digitaler, Privatsphäre)
+            → ENDS WITH " | Noir Hamburg"
+            → CRITICAL BUG RESOLVED: The word-overlap ratio algorithm correctly detected the mismatch 
+              (overlap 1/7 = 0.14 < 0.35) and triggered the fallback to article title.
+            
+            TEST 2 - POLICY PAGE UNCHANGED: ✅ PASS
+            GET /p/diskretion-und-datenschutz-noir-hamburg
+            → Status: 200
+            → <title>: "Diskretion & Datenschutz — Noir Hamburg Premium Escort"
+            → Policy page title unchanged (regression check passed)
+            
+            TEST 3 - UNIQUENESS ACROSS ALL DE BLOGS: ✅ PASS
+            GET /api/blog → 13 blog posts
+            For each slug, GET /blog/{slug} and extract <title>
+            → All 13 blog titles are UNIQUE (no duplicates found)
+            → Verified slugs: wie-buche-ich-einen-escort, fruehstueck-in-hamburg, der-stilvolle-herr, 
+              elbphilharmonie, diskretion-im-zeitalter, ein-wochenende-in-hamburg, business-travel-hamburg, 
+              nightlife-hamburg, fine-dining-hamburg, die-besten-luxus-hotels, die-zehn-besten-restaurants, 
+              hamburg-bei-nacht, diskretion-verstehen
+            
+            TEST 4 - DE ≠ EN TITLES: ❌ FAIL (DATA QUALITY ISSUE, NOT CODE BUG)
+            For each blog slug, compare <title> of /blog/{slug} vs /en/blog/{slug}
+            → Found 1 collision: "business-travel-hamburg-der-pragmatische-wegweiser-fuer-den-anspruchsvollen-reisenden"
+            → Both DE and EN return: "Business Travel Hamburg 2026 — Hotel, Meeting, Restaurant | Noir Hamburg"
+            → ROOT CAUSE: Database has IDENTICAL meta_title and meta_title_en for this blog post
+              (verified via GET /api/blog/{slug} → meta_title === meta_title_en)
+            → This is a DATA QUALITY issue, not a code defect. The helper is working correctly.
+            → RECOMMENDATION: User should edit this blog post in Admin → Blog → business-travel-hamburg 
+              and provide a unique English meta_title_en.
+            
+            TEST 5 - HELPER PRESERVES CORRECT META: ✅ PASS
+            GET /blog/fruehstueck-in-hamburg-die-zehn-schoensten-adressen-fuer-den-langsamen-morgen
+            → Status: 200
+            → <title>: "Frühstück in Hamburg — Die schönsten Adressen 2026 | Noir Hamburg"
+            → Helper correctly preserved the authored meta_title (high word overlap with article title)
+            → No over-triggering of fallback logic
+            
+            TEST 6 - EN FALLBACK DIFFERENTIATOR: ✅ PASS
+            GET /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+            → DE <title>: "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen | Noir Hamburg"
+            GET /en/blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+            → EN <title>: "Discretion in the Age of Digital Footprints — How We Really Protect Your Privacy — EN | Noir Hamburg"
+            → EN title CONTAINS "— EN" differentiator (as specified in app/(en)/en/blog/[slug]/page.js)
+            → DE and EN titles are DIFFERENT (no collision)
+            
+            SUMMARY:
+            * CRITICAL BUG FIXED: The flagged duplicate title issue is resolved. The word-overlap ratio 
+              algorithm (threshold 0.35) correctly identifies mismatched meta_title fields and falls back 
+              to article title.
+            * All 13 DE blog titles are unique (no duplicates).
+            * Policy page title unchanged (regression safe).
+            * Helper preserves correctly authored meta_title fields (no over-triggering).
+            * EN fallback adds "— EN" differentiator correctly.
+            * ONE DATA QUALITY ISSUE: "business-travel-hamburg" post has identical DE/EN meta_title in 
+              database. This is NOT a code bug. User should fix via Admin UI.
+            
+            VERDICT: ✅ FIX WORKING CORRECTLY
+            The strengthened resolveArticleTitle() helper with word-overlap ratio is production-ready.
+            The SEMrush duplicate title flag will be resolved after next crawl.
 
 test_plan_addendum:
   - Priority: verify NO two blog posts share the same <title> value after the fix.
