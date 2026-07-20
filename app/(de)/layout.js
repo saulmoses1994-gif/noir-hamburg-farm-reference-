@@ -16,6 +16,7 @@
 // multiple root layouts when each route group provides its own.
 
 import '../globals.css'
+import ReactDOM from 'react-dom'
 import { Playfair_Display, DM_Sans, JetBrains_Mono } from 'next/font/google'
 
 const playfair = Playfair_Display({
@@ -50,15 +51,18 @@ export const metadata = {
 }
 
 export default function DeRootLayout({ children }) {
+  // PERF: React DOM's preconnect / prefetchDNS APIs get emitted at the
+  // highest possible priority in the HTML — BEFORE Next.js-managed CSS
+  // stylesheets. This matters because SEMrush's "Preconnect to Required
+  // Origins" LCP recommendation flagged us: the Cloudinary preconnect
+  // via JSX <link> was being inserted AFTER the CSS stylesheet, so the
+  // TLS handshake to res.cloudinary.com was delayed by the CSS block.
+  // Using the imperative API guarantees the hint lands in the initial
+  // <head> before anything else.
+  ReactDOM.preconnect('https://res.cloudinary.com', { crossOrigin: 'anonymous' })
+  ReactDOM.prefetchDNS('https://res.cloudinary.com')
   return (
     <html lang="de" className={`${playfair.variable} ${dmSans.variable} ${jbMono.variable}`}>
-      <head>
-        {/* CWV network hints — Cloudinary preconnect saves ~150ms on the LCP
-            image handshake. Fonts are self-hosted via next/font so no external
-            font-domain preconnect needed. */}
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-      </head>
       <body className="font-body bg-white text-[#1A1414] antialiased">
         {children}
       </body>

@@ -2,6 +2,7 @@
 // See app/(de)/layout.js for full architectural rationale.
 
 import '../globals.css'
+import ReactDOM from 'react-dom'
 import { Playfair_Display, DM_Sans, JetBrains_Mono } from 'next/font/google'
 
 const playfair = Playfair_Display({
@@ -36,12 +37,13 @@ export const metadata = {
 }
 
 export default function EnRootLayout({ children }) {
+  // PERF: See app/(de)/layout.js — imperative preconnect API gives the
+  // Cloudinary hint the highest priority, landing before Next.js's
+  // managed CSS stylesheet in the emitted <head>.
+  ReactDOM.preconnect('https://res.cloudinary.com', { crossOrigin: 'anonymous' })
+  ReactDOM.prefetchDNS('https://res.cloudinary.com')
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable} ${jbMono.variable}`}>
-      <head>
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-      </head>
       <body className="font-body bg-white text-[#1A1414] antialiased">
         {children}
       </body>
