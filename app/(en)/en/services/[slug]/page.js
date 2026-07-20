@@ -86,11 +86,20 @@ export default async function ServiceDetailEn({ params }) {
   return (
     <>
       <Header lang={lang} currentPath={`/en/services/${slug}`} />
+      {/* LCP hero preload — see DE counterpart for rationale. */}
+      {heroImage && (
+        <link
+          rel="preload"
+          as="image"
+          href={heroImage}
+          fetchPriority="high"
+        />
+      )}
       <main id="main">
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
           <div className="absolute inset-0">
-            {heroImage && <img src={heroImage} alt={heroAlt} className="w-full h-full object-cover" />}
+            {heroImage && <img src={heroImage} alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">
