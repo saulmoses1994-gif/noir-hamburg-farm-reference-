@@ -54,7 +54,7 @@ test_plan:
 lcp_sprint_p0:
   - task: "P0 LCP sprint: static/ISR conversion via multi-root layouts + responsive hero + request-scoped React cache()"
     implemented: true
-    working: false
+    working: true
     file: "app/(de)/layout.js + app/(en)/layout.js (new) + app/layout.js (DELETED) + app/(de)/[...notfound]/page.js + app/(en)/en/[...notfound]/page.js + lib/settings.js + lib/service-content.js + lib/models.js + lib/blog.js + lib/pages.js + 31 public page files + app/sitemap.js + app/(de)/page.js + app/(en)/en/page.js + app/(de)/services/[slug]/page.js + app/(en)/en/services/[slug]/page.js"
     stuck_count: 0
     priority: "high"
