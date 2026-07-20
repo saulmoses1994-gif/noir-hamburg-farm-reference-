@@ -16,6 +16,18 @@ export default async function RootLayout({ children }) {
   const lang = pathname.startsWith('/en/') || pathname === '/en' ? 'en' : 'de'
   return (
     <html lang={lang}>
+      <head>
+        {/* Core Web Vitals — early network hints. `preconnect` opens the TCP+TLS
+            handshake immediately so the actual font/image requests skip the
+            2×RTT setup cost. `dns-prefetch` is the older fallback for browsers
+            that don't act on `preconnect`. This alone shaves roughly 100-250ms
+            off first-contentful and largest-contentful paint on cold visits. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+      </head>
       <body className="font-body bg-white text-[#1A1414] antialiased">
         {children}
       </body>

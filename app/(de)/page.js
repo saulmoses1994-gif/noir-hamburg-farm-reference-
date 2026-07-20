@@ -30,6 +30,18 @@ export default async function Home() {
   return (
     <>
       <Header lang={lang} currentPath="/" />
+      {/* Preload the LCP hero image via <link rel="preload">. Next.js hoists
+          any <link> tag rendered inside the page tree into the document <head>,
+          so this fires before the <img> element parses. Combined with
+          fetchPriority="high" below, it delivers the earliest possible LCP. */}
+      {hero && (
+        <link
+          rel="preload"
+          as="image"
+          href={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
+          fetchPriority="high"
+        />
+      )}
       <main id="main">
         <JsonLd data={jsonLd} />
         <section className="px-6 md:px-12 lg:px-16 pt-10 md:pt-16 lg:pt-24 pb-12 md:pb-16" data-testid="home-hero">
