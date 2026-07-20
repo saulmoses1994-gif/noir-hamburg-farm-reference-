@@ -3,7 +3,7 @@ import BlogDetailBody from '@/components/public/BlogDetailBody'
 import { getPublicBlog, listPublicBlog } from '@/lib/blog'
 import { listPublicModels } from '@/lib/models'
 import { listServiceContent, listAreaContent } from '@/lib/service-content'
-import { buildMetadata } from '@/lib/seo'
+import { buildMetadata, resolveArticleTitle } from '@/lib/seo'
 import { pick, t } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +24,14 @@ export async function generateMetadata({ params }) {
   if (!p) return { title: t('en', 'blog.detail.notFoundTitle') }
   const lang = 'en'
   const noindex = !(p.title_en || p.meta_title_en || p.content_en || p.excerpt_en)
-  const title = pick(p, 'meta_title', lang) || `${pick(p, 'title', lang)} — EN | Noir Hamburg`
+  // Guard against duplicate title tags — see DE counterpart. Also append
+  // ' — EN' when falling back so DE and EN never share an identical title.
+  const authored = pick(p, 'meta_title', lang)
+  const articleTitle = pick(p, 'title', lang)
+  const guarded = resolveArticleTitle(articleTitle, authored)
+  // If we fell back to the article title, differentiate from DE.
+  const usedFallback = guarded !== authored
+  const title = usedFallback && articleTitle ? `${articleTitle} — EN | Noir Hamburg` : guarded
   const description = pick(p, 'meta_description', lang) || pick(p, 'excerpt', lang) || ''
   return buildMetadata({
     title,

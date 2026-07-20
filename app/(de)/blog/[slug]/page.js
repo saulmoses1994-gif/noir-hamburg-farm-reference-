@@ -3,7 +3,7 @@ import BlogDetailBody from '@/components/public/BlogDetailBody'
 import { getPublicBlog, listPublicBlog } from '@/lib/blog'
 import { listPublicModels } from '@/lib/models'
 import { listServiceContent, listAreaContent } from '@/lib/service-content'
-import { buildMetadata } from '@/lib/seo'
+import { buildMetadata, resolveArticleTitle } from '@/lib/seo'
 import { pick, t } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +23,11 @@ export async function generateMetadata({ params }) {
   const p = await getPublicBlog(slug)
   if (!p) return { title: t('de', 'blog.detail.notFoundTitle') }
   const lang = 'de'
-  const title = pick(p, 'meta_title', lang) || `${pick(p, 'title', lang)} | Noir Hamburg`
+  // Guard against duplicate title tags: if the authored meta_title doesn't
+  // relate to this article's actual title (author copy-paste mistake), fall
+  // back to `${title} | Noir Hamburg`. Fixes SEMrush's duplicate-title error
+  // where a policy meta was pasted into a blog article's meta_title field.
+  const title = resolveArticleTitle(pick(p, 'title', lang), pick(p, 'meta_title', lang))
   const description = pick(p, 'meta_description', lang) || pick(p, 'excerpt', lang) || ''
   // Suppress the EN hreflang alternate when the EN version has no real
   // content — the /en/blog/{slug} route is noindexed in that case and

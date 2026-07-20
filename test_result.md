@@ -517,16 +517,125 @@ phase3_d3_areas_public:
 
 metadata:
   created_by: "main_agent"
-  version: "4.0"
-  test_sequence: 32
+  version: "4.1"
+  test_sequence: 33
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Pre-cutover bundle v3: .com wiring + work-with-us button + homepage hero"
-  stuck_tasks: []
+    - "SEO fix: Duplicate title tags between /p/diskretion-und-datenschutz-noir-hamburg and /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen"
+  stuck_tasks:
+    - "SEO fix: Duplicate title tags - helper logic is flawed, needs more strict matching algorithm"
   test_all: false
   test_priority: "high_first"
+
+seo_duplicate_title_fix:
+  - task: "Duplicate title tag safety net — resolveArticleTitle() in lib/seo.js"
+    implemented: true
+    working: false
+    file: "lib/seo.js + app/(de)/blog/[slug]/page.js + app/(en)/en/blog/[slug]/page.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            SEMrush "Detailed Issue: Duplicate title tags" (audit 20-Jul-2026) flagged 2 URLs
+            sharing the exact title "Diskretion & Datenschutz | Noir Hamburg Premium Escort":
+              - https://noir-hamburg.com/p/diskretion-und-datenschutz-noir-hamburg  (policy page — correct)
+              - https://noir-hamburg.com/blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen  (blog article — WRONG meta_title, copy-paste mistake)
+
+            Fix: Added `resolveArticleTitle(articleTitle, authoredMeta)` helper in `lib/seo.js`.
+            It requires the authored meta_title to include the first 8 chars of the article title.
+            If it doesn't (as in the flagged blog article), the helper falls back to
+            `${articleTitle} | Noir Hamburg`.
+
+            Wired into:
+              - app/(de)/blog/[slug]/page.js — generateMetadata now calls resolveArticleTitle()
+              - app/(en)/en/blog/[slug]/page.js — same, with an extra "— EN" differentiator on fallback
+
+            Expected on the flagged URL:
+              /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+              → title becomes:
+                "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen | Noir Hamburg"
+                (unique — no longer collides with the /p/ policy page title)
+
+            The /p/diskretion-und-datenschutz-noir-hamburg policy page's title is UNCHANGED.
+
+            Please verify:
+              1. GET /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+                 → returns 200 with an SSR <title> that:
+                   • DOES NOT equal "Diskretion & Datenschutz | Noir Hamburg Premium Escort"
+                   • CONTAINS "Diskretion im Zeitalter" (article-specific)
+                   • Ends with " | Noir Hamburg"
+              2. GET /p/diskretion-und-datenschutz-noir-hamburg
+                 → SSR <title> STILL contains "Diskretion & Datenschutz" (unchanged behavior)
+              3. GET all other 12 blog posts in listPublicBlog() → each returns a UNIQUE <title>
+                 that either contains its slug words OR is the correctly-authored meta_title.
+              4. GET /en/blog/{slug} → titles differ from DE counterparts (safeguard preserved).
+              5. The `resolveArticleTitle()` helper itself:
+                 • Returns the fallback when authored=null/undefined/empty
+                 • Returns the authored value when it contains the first 8 chars of article title
+                 • Returns the fallback when authored is genuinely unrelated to the article title
+        - working: false
+          agent: "testing"
+          comment: |
+            ❌ CRITICAL: The fix is NOT working. Comprehensive 6-test suite executed with 3/6 tests FAILED.
+            
+            ROOT CAUSE IDENTIFIED:
+            The helper function logic is flawed. It checks if meta_title.includes(first_8_chars_of_article_title),
+            but this is too lenient for the specific bug case.
+            
+            ACTUAL DATA for the flagged blog post:
+            - Article title: "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen"
+            - First 8 chars: "Diskreti"
+            - Authored meta_title: "Diskretion & Datenschutz | Noir Hamburg Premium Escort" (WRONG - policy page title)
+            - Helper check: Does "Diskretion & Datenschutz..." include "diskreti"? YES (starts with "Diskretion")
+            - Result: Helper PRESERVES the wrong meta_title instead of falling back
+            
+            TEST RESULTS:
+            ✅ TEST 1 - Specific bug fixed: FAILED
+               GET /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+               → Still returns "Diskretion & Datenschutz | Noir Hamburg Premium Escort" (UNCHANGED)
+               → Expected: "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen | Noir Hamburg"
+            
+            ✅ TEST 2 - Policy page unchanged: PASSED
+               GET /p/diskretion-und-datenschutz-noir-hamburg
+               → Returns "Diskretion & Datenschutz — Noir Hamburg Premium Escort" (correct, unchanged)
+            
+            ✅ TEST 3 - No duplicate DE titles: PASSED (but misleading - the bug still exists)
+               All 13 blog posts have unique titles, but the problematic post still has the wrong title.
+            
+            ❌ TEST 4 - DE/EN differentiated: FAILED
+               Found 1 collision: "business-travel-hamburg-der-pragmatische-wegweiser-fuer-den-anspruchsvollen-reisenden"
+               Both DE and EN return: "Business Travel Hamburg 2026 — Hotel, Meeting, Restaurant | Noir Hamburg"
+               Root cause: meta_title and meta_title_en are IDENTICAL in the database (data issue, not code issue).
+            
+            ✅ TEST 5 - Helper preserves correct meta: PASSED
+               Verified with "fruehstueck-in-hamburg" post - helper correctly preserves valid meta_title.
+            
+            ❌ TEST 6 - EN fallback differentiator: FAILED
+               GET /en/blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+               → Returns "Discretion & Data Protection | Noir Hamburg Premium Escort" (no "— EN" marker)
+               → Expected: Should contain "— EN" when fallback is triggered, but fallback never triggers due to logic flaw.
+            
+            RECOMMENDED FIX:
+            The helper logic needs to be more strict. Instead of checking if meta_title "includes" the first 8 chars,
+            it should check if meta_title "starts with" a substantial portion of the article title (e.g., first 20-30 chars)
+            OR use a more sophisticated similarity check (e.g., Levenshtein distance, word overlap ratio).
+            
+            Alternative approach: Check if the meta_title contains at least 2-3 unique words from the article title
+            (excluding common words like "der", "die", "das", "in", "und", etc.).
+            
+            SECONDARY ISSUE (data quality):
+            Blog post "business-travel-hamburg-der-pragmatische-wegweiser-fuer-den-anspruchsvollen-reisenden" has
+            identical meta_title and meta_title_en. This should be fixed in the database or via admin UI.
+
+test_plan_addendum:
+  - Priority: verify NO two blog posts share the same <title> value after the fix.
+  - Priority: verify /p/diskretion-und-datenschutz-noir-hamburg still has its authored title.
+  - Do NOT test hreflang / sitemap / other SEO metrics — that's not in scope for this bug.
 
 pre_cutover_bundle_v3:
   - task: "Pre-cutover bundle v3: .com wiring + work-with-us button + homepage hero"
@@ -2985,3 +3094,32 @@ qa_full_pass:
             
             Task marked as working=true, needs_retesting=false.
 
+
+
+agent_communication:
+    - agent: "testing"
+      message: |
+        CRITICAL BUG FOUND: SEO duplicate title fix is NOT working.
+        
+        The helper function resolveArticleTitle() in lib/seo.js has a logic flaw:
+        - It checks if meta_title.includes(first_8_chars_of_article_title)
+        - For the flagged blog post, both the article title and the wrong meta_title start with "Diskretion"
+        - So the helper thinks the meta_title is correct and preserves it
+        - Result: The duplicate title bug still exists
+        
+        EVIDENCE:
+        GET /blog/diskretion-im-zeitalter-digitaler-spuren-wie-wir-ihre-privatsphaere-wirklich-schuetzen
+        → Still returns "Diskretion & Datenschutz | Noir Hamburg Premium Escort" (WRONG)
+        → Should return "Diskretion im Zeitalter digitaler Spuren — Wie wir Ihre Privatsphäre wirklich schützen | Noir Hamburg"
+        
+        RECOMMENDED FIX:
+        Replace the simple .includes() check with a more strict algorithm:
+        1. Check if meta_title starts with first 20-30 chars of article title (not just 8), OR
+        2. Use word overlap ratio (count unique words shared between titles), OR
+        3. Use Levenshtein distance to measure similarity
+        
+        The current 8-char prefix check is too lenient for cases where both titles start with the same word.
+        
+        SECONDARY ISSUE:
+        Blog post "business-travel-hamburg..." has identical DE and EN meta_titles (data quality issue).
+        This should be fixed in the database.
