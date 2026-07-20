@@ -3,6 +3,16 @@ import { listPublicModels } from '@/lib/models'
 import { listPublicBlog } from '@/lib/blog'
 import { listPublicPages } from '@/lib/pages'
 
+// CRITICAL: sitemap MUST be regenerated on every request, otherwise it's
+// baked at build time with a snapshot of the DB and stays out of date until
+// the next deploy. That was the root cause of SEMrush's persistent "hreflang
+// conflicts" — the production sitemap only contained the 20 static routes
+// while search engines and SEMrush kept discovering the DB-driven detail
+// URLs (models, services, blog, /p/*) via internal crawling and comparing
+// them against a stale sitemap.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://noir-hamburg.com'
 
 // Slug pairs where the EN URL differs from the DE URL.
