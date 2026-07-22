@@ -31,14 +31,17 @@ export default async function HomeEn() {
   return (
     <>
       <Header lang={lang} currentPath="/en" />
-      {/* Preload the LCP hero image — see DE homepage for rationale. */}
+      {/* Preload the LCP hero image — see DE homepage for full rationale
+          (Pass A LCP diagnostics 2026-01). imageSrcSet/imageSizes exactly
+          mirror the <img> so the preload hit is REUSED and the browser
+          picks the smallest variant that fits the real container width. */}
       {hero && (
         <link
           rel="preload"
           as="image"
           href={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
-          imageSrcSet={`${optimizeImageUrl(hero.image, { w: 600, ar: '4/5', crop: 'fill' })} 600w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w`}
-          imageSizes="(max-width: 1024px) 100vw, 42vw"
+          imageSrcSet={`${optimizeImageUrl(hero.image, { w: 400, ar: '4/5', crop: 'fill' })} 400w, ${optimizeImageUrl(hero.image, { w: 700, ar: '4/5', crop: 'fill' })} 700w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w, ${optimizeImageUrl(hero.image, { w: 1200, ar: '4/5', crop: 'fill' })} 1200w`}
+          imageSizes="(max-width: 640px) calc(100vw - 3rem), (max-width: 1023px) calc(100vw - 6rem), 42vw"
           fetchPriority="high"
         />
       )}
@@ -64,8 +67,8 @@ export default async function HomeEn() {
                 <div className="editorial-image aspect-[4/5] sm:aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
                   <img
                     src={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
-                    srcSet={`${optimizeImageUrl(hero.image, { w: 600, ar: '4/5', crop: 'fill' })} 600w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w`}
-                    sizes="(max-width: 1024px) 100vw, 42vw"
+                    srcSet={`${optimizeImageUrl(hero.image, { w: 400, ar: '4/5', crop: 'fill' })} 400w, ${optimizeImageUrl(hero.image, { w: 700, ar: '4/5', crop: 'fill' })} 700w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w, ${optimizeImageUrl(hero.image, { w: 1200, ar: '4/5', crop: 'fill' })} 1200w`}
+                    sizes="(max-width: 640px) calc(100vw - 3rem), (max-width: 1023px) calc(100vw - 6rem), 42vw"
                     alt={hero.alt}
                     loading="eager"
                     fetchPriority="high"

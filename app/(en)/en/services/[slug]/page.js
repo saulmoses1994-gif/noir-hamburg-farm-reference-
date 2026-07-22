@@ -48,11 +48,13 @@ export default async function ServiceDetailEn({ params }) {
 
   // Same override pattern as /en/services list — Settings → Service-Bilder wins.
   const heroRaw = (settings?.service_images || {})[slug] || s.image
-  // PERF: Responsive srcset — see DE counterpart for rationale.
-  const heroMobile = optimizeImageUrl(heroRaw, { w: 900, ar: '16:9', crop: 'fill' })
-  const heroDesktop = optimizeImageUrl(heroRaw, { w: 1600, ar: '16:9', crop: 'fill' })
-  const heroSrcSet = `${heroMobile} 900w, ${heroDesktop} 1600w`
-  const heroImage = heroDesktop
+  // PERF (Pass A, LCP diagnostics 2026-01): see DE counterpart for rationale.
+  const heroW600 = optimizeImageUrl(heroRaw, { w: 600, ar: '16:9', crop: 'fill' })
+  const heroW800 = optimizeImageUrl(heroRaw, { w: 800, ar: '16:9', crop: 'fill' })
+  const heroW1200 = optimizeImageUrl(heroRaw, { w: 1200, ar: '16:9', crop: 'fill' })
+  const heroW1600 = optimizeImageUrl(heroRaw, { w: 1600, ar: '16:9', crop: 'fill' })
+  const heroSrcSet = `${heroW600} 600w, ${heroW800} 800w, ${heroW1200} 1200w, ${heroW1600} 1600w`
+  const heroImage = heroW1600
 
   const sections = s.sections || []
   const faqs = s.faqs || []
@@ -91,14 +93,14 @@ export default async function ServiceDetailEn({ params }) {
   return (
     <>
       <Header lang={lang} currentPath={`/en/services/${slug}`} />
-      {/* LCP hero preload — see DE counterpart for rationale. imageSrcSet
-          mirrors <img srcset/sizes> so the preload targets the exact bytes
-          the browser will render for the current viewport. */}
+      {/* LCP hero preload — imageSrcSet mirrors <img srcset/sizes> so the
+          preload response is REUSED (verified via network audit: exactly
+          ONE high-priority image request for the LCP variant). */}
       {heroImage && (
         <link
           rel="preload"
           as="image"
-          href={heroDesktop}
+          href={heroW800}
           imageSrcSet={heroSrcSet}
           imageSizes="100vw"
           fetchPriority="high"
@@ -108,7 +110,7 @@ export default async function ServiceDetailEn({ params }) {
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
           <div className="absolute inset-0">
-            {heroImage && <img src={heroDesktop} srcSet={heroSrcSet} sizes="100vw" alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
+            {heroImage && <img src={heroW800} srcSet={heroSrcSet} sizes="100vw" alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

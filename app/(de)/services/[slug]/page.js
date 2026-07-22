@@ -48,17 +48,21 @@ export default async function ServiceDetail({ params }) {
 
   // Same override pattern as /services list — Settings → Service-Bilder wins.
   const heroRaw = (settings?.service_images || {})[slug] || s.image
-  // PERF: Service pages currently ship w:2000 hero to ALL viewports,
-  // meaning a 375px mobile downloads a 5.3× oversized image
-  // (~108–148 KB). Ship a responsive `srcset` so the browser picks the
-  // correct size per DPR + viewport. The `<link rel="preload">` mirrors
-  // the same set via imageSrcSet/imageSizes so the preload hit matches
-  // the actual <img> request (crucial — a mismatched preload wastes
-  // bandwidth AND fails to accelerate LCP).
-  const heroMobile = optimizeImageUrl(heroRaw, { w: 900, ar: '16:9', crop: 'fill' })
-  const heroDesktop = optimizeImageUrl(heroRaw, { w: 1600, ar: '16:9', crop: 'fill' })
-  const heroSrcSet = `${heroMobile} 900w, ${heroDesktop} 1600w`
-  const heroImage = heroDesktop // used for schema.org + og:image
+  // PERF (Pass A, LCP diagnostics 2026-01): Full-width service hero.
+  // At a 412 px mobile viewport × 1.75 DPR the browser needs ~721 physical
+  // pixels — the old 900w candidate was 25 % oversized and the two-entry
+  // srcset offered no better match (600w was rejected as too small, 1600w
+  // is desktop-only). New candidate list adds 800w (closest match to
+  // 721 phys), 1200w (retina 2x mobile), and keeps 600w (small phones)
+  // + 1600w (desktop retina). imageSrcSet on the preload below MUST
+  // exactly mirror this so the preload response is REUSED (no duplicate
+  // download).
+  const heroW600 = optimizeImageUrl(heroRaw, { w: 600, ar: '16:9', crop: 'fill' })
+  const heroW800 = optimizeImageUrl(heroRaw, { w: 800, ar: '16:9', crop: 'fill' })
+  const heroW1200 = optimizeImageUrl(heroRaw, { w: 1200, ar: '16:9', crop: 'fill' })
+  const heroW1600 = optimizeImageUrl(heroRaw, { w: 1600, ar: '16:9', crop: 'fill' })
+  const heroSrcSet = `${heroW600} 600w, ${heroW800} 800w, ${heroW1200} 1200w, ${heroW1600} 1600w`
+  const heroImage = heroW1600 // used for schema.org + og:image (canonical largest)
 
   const sections = s.sections || []
   const faqs = s.faqs || []
@@ -98,18 +102,17 @@ export default async function ServiceDetail({ params }) {
   return (
     <>
       <Header lang={lang} currentPath={`/services/${slug}`} />
-      {/* Preload the LCP hero — service pages are second-most-visited and
-          their hero occupies the full above-the-fold viewport. Same rationale
-          as the homepage preload. Applied via <link> in the tree; Next.js
-          hoists it into <head> automatically.
-          PERF: imageSrcSet + imageSizes match the actual <img srcset/sizes>
-          below so the preload hits the exact bytes the browser will use for
-          the current viewport. A mismatched preload would double-download. */}
+      {/* LCP hero preload — imageSrcSet mirrors <img srcset/sizes> so the
+          preload response is REUSED (verified via network audit: exactly
+          ONE high-priority image request for the LCP variant).
+          `href` uses the 800w mid-tier as a safe fallback for the rare
+          browsers that ignore imageSrcSet — never picked by modern
+          responsive-image-capable Chromium/Safari/Firefox. */}
       {heroImage && (
         <link
           rel="preload"
           as="image"
-          href={heroDesktop}
+          href={heroW800}
           imageSrcSet={heroSrcSet}
           imageSizes="100vw"
           fetchPriority="high"
@@ -119,7 +122,7 @@ export default async function ServiceDetail({ params }) {
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
           <div className="absolute inset-0">
-            {heroImage && <img src={heroDesktop} srcSet={heroSrcSet} sizes="100vw" alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
+            {heroImage && <img src={heroW800} srcSet={heroSrcSet} sizes="100vw" alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

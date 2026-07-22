@@ -35,18 +35,29 @@ export default async function Home() {
           any <link> tag rendered inside the page tree into the document <head>,
           so this fires before the <img> element parses. Combined with
           fetchPriority="high" below, it delivers the earliest possible LCP.
-          PERF: The image slot is displayed at ~410×512 on mobile and
-          ~490×612 on the desktop 5-of-12-column grid. Ship a responsive
-          srcset with a 600w mobile variant (halves the download on phones)
-          and 900w for retina/desktop. imageSrcSet mirrors the <img> so the
-          preload targets the exact bytes the browser will render. */}
+          PERF (Pass A, LCP diagnostics 2026-01):
+          The right-column image slot is rendered at just 364×455 CSS px on
+          a 412 px mobile viewport (100vw − px-6 padding). Under the old
+          sizes="(max-width: 1024px) 100vw" hint the browser thought it
+          needed 412 CSS × 1.75 DPR = 721 physical px, so it always picked
+          the 900w variant (~68.6 KB) — 41 % oversized for the real slot.
+          The new sizes reflects the actual container width per breakpoint:
+            <640px  : calc(100vw - 3rem)  (matches Tailwind px-6 padding)
+            <1024px : calc(100vw - 6rem)  (matches md:px-12)
+            >=1024  : 42vw                (5-of-12 grid column at lg:px-16)
+          Paired with 400/700/900/1200 candidates the browser now picks the
+          smallest variant that satisfies the actual pixel demand:
+            iPhone-class 412 CSS @ DPR 1.75 → 637 physical → 700w (~40 KB)
+            iPhone-class 412 CSS @ DPR 3    → 1092 physical → 1200w
+          imageSrcSet/imageSizes exactly mirror the <img> below so the
+          preload hit is REUSED (no duplicate download). */}
       {hero && (
         <link
           rel="preload"
           as="image"
           href={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
-          imageSrcSet={`${optimizeImageUrl(hero.image, { w: 600, ar: '4/5', crop: 'fill' })} 600w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w`}
-          imageSizes="(max-width: 1024px) 100vw, 42vw"
+          imageSrcSet={`${optimizeImageUrl(hero.image, { w: 400, ar: '4/5', crop: 'fill' })} 400w, ${optimizeImageUrl(hero.image, { w: 700, ar: '4/5', crop: 'fill' })} 700w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w, ${optimizeImageUrl(hero.image, { w: 1200, ar: '4/5', crop: 'fill' })} 1200w`}
+          imageSizes="(max-width: 640px) calc(100vw - 3rem), (max-width: 1023px) calc(100vw - 6rem), 42vw"
           fetchPriority="high"
         />
       )}
@@ -72,8 +83,8 @@ export default async function Home() {
                 <div className="editorial-image aspect-[4/5] sm:aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
                   <img
                     src={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
-                    srcSet={`${optimizeImageUrl(hero.image, { w: 600, ar: '4/5', crop: 'fill' })} 600w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w`}
-                    sizes="(max-width: 1024px) 100vw, 42vw"
+                    srcSet={`${optimizeImageUrl(hero.image, { w: 400, ar: '4/5', crop: 'fill' })} 400w, ${optimizeImageUrl(hero.image, { w: 700, ar: '4/5', crop: 'fill' })} 700w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w, ${optimizeImageUrl(hero.image, { w: 1200, ar: '4/5', crop: 'fill' })} 1200w`}
+                    sizes="(max-width: 640px) calc(100vw - 3rem), (max-width: 1023px) calc(100vw - 6rem), 42vw"
                     alt={hero.alt}
                     loading="eager"
                     fetchPriority="high"
