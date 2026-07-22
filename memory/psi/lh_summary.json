@@ -1,0 +1,560 @@
+[
+  {
+    "url": "https://noir-hamburg.com/",
+    "medianMetrics": {
+      "perfScore": 0.96,
+      "LCP_ms": 2747.6816,
+      "FCP_ms": 964.4464,
+      "TTFB_ms": 541.137,
+      "TBT_ms": 29,
+      "CLS": 0,
+      "SI_ms": 1438.7209779924294
+    },
+    "runs": [
+      {
+        "perfScore": 0.94,
+        "metrics": {
+          "LCP_ms": 3052.572,
+          "FCP_ms": 991.3330000000001,
+          "TTFB_ms": 541.137,
+          "TBT_ms": 46.5,
+          "CLS": 0,
+          "SI_ms": 1775.0594119865416,
+          "TotalByteWeight_kb": 406.1064453125
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/",
+          "transferSize": 11933,
+          "networkEndTime": 695.5460000634193,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 0.5,
+          "displayValue": "Est savings of 0 ms",
+          "items": [
+            {
+              "url": "https://noir-hamburg.com/_next/static/css/7d5a2a5306805c6a.css",
+              "totalBytes": 15029,
+              "wastedMs": 150
+            }
+          ]
+        },
+        "responsiveImages": {
+          "score": 0,
+          "displayValue": "Est savings of 34 KiB",
+          "items": [
+            {
+              "url": "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg",
+              "wastedBytes": 34714,
+              "totalBytes": 69560
+            }
+          ]
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      },
+      {
+        "perfScore": 0.96,
+        "metrics": {
+          "LCP_ms": 2747.6816,
+          "FCP_ms": 947.6816,
+          "TTFB_ms": 588.4150000000001,
+          "TBT_ms": 29,
+          "CLS": 0,
+          "SI_ms": 1438.7209779924294,
+          "TotalByteWeight_kb": 400.31640625
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/",
+          "transferSize": 11469,
+          "networkEndTime": 646.2239999771118,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 0,
+          "displayValue": "Est savings of 110 ms",
+          "items": [
+            {
+              "url": "https://noir-hamburg.com/_next/static/css/7d5a2a5306805c6a.css",
+              "totalBytes": 15099,
+              "wastedMs": 150
+            }
+          ]
+        },
+        "responsiveImages": {
+          "score": 0,
+          "displayValue": "Est savings of 34 KiB",
+          "items": [
+            {
+              "url": "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg",
+              "wastedBytes": 34714,
+              "totalBytes": 69560
+            }
+          ]
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      },
+      {
+        "perfScore": 0.98,
+        "metrics": {
+          "LCP_ms": 2464.4464000000003,
+          "FCP_ms": 964.4464,
+          "TTFB_ms": 159.45600000000002,
+          "TBT_ms": 28,
+          "CLS": 0,
+          "SI_ms": 964.4464,
+          "TotalByteWeight_kb": 400.294921875
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/",
+          "transferSize": 11491,
+          "networkEndTime": 161.86900001764297,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 0,
+          "displayValue": "Est savings of 110 ms",
+          "items": [
+            {
+              "url": "https://noir-hamburg.com/_next/static/css/7d5a2a5306805c6a.css",
+              "totalBytes": 15105,
+              "wastedMs": 150
+            }
+          ]
+        },
+        "responsiveImages": {
+          "score": 0,
+          "displayValue": "Est savings of 34 KiB",
+          "items": [
+            {
+              "url": "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg",
+              "wastedBytes": 34714,
+              "totalBytes": 69560
+            }
+          ]
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      }
+    ]
+  },
+  {
+    "url": "https://noir-hamburg.com/services/business-escort-hamburg",
+    "medianMetrics": {
+      "perfScore": 0.94,
+      "LCP_ms": 3138.1730000000002,
+      "FCP_ms": 1012.296,
+      "TTFB_ms": 168.978,
+      "TBT_ms": 60,
+      "CLS": 0,
+      "SI_ms": 1012.296
+    },
+    "runs": [
+      {
+        "perfScore": 0.94,
+        "metrics": {
+          "LCP_ms": 3138.1730000000002,
+          "FCP_ms": 995.173,
+          "TTFB_ms": 151.65200000000002,
+          "TBT_ms": 37.5,
+          "CLS": 0,
+          "SI_ms": 995.173,
+          "TotalByteWeight_kb": 392.8525390625
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/services/business-escort-hamburg",
+          "transferSize": 15494,
+          "networkEndTime": 155.15200001001358,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 1,
+          "items": []
+        },
+        "responsiveImages": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      },
+      {
+        "perfScore": 0.94,
+        "metrics": {
+          "LCP_ms": 3044.296,
+          "FCP_ms": 1012.296,
+          "TTFB_ms": 168.978,
+          "TBT_ms": 84.5,
+          "CLS": 0,
+          "SI_ms": 1012.296,
+          "TotalByteWeight_kb": 392.65234375
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/services/business-escort-hamburg",
+          "transferSize": 15576,
+          "networkEndTime": 173.10399997234344,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 1,
+          "items": []
+        },
+        "responsiveImages": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      },
+      {
+        "perfScore": 0.89,
+        "metrics": {
+          "LCP_ms": 3497.2008,
+          "FCP_ms": 1153.2008,
+          "TTFB_ms": 240.234,
+          "TBT_ms": 60,
+          "CLS": 0,
+          "SI_ms": 3832.7118240394057,
+          "TotalByteWeight_kb": 392.6494140625
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/services/business-escort-hamburg",
+          "transferSize": 15476,
+          "networkEndTime": 242.8149999976158,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 1,
+          "items": []
+        },
+        "responsiveImages": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      }
+    ]
+  },
+  {
+    "url": "https://noir-hamburg.com/services/luxury-escort-hamburg",
+    "medianMetrics": {
+      "perfScore": 0.95,
+      "LCP_ms": 3003.2677,
+      "FCP_ms": 1015.7062,
+      "TTFB_ms": 186.343,
+      "TBT_ms": 49.5,
+      "CLS": 0,
+      "SI_ms": 1015.7062
+    },
+    "runs": [
+      {
+        "perfScore": 0.95,
+        "metrics": {
+          "LCP_ms": 3001.7062,
+          "FCP_ms": 1015.7062,
+          "TTFB_ms": 177.626,
+          "TBT_ms": 49.5,
+          "CLS": 0,
+          "SI_ms": 1015.7062,
+          "TotalByteWeight_kb": 382.29296875
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/services/luxury-escort-hamburg",
+          "transferSize": 16119,
+          "networkEndTime": 182.3080000281334,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 1,
+          "items": []
+        },
+        "responsiveImages": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      },
+      {
+        "perfScore": 0.93,
+        "metrics": {
+          "LCP_ms": 3022.4085,
+          "FCP_ms": 1018.4085,
+          "TTFB_ms": 2137.5860000000002,
+          "TBT_ms": 88,
+          "CLS": 0.002628525005709534,
+          "SI_ms": 3591.259641075312,
+          "TotalByteWeight_kb": 382.5966796875
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/services/luxury-escort-hamburg",
+          "transferSize": 16280,
+          "networkEndTime": 2147.385000050068,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 1,
+          "items": []
+        },
+        "responsiveImages": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      },
+      {
+        "perfScore": 0.95,
+        "metrics": {
+          "LCP_ms": 3003.2677,
+          "FCP_ms": 1008.2677,
+          "TTFB_ms": 186.343,
+          "TBT_ms": 47.5,
+          "CLS": 0,
+          "SI_ms": 1008.2677,
+          "TotalByteWeight_kb": 382.0546875
+        },
+        "lcp": {
+          "element": "",
+          "snippet": "",
+          "url": null,
+          "srcSetInDom": null,
+          "phases": []
+        },
+        "lcpNetworkRequest": null,
+        "initialDocument": {
+          "url": "https://noir-hamburg.com/services/luxury-escort-hamburg",
+          "transferSize": 16123,
+          "networkEndTime": 191.28799998760223,
+          "protocol": "h2"
+        },
+        "prioritizeLcpImage": {
+          "score": 1,
+          "displayValue": "",
+          "overallSavingsMs": 0
+        },
+        "renderBlocking": {
+          "score": 1,
+          "items": []
+        },
+        "responsiveImages": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "modernFormats": {
+          "score": 1,
+          "displayValue": "",
+          "items": []
+        },
+        "optImages": {
+          "score": 1,
+          "items": []
+        },
+        "unsizedImages": {
+          "score": 1,
+          "items": []
+        }
+      }
+    ]
+  }
+]

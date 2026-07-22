@@ -1,0 +1,40 @@
+
+============ Home ============
+      1→  696ms (dur  695ms) prio=VeryHigh  Document    text/html              https://noir-hamburg.com/
+    705→  802ms (dur   97ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/13971731025ec697-s.p.woff2
+    706→  931ms (dur  226ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/427e4a37d3642943-s.p.woff2
+    706→  812ms (dur  106ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/78d0dd042ac6d54d-s.p.woff2
+    706→  812ms (dur  106ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2
+    706→  815ms (dur  109ms) prio=High      Image       image/webp             https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qr
+    712→  800ms (dur   88ms) prio=VeryHigh  Stylesheet  text/css               https://noir-hamburg.com/_next/static/css/7d5a2a5306805c6a.css
+    712→  790ms (dur   77ms) prio=VeryHigh  Stylesheet  text/css               https://noir-hamburg.com/_next/static/css/bf2e1922c85df051.css
+    713→  812ms (dur   99ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/webpack-00a573316b112ca9.js
+    713→  813ms (dur  100ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/4bd1b696-f785427dddbba9fb.js
+    713→  789ms (dur   76ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/1255-769661468ce59a91.js
+    713→  791ms (dur   78ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/main-app-05a5fe279f4f6e20.js
+    713→  813ms (dur   99ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/2619-3c9e02e22d10480a.js
+    714→  792ms (dur   78ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/app/(en)/not-found-6021ba611601d660.js
+    945→ 1102ms (dur  157ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/models?_rsc=L_hJoaM70xBG6HoC
+    945→ 1681ms (dur  736ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/escort-hamburg?_rsc=L_hJoaM70xBG6HoC
+    946→ 2491ms (dur 1545ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/services?_rsc=L_hJoaM70xBG6HoC
+    946→ 2690ms (dur 1744ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/areas?_rsc=L_hJoaM70xBG6HoC
+
+============ Business ============
+      1→  155ms (dur  154ms) prio=VeryHigh  Document    text/html              https://noir-hamburg.com/services/business-escort-hamburg
+    163→  204ms (dur   40ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/13971731025ec697-s.p.woff2
+    164→  206ms (dur   42ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/427e4a37d3642943-s.p.woff2
+    164→  207ms (dur   43ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/78d0dd042ac6d54d-s.p.woff2
+    164→  209ms (dur   45ms) prio=High      Font        font/woff2             https://noir-hamburg.com/_next/static/media/eaead17c7dbfcd5d-s.p.woff2
+    164→  361ms (dur  197ms) prio=High      Image       image/webp             https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16:9,c_fill,g_auto,dpr_auto/v1784213207/noir-hamburg/misc/lvpl9w1usm
+    164→  203ms (dur   39ms) prio=VeryHigh  Stylesheet  text/css               https://noir-hamburg.com/_next/static/css/7d5a2a5306805c6a.css
+    165→  208ms (dur   43ms) prio=VeryHigh  Stylesheet  text/css               https://noir-hamburg.com/_next/static/css/bf2e1922c85df051.css
+    204→  253ms (dur   49ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/webpack-00a573316b112ca9.js
+    204→  251ms (dur   46ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/4bd1b696-f785427dddbba9fb.js
+    207→  251ms (dur   44ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/1255-769661468ce59a91.js
+    209→  247ms (dur   38ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/main-app-05a5fe279f4f6e20.js
+    209→  250ms (dur   41ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/2619-3c9e02e22d10480a.js
+    210→  255ms (dur   45ms) prio=Low       Script      application/javascript https://noir-hamburg.com/_next/static/chunks/app/(de)/services/%5Bslug%5D/page-6021ba611601d660.js
+    308→  547ms (dur  239ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/?_rsc=BRiVcKtZCL65iLaa
+    308→  548ms (dur  240ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/models?_rsc=BRiVcKtZCL65iLaa
+    308→  556ms (dur  248ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/escort-hamburg?_rsc=BRiVcKtZCL65iLaa
+    308→  559ms (dur  251ms) prio=Low       Fetch       text/x-component       https://noir-hamburg.com/services?_rsc=BRiVcKtZCL65iLaa

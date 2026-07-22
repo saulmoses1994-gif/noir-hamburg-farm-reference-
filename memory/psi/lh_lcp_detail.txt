@@ -1,0 +1,378 @@
+
+============ Home ============
+--- largest-contentful-paint-element ---
+displayValue: 3,050 ms
+details.type: list
+item count: 2
+
+--- ITEM 0 ---
+{
+  "type": "table",
+  "headings": [
+    {
+      "key": "node",
+      "valueType": "node",
+      "label": "Element"
+    }
+  ],
+  "items": [
+    {
+      "node": {
+        "type": "node",
+        "lhId": "page-0-IMG",
+        "path": "1,HTML,1,BODY,4,MAIN,2,SECTION,0,DIV,1,DIV,0,DIV,0,IMG",
+        "selector": "div.grid > div.lg:col-span-5 > div.editorial-image > img.w-full",
+        "boundingRect": {
+          "top": 113,
+          "bottom": 568,
+          "left": 24,
+          "right": 388,
+          "width": 364,
+          "height": 455
+        },
+        "snippet": "<img src=\"https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:…\" srcset=\"https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_600,ar_4:…\" sizes=\"(max-width: 1024px) 100vw, 42vw\" alt=\"Noir Hamburg\" loading=\"eager\" fetchpriority=\"high\" class=\"w-full h-full object-cover object-[center_20%]\">",
+        "nodeLabel": "Noir Hamburg"
+      }
+    }
+  ]
+}
+
+--- ITEM 1 ---
+{
+  "type": "table",
+  "headings": [
+    {
+      "key": "phase",
+      "valueType": "text",
+      "label": "Phase"
+    },
+    {
+      "key": "percent",
+      "valueType": "text",
+      "label": "% of LCP"
+    },
+    {
+      "key": "timing",
+      "valueType": "ms",
+      "label": "Timing"
+    }
+  ],
+  "items": [
+    {
+      "phase": "TTFB",
+      "timing": 695.019,
+      "percent": "23%"
+    },
+    {
+      "phase": "Load Delay",
+      "timing": 1524.1385954092286,
+      "percent": "50%"
+    },
+    {
+      "phase": "Load Time",
+      "timing": 340.5607602828095,
+      "percent": "11%"
+    },
+    {
+      "phase": "Render Delay",
+      "timing": 492.853644307962,
+      "percent": "16%"
+    }
+  ]
+}
+
+LCP metric numericValue: 3052.572
+
+--- Cloudinary IMAGE REQUESTS (first 5) ---
+  prio=High type=Image mime=image/webp
+    https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg
+    transfer=68.6KB net=706→815ms (dur 109ms)
+
+--- prioritize-lcp-image ---
+  score: 1, displayValue: 
+  details: {
+  "type": "opportunity",
+  "headings": [],
+  "items": [],
+  "overallSavingsMs": 0,
+  "sortedBy": [
+    "wastedMs"
+  ],
+  "debugData": {
+    "type": "debugdata",
+    "initiatorPath": [
+      {
+        "url": "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg",
+        "initiatorType": "parser"
+      },
+      {
+        "url": "https://noir-hamburg.com/",
+        "initiatorType": "other"
+      }
+    ],
+    "pathLength": 2
+  }
+}
+
+--- resource-summary ---
+  total      count=24 bytes=400.3KB
+  font       count=4 bytes=132.8KB
+  script     count=8 bytes=116.0KB
+  image      count=1 bytes=68.6KB
+  other      count=8 bytes=55.2KB
+  stylesheet count=2 bytes=15.9KB
+  document   count=1 bytes=11.7KB
+  media      count=0 bytes=0.0KB
+  third-party count=1 bytes=68.6KB
+
+============ Business ============
+--- largest-contentful-paint-element ---
+displayValue: 3,140 ms
+details.type: list
+item count: 2
+
+--- ITEM 0 ---
+{
+  "type": "table",
+  "headings": [
+    {
+      "key": "node",
+      "valueType": "node",
+      "label": "Element"
+    }
+  ],
+  "items": [
+    {
+      "node": {
+        "type": "node",
+        "lhId": "page-0-IMG",
+        "path": "1,HTML,1,BODY,4,MAIN,3,SECTION,0,DIV,0,IMG",
+        "selector": "main#main > section.relative > div.absolute > img.w-full",
+        "boundingRect": {
+          "top": 73,
+          "bottom": 567,
+          "left": 0,
+          "right": 412,
+          "width": 412,
+          "height": 494
+        },
+        "snippet": "<img src=\"https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16…\" srcset=\"https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16…\" sizes=\"100vw\" alt=\"business-escort-hamburg-model — Premium Business Begleitung von Noir Hambu…\" loading=\"eager\" fetchpriority=\"high\" class=\"w-full h-full object-cover\">",
+        "nodeLabel": "business-escort-hamburg-model — Premium Business Begleitung von Noir Hamburg"
+      }
+    }
+  ]
+}
+
+--- ITEM 1 ---
+{
+  "type": "table",
+  "headings": [
+    {
+      "key": "phase",
+      "valueType": "text",
+      "label": "Phase"
+    },
+    {
+      "key": "percent",
+      "valueType": "text",
+      "label": "% of LCP"
+    },
+    {
+      "key": "timing",
+      "valueType": "ms",
+      "label": "Timing"
+    }
+  ],
+  "items": [
+    {
+      "phase": "TTFB",
+      "timing": 642.173,
+      "percent": "20%"
+    },
+    {
+      "phase": "Load Delay",
+      "timing": 667.2337917113225,
+      "percent": "21%"
+    },
+    {
+      "phase": "Load Time",
+      "timing": 1562.9575810036276,
+      "percent": "50%"
+    },
+    {
+      "phase": "Render Delay",
+      "timing": 265.8086272850501,
+      "percent": "8%"
+    }
+  ]
+}
+
+LCP metric numericValue: 3138.1730000000002
+
+--- Cloudinary IMAGE REQUESTS (first 5) ---
+  prio=High type=Image mime=image/webp
+    https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16:9,c_fill,g_auto,dpr_auto/v1784213207/noir-hamburg/misc/lvpl9w1usmvjqqbm0blr.png
+    transfer=49.5KB net=164→361ms (dur 197ms)
+
+--- prioritize-lcp-image ---
+  score: 1, displayValue: 
+  details: {
+  "type": "opportunity",
+  "headings": [],
+  "items": [],
+  "overallSavingsMs": 0,
+  "sortedBy": [
+    "wastedMs"
+  ],
+  "debugData": {
+    "type": "debugdata",
+    "initiatorPath": [
+      {
+        "url": "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16:9,c_fill,g_auto,dpr_auto/v1784213207/noir-hamburg/misc/lvpl9w1usmvjqqbm0blr.png",
+        "initiatorType": "parser"
+      },
+      {
+        "url": "https://noir-hamburg.com/services/business-escort-hamburg",
+        "initiatorType": "other"
+      }
+    ],
+    "pathLength": 2
+  }
+}
+
+--- resource-summary ---
+  total      count=25 bytes=392.9KB
+  font       count=4 bytes=133.1KB
+  script     count=8 bytes=116.0KB
+  other      count=9 bytes=63.1KB
+  image      count=1 bytes=49.5KB
+  stylesheet count=2 bytes=15.9KB
+  document   count=1 bytes=15.1KB
+  media      count=0 bytes=0.0KB
+  third-party count=1 bytes=49.5KB
+
+============ Luxury ============
+--- largest-contentful-paint-element ---
+displayValue: 3,000 ms
+details.type: list
+item count: 2
+
+--- ITEM 0 ---
+{
+  "type": "table",
+  "headings": [
+    {
+      "key": "node",
+      "valueType": "node",
+      "label": "Element"
+    }
+  ],
+  "items": [
+    {
+      "node": {
+        "type": "node",
+        "lhId": "page-0-IMG",
+        "path": "1,HTML,1,BODY,4,MAIN,3,SECTION,0,DIV,0,IMG",
+        "selector": "main#main > section.relative > div.absolute > img.w-full",
+        "boundingRect": {
+          "top": 73,
+          "bottom": 567,
+          "left": 0,
+          "right": 412,
+          "width": 412,
+          "height": 494
+        },
+        "snippet": "<img src=\"https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16…\" srcset=\"https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16…\" sizes=\"100vw\" alt=\"Luxus Escort Hamburg Model in Vier Jahreszeiten Hotel\" loading=\"eager\" fetchpriority=\"high\" class=\"w-full h-full object-cover\">",
+        "nodeLabel": "Luxus Escort Hamburg Model in Vier Jahreszeiten Hotel"
+      }
+    }
+  ]
+}
+
+--- ITEM 1 ---
+{
+  "type": "table",
+  "headings": [
+    {
+      "key": "phase",
+      "valueType": "text",
+      "label": "Phase"
+    },
+    {
+      "key": "percent",
+      "valueType": "text",
+      "label": "% of LCP"
+    },
+    {
+      "key": "timing",
+      "valueType": "ms",
+      "label": "Timing"
+    }
+  ],
+  "items": [
+    {
+      "phase": "TTFB",
+      "timing": 643.7062,
+      "percent": "21%"
+    },
+    {
+      "phase": "Load Delay",
+      "timing": 670.7671675327675,
+      "percent": "22%"
+    },
+    {
+      "phase": "Load Time",
+      "timing": 1558.8216669430967,
+      "percent": "52%"
+    },
+    {
+      "phase": "Render Delay",
+      "timing": 128.41116552413587,
+      "percent": "4%"
+    }
+  ]
+}
+
+LCP metric numericValue: 3001.7062
+
+--- Cloudinary IMAGE REQUESTS (first 5) ---
+  prio=High type=Image mime=image/webp
+    https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16:9,c_fill,g_auto,dpr_auto/v1784213253/noir-hamburg/misc/fuefo3bcty4eiiiofszv.jpg
+    transfer=38.6KB net=191→418ms (dur 227ms)
+
+--- prioritize-lcp-image ---
+  score: 1, displayValue: 
+  details: {
+  "type": "opportunity",
+  "headings": [],
+  "items": [],
+  "overallSavingsMs": 0,
+  "sortedBy": [
+    "wastedMs"
+  ],
+  "debugData": {
+    "type": "debugdata",
+    "initiatorPath": [
+      {
+        "url": "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_16:9,c_fill,g_auto,dpr_auto/v1784213253/noir-hamburg/misc/fuefo3bcty4eiiiofszv.jpg",
+        "initiatorType": "parser"
+      },
+      {
+        "url": "https://noir-hamburg.com/services/luxury-escort-hamburg",
+        "initiatorType": "other"
+      }
+    ],
+    "pathLength": 2
+  }
+}
+
+--- resource-summary ---
+  total      count=25 bytes=382.3KB
+  font       count=4 bytes=133.0KB
+  script     count=8 bytes=115.9KB
+  other      count=9 bytes=63.1KB
+  image      count=1 bytes=38.6KB
+  stylesheet count=2 bytes=16.0KB
+  document   count=1 bytes=15.7KB
+  media      count=0 bytes=0.0KB
+  third-party count=1 bytes=38.6KB

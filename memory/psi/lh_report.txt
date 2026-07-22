@@ -1,0 +1,101 @@
+
+========================================================
+URL: https://noir-hamburg.com/
+Median: Score=0.96  LCP=2748ms  FCP=964ms  TTFB=541ms  TBT=29ms
+
+--- LCP ELEMENT (from median run) ---
+Selector: 
+Snippet:  
+Resource URL: null
+DOM srcSet:   null
+
+--- LCP PHASES ---
+
+--- LCP NETWORK REQUEST ---
+  (LCP is not an image / network request not resolved)
+
+--- INITIAL DOCUMENT ---
+  URL: https://noir-hamburg.com/
+  Transfer: 11.2 KB
+  Protocol: h2
+  Doc endTime: 646ms
+
+--- prioritize-lcp-image AUDIT ---
+  Score: 1  |    |  Savings: 0ms
+
+--- RENDER-BLOCKING RESOURCES ---
+  Score: 0  |  Est savings of 110 ms
+   • https://noir-hamburg.com/_next/static/css/7d5a2a5306805c6a.css  bytes=15099  wasted=150ms
+
+--- uses-responsive-images ---
+  Score: 0  |  Est savings of 34 KiB
+   • https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_900,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg  wasted=34714B  total=69560B
+
+--- modern-image-formats ---
+  Score: 1  |  ok
+
+========================================================
+URL: https://noir-hamburg.com/services/business-escort-hamburg
+Median: Score=0.94  LCP=3138ms  FCP=1012ms  TTFB=169ms  TBT=60ms
+
+--- LCP ELEMENT (from median run) ---
+Selector: 
+Snippet:  
+Resource URL: null
+DOM srcSet:   null
+
+--- LCP PHASES ---
+
+--- LCP NETWORK REQUEST ---
+  (LCP is not an image / network request not resolved)
+
+--- INITIAL DOCUMENT ---
+  URL: https://noir-hamburg.com/services/business-escort-hamburg
+  Transfer: 15.1 KB
+  Protocol: h2
+  Doc endTime: 155ms
+
+--- prioritize-lcp-image AUDIT ---
+  Score: 1  |    |  Savings: 0ms
+
+--- RENDER-BLOCKING RESOURCES ---
+  Score: 1  |  ok
+
+--- uses-responsive-images ---
+  Score: 1  |  ok
+
+--- modern-image-formats ---
+  Score: 1  |  ok
+
+========================================================
+URL: https://noir-hamburg.com/services/luxury-escort-hamburg
+Median: Score=0.95  LCP=3003ms  FCP=1016ms  TTFB=186ms  TBT=50ms
+
+--- LCP ELEMENT (from median run) ---
+Selector: 
+Snippet:  
+Resource URL: null
+DOM srcSet:   null
+
+--- LCP PHASES ---
+
+--- LCP NETWORK REQUEST ---
+  (LCP is not an image / network request not resolved)
+
+--- INITIAL DOCUMENT ---
+  URL: https://noir-hamburg.com/services/luxury-escort-hamburg
+  Transfer: 15.7 KB
+  Protocol: h2
+  Doc endTime: 191ms
+
+--- prioritize-lcp-image AUDIT ---
+  Score: 1  |    |  Savings: 0ms
+
+--- RENDER-BLOCKING RESOURCES ---
+  Score: 1  |  ok
+
+--- uses-responsive-images ---
+  Score: 1  |  ok
+
+--- modern-image-formats ---
+  Score: 1  |  ok
