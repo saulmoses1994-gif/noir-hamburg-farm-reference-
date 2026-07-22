@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { localePath } from '@/lib/i18n'
 import { getBrand } from '@/lib/brand'
+import { resolveContentPagePath } from '@/lib/pages'
 
 // Async server component. Reads live site_settings on every request; the
 // Settings PUT handler already fires revalidatePath('/', 'layout') so edits
@@ -12,6 +13,19 @@ export default async function Footer({ lang = 'de' }) {
     brand.facebookUrl && { href: brand.facebookUrl, label: 'Facebook', testId: 'social-facebook' },
     brand.twitterUrl && { href: brand.twitterUrl, label: 'X / Twitter', testId: 'social-twitter' },
   ].filter(Boolean)
+
+  // Resolve the three CMS "legal/info" page URLs so the footer <a href> lands
+  // directly on the page the browser will render (no 3xx hop). If EN copy
+  // exists in the CMS the resolver returns /en/p/${slug}; otherwise it
+  // returns the DE canonical /p/${slug}. This keeps SEMrush from flagging
+  // internal links pointing to redirected URLs, without changing the
+  // redirect middleware, hreflang tags, or CMS behaviour. See
+  // lib/pages.js `resolveContentPagePath` for the full contract.
+  const [discretionHref, standardsHref, bookingHref] = await Promise.all([
+    resolveContentPagePath(lang, 'diskretion-und-datenschutz-noir-hamburg'),
+    resolveContentPagePath(lang, 'professionelle-standards-noir-hamburg'),
+    resolveContentPagePath(lang, 'so-funktioniert-eine-buchung-noir-hamburg'),
+  ])
 
   return (
     <footer className="bg-[#1A1414] text-white/80 mt-24" data-testid="footer">
@@ -65,12 +79,13 @@ export default async function Footer({ lang = 'de' }) {
           <div className="overline text-white/60 mb-3">{lang === 'en' ? 'Legal & Info' : 'Rechtliches & Info'}</div>
           <ul className="space-y-2 text-sm">
             <li><Link href={localePath(lang, '/impressum')} className="hover:text-white">{lang === 'en' ? 'Imprint' : 'Impressum'}</Link></li>
-            {/* Link straight to the canonical slug — avoiding the /p/diskretion */}
-            {/* alias saves one 301 hop for crawlers and eliminates the "hreflang */}
-            {/* to redirected URL" warning class in SEMrush. */}
-            <li><Link href={localePath(lang, '/p/diskretion-und-datenschutz-noir-hamburg')} className="hover:text-white">{lang === 'en' ? 'Discretion & Privacy' : 'Diskretion & Datenschutz'}</Link></li>
-            <li><Link href={localePath(lang, '/p/professionelle-standards-noir-hamburg')} className="hover:text-white">{lang === 'en' ? 'Professional Standards' : 'Professionelle Standards'}</Link></li>
-            <li><Link href={localePath(lang, '/p/so-funktioniert-eine-buchung-noir-hamburg')} className="hover:text-white">{lang === 'en' ? 'How Booking Works' : 'So funktioniert eine Buchung'}</Link></li>
+            {/* PERF/SEO: Link directly to the URL the browser will actually render.
+                `resolveContentPagePath` returns /en/p/${slug} when the CMS
+                has EN copy, /p/${slug} otherwise — avoiding the 3xx hop
+                that SEMrush classifies as a "redirected internal link". */}
+            <li><Link href={discretionHref} className="hover:text-white">{lang === 'en' ? 'Discretion & Privacy' : 'Diskretion & Datenschutz'}</Link></li>
+            <li><Link href={standardsHref} className="hover:text-white">{lang === 'en' ? 'Professional Standards' : 'Professionelle Standards'}</Link></li>
+            <li><Link href={bookingHref} className="hover:text-white">{lang === 'en' ? 'How Booking Works' : 'So funktioniert eine Buchung'}</Link></li>
           </ul>
         </div>
       </div>

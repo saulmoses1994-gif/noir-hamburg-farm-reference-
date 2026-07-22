@@ -7,7 +7,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // Client-side contact form used on /kontakt (and /en/contact). Posts to
 // POST /api/contact. Includes a hidden honeypot ("website") for bot triage.
-export default function ContactForm({ lang, services = [] }) {
+// `privacyHref` is resolved server-side by ContactBody via
+// resolveContentPagePath() so the consent-link href points directly to the
+// canonical 200-page (no 3xx hop). Kept as a prop rather than recomputed
+// here because that lookup requires MongoDB and this is a client component.
+export default function ContactForm({ lang, services = [], privacyHref }) {
   const [form, setForm] = useState({
     name: '', email: '', phone: '', service: '', message: '',
     date: '', consent: false,
@@ -210,7 +214,7 @@ export default function ContactForm({ lang, services = [] }) {
         />
         <span className="text-sm font-light text-[#3F3838] leading-relaxed">
           {t(lang, 'contact.form.consent')}{' '}
-          <Link href={localePath(lang, '/p/diskretion-und-datenschutz-noir-hamburg')} className="underline decoration-[#8B1538]/50 hover:decoration-[#8B1538]">
+          <Link href={privacyHref || localePath(lang, '/p/diskretion-und-datenschutz-noir-hamburg')} className="underline decoration-[#8B1538]/50 hover:decoration-[#8B1538]">
             {t(lang, 'contact.form.consentLink')}
           </Link>{' '}
           {t(lang, 'contact.form.consentTail')}
