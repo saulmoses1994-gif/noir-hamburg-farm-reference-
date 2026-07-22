@@ -1,0 +1,87 @@
+
+============= Home =============
+  --- BASELINE (median LCP=2723ms) ---
+    FCP=912  TTFB=4  TBT=60  CLS=0.000
+    High-prio image reqs: 1
+      68.2KB  net=17→59ms  zvujm32qrtmeadh8vjjj.jpg...
+    Font requests total: 4  |  Early (net<200ms): 4
+      High       36.6KB  net=16→28ms  13971731025ec697-s.p.woff2
+      High       21.2KB  net=17→29ms  427e4a37d3642943-s.p.woff2
+      High       38.5KB  net=17→29ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=17→30ms  eaead17c7dbfcd5d-s.p.woff2
+  --- Pass A (median LCP=2833ms) ---
+    FCP=911  TTFB=4  TBT=205  CLS=0.000
+    High-prio image reqs: 1
+      50.3KB  net=17→59ms  zvujm32qrtmeadh8vjjj.jpg...
+    Font requests total: 4  |  Early (net<200ms): 4
+      High       36.6KB  net=16→26ms  13971731025ec697-s.p.woff2
+      High       21.2KB  net=16→26ms  427e4a37d3642943-s.p.woff2
+      High       38.5KB  net=16→26ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=17→27ms  eaead17c7dbfcd5d-s.p.woff2
+  --- Pass B (median LCP=2786ms) ---
+    FCP=1363  TTFB=6  TBT=173  CLS=0.000
+    High-prio image reqs: 1
+      50.3KB  net=18→52ms  zvujm32qrtmeadh8vjjj.jpg...
+    Font requests total: 4  |  Early (net<200ms): 2
+      High       38.5KB  net=17→25ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=17→26ms  eaead17c7dbfcd5d-s.p.woff2
+      VeryHigh   36.6KB  net=51→55ms  13971731025ec697-s.woff2
+      VeryHigh   21.2KB  net=52→56ms  427e4a37d3642943-s.woff2
+
+============= Business =============
+  --- BASELINE (median LCP=2892ms) ---
+    FCP=1063  TTFB=7  TBT=111  CLS=0.000
+    High-prio image reqs: 1
+      49.5KB  net=19→49ms  lvpl9w1usmvjqqbm0blr.png...
+    Font requests total: 4  |  Early (net<200ms): 4
+      High       36.6KB  net=18→30ms  13971731025ec697-s.p.woff2
+      High       21.2KB  net=19→30ms  427e4a37d3642943-s.p.woff2
+      High       38.5KB  net=19→31ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=19→31ms  eaead17c7dbfcd5d-s.p.woff2
+  --- Pass A (median LCP=2966ms) ---
+    FCP=1058  TTFB=4  TBT=193  CLS=0.000
+    High-prio image reqs: 1
+      49.2KB  net=17→56ms  lvpl9w1usmvjqqbm0blr.png...
+    Font requests total: 4  |  Early (net<200ms): 4
+      High       36.6KB  net=16→22ms  13971731025ec697-s.p.woff2
+      High       21.2KB  net=16→27ms  427e4a37d3642943-s.p.woff2
+      High       38.5KB  net=17→27ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=17→27ms  eaead17c7dbfcd5d-s.p.woff2
+  --- Pass B (median LCP=2823ms) ---
+    FCP=1514  TTFB=5  TBT=64  CLS=0.000
+    High-prio image reqs: 1
+      49.1KB  net=17→36ms  lvpl9w1usmvjqqbm0blr.png...
+    Font requests total: 4  |  Early (net<200ms): 2
+      High       38.5KB  net=16→30ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=17→30ms  eaead17c7dbfcd5d-s.p.woff2
+      VeryHigh   36.6KB  net=48→83ms  13971731025ec697-s.woff2
+      VeryHigh   21.2KB  net=48→83ms  427e4a37d3642943-s.woff2
+
+============= Luxury =============
+  --- BASELINE (median LCP=2826ms) ---
+    FCP=1059  TTFB=4  TBT=51  CLS=0.000
+    High-prio image reqs: 1
+      38.5KB  net=18→105ms  fuefo3bcty4eiiiofszv.jpg...
+    Font requests total: 4  |  Early (net<200ms): 4
+      High       36.6KB  net=17→27ms  13971731025ec697-s.p.woff2
+      High       21.2KB  net=17→27ms  427e4a37d3642943-s.p.woff2
+      High       38.5KB  net=17→28ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=18→28ms  eaead17c7dbfcd5d-s.p.woff2
+  --- Pass A (median LCP=2839ms) ---
+    FCP=1064  TTFB=6  TBT=57  CLS=0.000
+    High-prio image reqs: 1
+      33.8KB  net=18→52ms  fuefo3bcty4eiiiofszv.jpg...
+    Font requests total: 4  |  Early (net<200ms): 4
+      High       36.6KB  net=17→28ms  13971731025ec697-s.p.woff2
+      High       21.2KB  net=18→29ms  427e4a37d3642943-s.p.woff2
+      High       38.5KB  net=18→29ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=18→29ms  eaead17c7dbfcd5d-s.p.woff2
+  --- Pass B (median LCP=2848ms) ---
+    FCP=1512  TTFB=5  TBT=144  CLS=0.000
+    High-prio image reqs: 1
+      33.7KB  net=17→33ms  fuefo3bcty4eiiiofszv.jpg...
+    Font requests total: 4  |  Early (net<200ms): 2
+      High       38.5KB  net=17→25ms  78d0dd042ac6d54d-s.p.woff2
+      High       38.0KB  net=17→25ms  eaead17c7dbfcd5d-s.p.woff2
+      VeryHigh   36.6KB  net=62→65ms  13971731025ec697-s.woff2
+      VeryHigh   21.2KB  net=62→65ms  427e4a37d3642943-s.woff2

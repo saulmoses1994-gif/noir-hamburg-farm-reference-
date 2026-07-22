@@ -1,0 +1,266 @@
+[
+  {
+    "url": "http://127.0.0.1:3001/",
+    "medianMetrics": {
+      "perfScore": 0.95,
+      "LCP_ms": 2785.9012000000002,
+      "FCP_ms": 1366.4124000000002,
+      "TTFB_ms": 5.784000000000001,
+      "TBT_ms": 58,
+      "CLS": 0.0001566735498331704
+    },
+    "runs": [
+      {
+        "perfScore": 0.95,
+        "LCP_ms": 2860.8072,
+        "FCP_ms": 1379.1054000000001,
+        "TTFB_ms": 8.633,
+        "TBT_ms": 54,
+        "CLS": 0.0001566735498331704,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_700,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      },
+      {
+        "perfScore": 0.93,
+        "LCP_ms": 2785.9012000000002,
+        "FCP_ms": 1362.9011999999998,
+        "TTFB_ms": 5.784000000000001,
+        "TBT_ms": 173,
+        "CLS": 0.0001566735498331704,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_700,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      },
+      {
+        "perfScore": 0.96,
+        "LCP_ms": 2674.4124,
+        "FCP_ms": 1366.4124000000002,
+        "TTFB_ms": 4.212000000000001,
+        "TBT_ms": 58,
+        "CLS": 0.0001566735498331704,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_700,ar_4:5,c_fill,g_auto,dpr_auto/v1784210953/noir-hamburg/models/zvujm32qrtmeadh8vjjj.jpg"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      }
+    ]
+  },
+  {
+    "url": "http://127.0.0.1:3001/services/business-escort-hamburg",
+    "medianMetrics": {
+      "perfScore": 0.95,
+      "LCP_ms": 2823.0877,
+      "FCP_ms": 1513.71585,
+      "TTFB_ms": 4.473,
+      "TBT_ms": 63.5,
+      "CLS": 0.00007933790532764712
+    },
+    "runs": [
+      {
+        "perfScore": 0.92,
+        "LCP_ms": 2974.1439,
+        "FCP_ms": 1513.71585,
+        "TTFB_ms": 4.473,
+        "TBT_ms": 165,
+        "CLS": 0.00007933790532764712,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_800,ar_16:9,c_fill,g_auto,dpr_auto/v1784213207/noir-hamburg/misc/lvpl9w1usmvjqqbm0blr.png"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      },
+      {
+        "perfScore": 0.95,
+        "LCP_ms": 2823.0877,
+        "FCP_ms": 1514.0877,
+        "TTFB_ms": 4.567,
+        "TBT_ms": 63.5,
+        "CLS": 0.00007933790532764712,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_800,ar_16:9,c_fill,g_auto,dpr_auto/v1784213207/noir-hamburg/misc/lvpl9w1usmvjqqbm0blr.png"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      },
+      {
+        "perfScore": 0.95,
+        "LCP_ms": 2822.4988999999996,
+        "FCP_ms": 1512.4989,
+        "TTFB_ms": 4.36,
+        "TBT_ms": 59.999999999999545,
+        "CLS": 0.00007933790532764712,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_800,ar_16:9,c_fill,g_auto,dpr_auto/v1784213207/noir-hamburg/misc/lvpl9w1usmvjqqbm0blr.png"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      }
+    ]
+  },
+  {
+    "url": "http://127.0.0.1:3001/services/luxury-escort-hamburg",
+    "medianMetrics": {
+      "perfScore": 0.94,
+      "LCP_ms": 2848.4198499999993,
+      "FCP_ms": 1512.41985,
+      "TTFB_ms": 4.403,
+      "TBT_ms": 133.5,
+      "CLS": 0.0000702471036755209
+    },
+    "runs": [
+      {
+        "perfScore": 0.92,
+        "LCP_ms": 3145.1515999999997,
+        "FCP_ms": 1512.1137,
+        "TTFB_ms": 4.403,
+        "TBT_ms": 133.5,
+        "CLS": 0.0000702471036755209,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_800,ar_16:9,c_fill,g_auto,dpr_auto/v1784213253/noir-hamburg/misc/fuefo3bcty4eiiiofszv.jpg"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      },
+      {
+        "perfScore": 0.95,
+        "LCP_ms": 2825.3278999999993,
+        "FCP_ms": 1515.3278999999998,
+        "TTFB_ms": 4.359,
+        "TBT_ms": 64,
+        "CLS": 0.0000702471036755209,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_800,ar_16:9,c_fill,g_auto,dpr_auto/v1784213253/noir-hamburg/misc/fuefo3bcty4eiiiofszv.jpg"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      },
+      {
+        "perfScore": 0.94,
+        "LCP_ms": 2848.4198499999993,
+        "FCP_ms": 1512.41985,
+        "TTFB_ms": 5.242,
+        "TBT_ms": 144,
+        "CLS": 0.0000702471036755209,
+        "lcpElement": "",
+        "lcpSnippetShort": "",
+        "lcpUrl": null,
+        "lcpPhases": [],
+        "lcpNet": null,
+        "highPriImageCount": 1,
+        "highPriImageUrls": [
+          "https://res.cloudinary.com/yjccbi9f/image/upload/f_auto,q_auto,w_800,ar_16:9,c_fill,g_auto,dpr_auto/v1784213253/noir-hamburg/misc/fuefo3bcty4eiiiofszv.jpg"
+        ],
+        "prioritizeLcpImage": {
+          "score": 1,
+          "savingsMs": 0
+        },
+        "usesResponsiveImages": {
+          "score": 1,
+          "display": ""
+        }
+      }
+    ]
+  }
+]

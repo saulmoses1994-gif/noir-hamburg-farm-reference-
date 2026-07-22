@@ -13,7 +13,7 @@ const URLS = [
 ]
 const RUNS = 3
 const OUT_DIR = '/app/memory/psi'
-const OUT_TAG = 'baseline'
+const OUT_TAG = 'passB'
 
 async function runOnce(url, port) {
   const result = await lighthouse(url, {
