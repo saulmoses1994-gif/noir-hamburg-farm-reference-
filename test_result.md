@@ -3362,3 +3362,102 @@ agent_communication:
         All performance optimizations are working as expected with no regressions.
         
         RECOMMENDATION: Main agent should summarize and finish. No further testing required.
+
+
+  - task: "SEMrush audit fixes — logo.png (Fix 1) + direct-link resolution (Fix 2)"
+    implemented: true
+    working: true
+    file: "public/logo.png, lib/pages.js, components/site/Footer.js, components/public/ContactBody.js, components/public/ContactForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+            Fixes deployed to production noir-hamburg.com. Please verify against PRODUCTION URL directly (not preview).
+        -working: true
+        -agent: "testing"
+        -comment: |
+            ✅ VERIFIED: All 12 production verification checks PASSED (12/12).
+            Tested against live production URL: https://noir-hamburg.com
+            User-Agent: Mozilla/5.0 (compatible; SEMrushBot/7~bl; +http://www.semrush.com/bot.html)
+            
+            FIX 1 — /logo.png (3/3 checks passed):
+            ✅ CHECK #1: /logo.png returns HTTP 200, Content-Type: image/png, Size: 11,192 bytes
+            ✅ CHECK #2: DE homepage (/) Organization JSON-LD has logo="https://noir-hamburg.com/logo.png"
+            ✅ CHECK #3: EN homepage (/en) Organization JSON-LD has logo="https://noir-hamburg.com/logo.png"
+            
+            FIX 2 — Direct-link resolution (9/9 checks passed):
+            ✅ CHECK #4: DE homepage (/) footer has 3 legal links, all use /p/... format:
+               - Diskretion & Datenschutz: /p/diskretion-und-datenschutz-noir-hamburg
+               - Professionelle Standards: /p/professionelle-standards-noir-hamburg
+               - So funktioniert eine Buchung: /p/so-funktioniert-eine-buchung-noir-hamburg
+            ✅ CHECK #5: EN homepage (/en) footer has 3 legal links, all use /p/... format (correct for pages without EN copy):
+               - Discretion & Privacy: /p/diskretion-und-datenschutz-noir-hamburg
+               - Professional Standards: /p/professionelle-standards-noir-hamburg
+               - How Booking Works: /p/so-funktioniert-eine-buchung-noir-hamburg
+            ✅ CHECK #6: DE contact (/kontakt) consent link uses /p/diskretion-und-datenschutz-noir-hamburg
+            ✅ CHECK #7: EN contact (/en/contact) consent link uses /p/diskretion-und-datenschutz-noir-hamburg
+            ✅ CHECK #8: DE contact (/kontakt) sidebar privacy link uses /p/diskretion-und-datenschutz-noir-hamburg
+            ✅ CHECK #9: EN contact (/en/contact) sidebar privacy link uses /p/diskretion-und-datenschutz-noir-hamburg
+            ✅ CHECK #10: Regression check - all 9 production URLs return HTTP 200
+            ✅ CHECK #11: Hreflang and canonical unchanged on / (canonical + 3 hreflang alternates present)
+            ✅ CHECK #12: Sitemap contains 117 <loc> entries (≥100 required)
+            
+            CRITICAL VERIFICATIONS:
+            • Fix 1 working correctly: /logo.png is accessible and referenced in Organization JSON-LD on both DE and EN homepages
+            • Fix 2 working correctly: All footer legal links and contact form privacy links emit direct /p/... URLs (no /en/p/... redirect chains)
+            • EN homepage footer correctly uses /p/... for all 3 legal pages (since production DB has no EN translations)
+            • Both DE and EN contact pages have correct consent checkbox links and sidebar privacy links pointing to /p/diskretion-und-datenschutz-noir-hamburg
+            • No regressions: All tested production URLs return 200, canonical and hreflang unchanged, sitemap intact
+            
+            Both SEMrush audit fixes are deployed and working correctly in production.
+
+            FIX 1 — /logo.png:
+            • Added public/logo.png (512x512, 11.2 KB, PNG, brand wordmark "Noir Hamburg" in Playfair)
+            • Organization JSON-LD schema on / and /en references this URL
+            • Expected: HTTPS 200, Content-Type: image/png, non-zero body
+
+            FIX 2 — Direct-link resolution (no redirect chain):
+            • Added `resolveContentPagePath(lang, slug)` and `hasEnPageContent(page)` in lib/pages.js
+            • Footer.js: 3 legal-page links now resolved server-side to their direct 200 destinations
+            • ContactBody.js: privacy link resolved server-side, passed as `privacyHref` prop to ContactForm
+            • ContactForm.js: uses `privacyHref` prop instead of computing via localePath
+            • Logic: lang=de → /p/${slug}; lang=en + EN copy in CMS → /en/p/${slug}; lang=en + no EN copy → /p/${slug}
+            • Untouched: routing, middleware, CMS, hreflang, redirects, sitemap
+
+            VERIFICATION PROTOCOL (please test PRODUCTION at https://noir-hamburg.com):
+            1. GET https://noir-hamburg.com/logo.png → expect HTTP 200, Content-Type: image/png, ≥5 KB body
+            2. GET https://noir-hamburg.com/ → extract Organization JSON-LD, verify `logo` field equals "https://noir-hamburg.com/logo.png"
+            3. GET https://noir-hamburg.com/en → same Organization JSON-LD check
+            4. GET https://noir-hamburg.com/ → verify footer legal-info list links (Diskretion, Professionelle Standards, So funktioniert eine Buchung) all use hrefs starting `/p/…` (NOT `/en/p/…`)
+            5. GET https://noir-hamburg.com/en → verify footer legal-info list links all use `/p/…` (since production DB has no EN copy for these 3 pages) — NO `/en/p/…` for these 3
+            6. GET https://noir-hamburg.com/kontakt → verify the ContactForm consent link href starts with `/p/diskretion-und-datenschutz-noir-hamburg` (NOT `/en/p/…`)
+            7. GET https://noir-hamburg.com/en/contact → same consent-link check, still `/p/…`
+            8. GET https://noir-hamburg.com/kontakt → verify sidebar "Datenschutz →" link href starts with `/p/diskretion-und-datenschutz-noir-hamburg`
+            9. GET https://noir-hamburg.com/en/contact → verify sidebar "Datenschutz →" link href starts with `/p/diskretion-und-datenschutz-noir-hamburg`
+            10. Verify no regression: `curl -sI` should return 200 for each of these production URLs:
+                • https://noir-hamburg.com/
+                • https://noir-hamburg.com/en
+                • https://noir-hamburg.com/kontakt
+                • https://noir-hamburg.com/en/contact
+                • https://noir-hamburg.com/services/business-escort-hamburg
+                • https://noir-hamburg.com/services/luxury-escort-hamburg
+                • https://noir-hamburg.com/p/diskretion-und-datenschutz-noir-hamburg
+                • https://noir-hamburg.com/p/professionelle-standards-noir-hamburg
+                • https://noir-hamburg.com/p/so-funktioniert-eine-buchung-noir-hamburg
+            11. Verify hreflang / canonical unchanged on / (both DE and EN alternates + canonical present)
+            12. Verify sitemap contains full URL set (≥100 <loc> entries)
+
+            Report a pass ONLY if all 12 checks pass. Report specific failing URLs.
+
+metadata:
+  latest_run_id: "semrush-fixes-verification-post-deploy"
+
+test_plan:
+  current_focus:
+    - "SEMrush audit fixes — logo.png (Fix 1) + direct-link resolution (Fix 2)"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
