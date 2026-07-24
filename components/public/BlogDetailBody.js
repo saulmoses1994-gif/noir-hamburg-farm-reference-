@@ -110,7 +110,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
 
   return (
     <>
-      <Header lang={lang} currentPath={detailPath} />
+      <Header lang={lang} currentPath={detailPath} counterpartOverride={counterpartHref || (isEn ? '/blog' : '/en/blog')} />
       <main id="main">
         <JsonLd data={jsonLd} />
 

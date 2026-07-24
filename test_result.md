@@ -3453,11 +3453,28 @@ agent_communication:
             Report a pass ONLY if all 12 checks pass. Report specific failing URLs.
 
 metadata:
-  latest_run_id: "semrush-fixes-verification-post-deploy"
+  latest_run_id: "multilingual-blog-migration-complete"
 
 test_plan:
   current_focus:
-    - "SEMrush audit fixes — logo.png (Fix 1) + direct-link resolution (Fix 2)"
+    - "Multilingual blog split — production migration + header swap fix"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      MULTILINGUAL BLOG SEO — PRODUCTION VERIFIED (2026-07-24):
+      • Ran POST /api/blog/migrate-en-slugs on production: {migrated:4, skipped:10, alreadySlugged:0, indexEnsured:true}
+      • Backfilled slug_en for: the-ten-best-restaurants..., hamburg-by-night..., understanding-discretion..., luxury-escort-hamburg-...
+      • Sitemap: 109 URLs total, includes 4 EN blog entries with correct slug_en
+      • Hreflang: bidirectional alternates + x-default confirmed on DE & EN articles
+      • Legacy /en/blog/[de-slug] → 308 permanent redirect to /en/blog/[slug_en] (Google treats 308 == 301 for SEO)
+      • Posts without EN content → 404 on their /en/blog URL (per PRD rule 7)
+
+      HEADER-SWAP FIX (preview only, needs redeploy):
+      • BUG: Site header's EN toggle used swappedPath() which blindly prefixed /en, producing broken /en/blog/[de-slug] links for posts without EN translation.
+      • FIX: Added counterpartOverride prop to Header.js. BlogDetailBody now passes counterpartHref if present, else /en/blog (or /blog on EN side).
+      • Verified in preview: DE-only post → header EN link now goes to /en/blog (index); DE+EN post → header EN link goes to correct slug_en URL.
+      • Awaiting production redeploy.

@@ -7,9 +7,13 @@ import MobileNav from '@/components/site/MobileNav'
 // Async server component. Reads live site_settings on every request; the
 // Settings PUT handler already fires revalidatePath('/', 'layout') so edits
 // propagate to every layout surface on the next request without a redeploy.
-export default async function Header({ lang = 'de', currentPath = '/' }) {
+export default async function Header({ lang = 'de', currentPath = '/', counterpartOverride = null }) {
   const brand = await getBrand(lang)
-  const swap = swappedPath(currentPath, lang)
+  // counterpartOverride lets a page pass in a KNOWN-GOOD language-swap target
+  // (e.g. blog detail pages, where /en/blog/[de-slug] would 404 if the post
+  // has no EN translation). Falling back to swappedPath() is only correct for
+  // pages whose URL structure is symmetric across languages.
+  const swap = counterpartOverride || swappedPath(currentPath, lang)
   const navItems = NAV.map((n) => ({
     href: localePath(lang, n.to),
     label: lang === 'en' ? n.enLabel : n.deLabel,

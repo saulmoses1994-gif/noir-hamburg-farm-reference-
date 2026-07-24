@@ -481,6 +481,53 @@ async function route(request, ctx, method) {
       return j(cleanDoc(result))
     }
 
+    // ────────────────────────────────────────────────────────────────
+    //  POST /api/blog/migrate-en-slugs
+    //
+    //  One-shot admin migration. Backfills `slug_en` on every blog post
+    //  that has `title_en + content_en` but no `slug_en` yet. Idempotent:
+    //  safe to call repeatedly; skips docs that already have slug_en.
+    //  Also ensures the sparse unique index on slug_en exists.
+    //
+    //  Mirrors scripts/migrate_blog_slugs.mjs but runs INSIDE the Next.js
+    //  server so it hits the same MongoDB that serves the app (i.e. the
+    //  production DB in production). The user runs this once per env
+    //  after the multilingual-blog deploy lands.
+    //
+    //  Returns { migrated, skipped, alreadySlugged, indexEnsured, entries }.
+    // ────────────────────────────────────────────────────────────────
+    if (parts[0] === 'blog' && parts[1] === 'migrate-en-slugs' && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const db = await getDb()
+      const coll = db.collection('blog')
+      const docs = await coll.find({ deleted_at: { $in: [null, undefined] } }).toArray()
+      const entries = []
+      let migrated = 0, skippedNoEn = 0, alreadySlugged = 0
+      for (const d of docs) {
+        if (d.slug_en) { alreadySlugged++; continue }
+        if (!d.title_en || !d.content_en) { skippedNoEn++; continue }
+        const slugEn = await resolveBlogSlugEn(db, d.title_en, null, d.slug)
+        if (!slugEn) { skippedNoEn++; continue }
+        await coll.updateOne({ _id: d._id }, { $set: { slug_en: slugEn } })
+        entries.push({ slug: d.slug, slug_en: slugEn })
+        migrated++
+      }
+      let indexEnsured = false
+      try {
+        await coll.createIndex({ slug_en: 1 }, { unique: true, sparse: true, name: 'slug_en_unique_sparse' })
+        indexEnsured = true
+      } catch (e) { /* index may already exist with different opts; ignore */ }
+      try {
+        revalidatePath('/blog'); revalidatePath('/en/blog'); revalidatePath('/sitemap.xml')
+        for (const e of entries) {
+          revalidatePath(`/blog/${e.slug}`)
+          revalidatePath(`/en/blog/${e.slug_en}`)
+        }
+      } catch (e) { /* revalidation is best-effort */ }
+      return j({ migrated, skippedNoEn, alreadySlugged, indexEnsured, entries })
+    }
+
     // Admin \u2014 soft delete.
     if (parts[0] === 'blog' && parts.length === 2 && method === 'DELETE') {
       const guard = await requireAdmin(request, NextResponse)
