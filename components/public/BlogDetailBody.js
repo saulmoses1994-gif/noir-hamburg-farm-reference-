@@ -36,26 +36,31 @@ function decorateH2s(rawHtml) {
   return { html, toc }
 }
 
-export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedServices = [], relatedLocations = [], relatedModels = [] }) {
+export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedServices = [], relatedLocations = [], relatedModels = [], counterpartHref = null }) {
   const isEn = lang === 'en'
-  const title = pick(post, 'title', lang) || ''
-  const excerpt = pick(post, 'excerpt', lang) || ''
-  const rawContent = pick(post, 'content', lang) || ''
-  // Show the "EN preview" banner when the reader is on the EN twin but only
-  // German long-form content exists (rule (a) fallback).
-  const enFallback = isEn && !post.content_en
+  // MULTILINGUAL SPLIT: DE and EN pages are now fully separate URLs, so we
+  // read the language-appropriate fields DIRECTLY \u2014 no cross-language
+  // fallback. The EN route already refuses to render when EN content is
+  // missing (returns 404), so we can safely trust that title_en/content_en
+  // are present when lang==='en'.
+  const title = (isEn ? post.title_en : post.title) || ''
+  const excerpt = (isEn ? post.excerpt_en : post.excerpt) || ''
+  const rawContent = (isEn ? post.content_en : post.content) || ''
 
   const { html: content, toc } = decorateH2s(rawContent)
 
-  // Normalise per-article FAQs to the active language.
+  // Per-article FAQs \u2014 language-locked, same principle as above.
   const articleFaqs = (post.faqs || [])
     .map((f) => ({
-      q: (isEn && f.q_en ? f.q_en : f.q) || '',
-      a: (isEn && f.a_en ? f.a_en : f.a) || '',
+      q: (isEn ? f.q_en : f.q) || '',
+      a: (isEn ? f.a_en : f.a) || '',
     }))
     .filter((f) => f.q && f.a)
 
-  const detailPath = localePath(lang, `/blog/${post.slug}`)
+  // Blog URL for THIS article \u2014 EN uses slug_en, DE uses the DE slug.
+  // Never crosses language boundaries.
+  const articleSlug = isEn ? (post.slug_en || post.slug) : post.slug
+  const detailPath = isEn ? `/en/blog/${articleSlug}` : `/blog/${articleSlug}`
   const blogHref = localePath(lang, '/blog')
   const homeHref = lang === 'en' ? '/en' : '/'
   const contactHref = localePath(lang, '/kontakt')
@@ -72,7 +77,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
       dateModified: post.updated_at || post.created_at,
       author: { '@type': 'Organization', name: 'Noir Hamburg' },
       publisher: { '@type': 'Organization', name: 'Noir Hamburg' },
-      inLanguage: isEn && post.content_en ? 'en' : 'de',
+      inLanguage: isEn ? 'en' : 'de',
       articleSection: post.category || undefined,
       mainEntityOfPage: { '@type': 'WebPage', '@id': `${siteUrl()}${detailPath}` },
     },
@@ -124,6 +129,27 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
               {t(lang, 'blog.detail.modelsTop')}
             </Link>
           </div>
+          {/* MULTILINGUAL: language switcher — appears only when a real
+              counterpart exists in the other language. `counterpartHref` is
+              resolved server-side by the page component (null when there's
+              no EN twin, which is the case for DE-only articles). Uses
+              flag emoji (unicode, no image dependency) to keep the switcher
+              visually consistent with the header UI. rel="alternate" +
+              hreflang give crawlers an extra signal on top of the <link>
+              tag in <head>. */}
+          {counterpartHref && (
+            <div className="mt-4 text-sm" data-testid="blog-lang-switcher">
+              {isEn ? (
+                <Link href={counterpartHref} hrefLang="de" rel="alternate" className="text-[#6B5F5F] hover:accent-text">
+                  🇬🇧 English<span className="mx-2 text-[#B8AFAF]">|</span><span className="accent-text hover:underline">🇩🇪 Deutsch</span>
+                </Link>
+              ) : (
+                <Link href={counterpartHref} hrefLang="en" rel="alternate" className="text-[#6B5F5F] hover:accent-text">
+                  <span className="accent-text hover:underline">🇩🇪 Deutsch</span><span className="mx-2 text-[#B8AFAF]">|</span>🇬🇧 English
+                </Link>
+              )}
+            </div>
+          )}
         </section>
 
         <article className="px-6 md:px-12 lg:px-16 pb-20">
@@ -143,13 +169,6 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
               {/* format+quality, dpr_auto. Reduces payload from potentially */}
               {/* several MB to ~200-400KB, directly improving CWV LCP score. */}
               <img src={optimizeImageUrl(post.cover_image, { w: 1600, ar: '3/2', crop: 'fill' })} alt={title} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
-            </div>
-          )}
-
-          {enFallback && (
-            <div className="max-w-3xl mx-auto mb-8 p-4 border-l-4 border-[#8B1538] bg-[#FAF5F2] text-sm text-[#4A3F3F]" data-testid="en-fallback-note">
-              <strong className="text-[#8B1538]">{t(lang, 'blog.detail.enFallbackTitle')}</strong>{' '}
-              {t(lang, 'blog.detail.enFallback')}
             </div>
           )}
 
@@ -275,22 +294,30 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
             <div className="max-w-5xl mx-auto mt-16" data-testid="blog-related-articles">
               <span className="overline mb-6 block">{t(lang, 'blog.detail.relatedArticles')}</span>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {relatedPosts.map((p) => (
-                  <Link
-                    key={p.slug}
-                    href={localePath(lang, `/blog/${p.slug}`)}
-                    className="group block"
-                    data-testid={`blog-related-post-${p.slug}`}
-                  >
-                    {p.cover_image && (
-                      <div className="editorial-image aspect-[4/3] overflow-hidden mb-4">
-                        <img src={p.cover_image} alt={pick(p, 'title', lang)} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      </div>
-                    )}
-                    <span className="overline text-[10px] accent-text">{p.category}</span>
-                    <h3 className="font-heading text-xl mt-2 group-hover:accent-text">{pick(p, 'title', lang)}</h3>
-                  </Link>
-                ))}
+                {relatedPosts.map((p) => {
+                  // MULTILINGUAL: EN articles link to /en/blog/{slug_en},
+                  // DE articles link to /blog/{slug}. Never crosses languages.
+                  // Titles + alt text also read the language-appropriate field.
+                  const relSlug = isEn ? p.slug_en : p.slug
+                  const relTitle = isEn ? p.title_en : p.title
+                  const relHref = isEn ? `/en/blog/${relSlug}` : `/blog/${relSlug}`
+                  return (
+                    <Link
+                      key={p.slug}
+                      href={relHref}
+                      className="group block"
+                      data-testid={`blog-related-post-${p.slug}`}
+                    >
+                      {p.cover_image && (
+                        <div className="editorial-image aspect-[4/3] overflow-hidden mb-4">
+                          <img src={p.cover_image} alt={relTitle} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      )}
+                      <span className="overline text-[10px] accent-text">{p.category}</span>
+                      <h3 className="font-heading text-xl mt-2 group-hover:accent-text">{relTitle}</h3>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
           )}

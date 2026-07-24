@@ -98,10 +98,18 @@ export default async function sitemap() {
     { priority: 0.8, lastModified: m.updated_at ? new Date(m.updated_at) : new Date(), hasEnAlternate: hasEnModel(m) },
   ))
 
-  const blogEntries = blog.flatMap((b) => pair(
-    `/blog/${b.slug}`, `/en/blog/${b.slug}`,
-    { priority: 0.6, changeFrequency: 'monthly', lastModified: b.updated_at ? new Date(b.updated_at) : new Date(), hasEnAlternate: hasEnBlog(b) },
-  ))
+  const blogEntries = blog.flatMap((b) => {
+    // MULTILINGUAL BLOG: DE URL uses b.slug (DE canonical), EN URL uses
+    // b.slug_en (auto-derived from title_en at save time). EN alternate is
+    // only emitted when the post actually has EN content AND an EN slug —
+    // matches the /en/blog/[slug] route's own "hasEnBlogContent" gate.
+    const hasEn = !!(b.slug_en && b.title_en && b.content_en)
+    return pair(
+      `/blog/${b.slug}`,
+      hasEn ? `/en/blog/${b.slug_en}` : `/en/blog/${b.slug}`,
+      { priority: 0.6, changeFrequency: 'monthly', lastModified: b.updated_at ? new Date(b.updated_at) : new Date(), hasEnAlternate: hasEn },
+    )
+  })
 
   const pageEntries = pages.flatMap((p) => pair(
     `/p/${p.slug}`, `/en/p/${p.slug}`,

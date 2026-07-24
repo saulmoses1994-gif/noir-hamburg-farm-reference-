@@ -1,54 +1,77 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import BlogDetailBody from '@/components/public/BlogDetailBody'
-import { getPublicBlog, listPublicBlog } from '@/lib/blog'
+import { getPublicBlog, getPublicBlogByEnSlug, listPublicBlog, hasEnBlogContent } from '@/lib/blog'
 import { listPublicModels } from '@/lib/models'
 import { listServiceContent, listAreaContent } from '@/lib/service-content'
 import { buildMetadata, resolveArticleTitle } from '@/lib/seo'
-import { pick, t } from '@/lib/i18n'
+import { t } from '@/lib/i18n'
 
-// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
+// PERF: ISR — CMS PUT handlers call revalidatePath() so edits propagate promptly.
 export const revalidate = 300
 export const dynamicParams = true
 
 export async function generateStaticParams() {
   try {
     const posts = await listPublicBlog()
-    return posts.map((p) => ({ slug: p.slug }))
-  } catch {
-    return []
-  }
+    // Only pre-render EN pages for posts that actually have EN content and
+    // an EN slug — skipping the rest avoids thin/duplicate EN URLs.
+    return posts
+      .filter((p) => p.slug_en && hasEnBlogContent(p))
+      .map((p) => ({ slug: p.slug_en }))
+  } catch { return [] }
+}
+
+// Fetch helper: try slug_en first, then fall back to a legacy DE slug lookup.
+// The legacy lookup exists solely so we can 301 old indexed /en/blog/{de-slug}
+// URLs to their new /en/blog/{slug_en} destinations.
+async function findPostForEnRoute(paramSlug) {
+  const byEn = await getPublicBlogByEnSlug(paramSlug)
+  if (byEn) return { post: byEn, isEnSlug: true }
+  const byDe = await getPublicBlog(paramSlug)
+  if (byDe) return { post: byDe, isEnSlug: false }
+  return { post: null, isEnSlug: false }
 }
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  const p = await getPublicBlog(slug)
-  if (!p) return { title: t('en', 'blog.detail.notFoundTitle') }
-  const lang = 'en'
-  const noindex = !(p.title_en || p.meta_title_en || p.content_en || p.excerpt_en)
-  // Guard against duplicate title tags — see DE counterpart. Also append
-  // ' — EN' when falling back so DE and EN never share an identical title.
-  const authored = pick(p, 'meta_title', lang)
-  const articleTitle = pick(p, 'title', lang)
-  const guarded = resolveArticleTitle(articleTitle, authored)
-  // If we fell back to the article title, differentiate from DE.
-  const usedFallback = guarded !== authored
-  const title = usedFallback && articleTitle ? `${articleTitle} — EN | Noir Hamburg` : guarded
-  const description = pick(p, 'meta_description', lang) || pick(p, 'excerpt', lang) || ''
+  const { post, isEnSlug } = await findPostForEnRoute(slug)
+  if (!post || !hasEnBlogContent(post)) return { title: t('en', 'blog.detail.notFoundTitle') }
+  // Legacy slug → use the canonical EN URL in metadata (browser will follow
+  // the 301 anyway; this just keeps social crawlers on the canonical).
+  const canonicalSlug = post.slug_en || slug
+  const title = resolveArticleTitle(post.title_en, post.meta_title_en)
+  const description = post.meta_description_en || post.excerpt_en || ''
   return buildMetadata({
     title,
     description,
-    image: p.cover_image,
-    imageAlt: pick(p, 'title', lang),
-    path: `/blog/${slug}`,
-    lang,
-    noindex,
+    image: post.cover_image,
+    imageAlt: post.title_en,
+    path: `/blog/${canonicalSlug}`,       // buildMetadata will apply /en prefix
+    lang: 'en',
+    hasEnAlternate: true,
+    enPath: `/en/blog/${canonicalSlug}`,
+    // Also emit the DE alternate for a proper hreflang pair.
+    dePath: `/blog/${post.slug}`,
   })
 }
 
 export default async function BlogDetailPageEn({ params }) {
   const { slug } = await params
-  const post = await getPublicBlog(slug)
+  const { post, isEnSlug } = await findPostForEnRoute(slug)
+
+  // Not a known slug in EITHER language → hard 404.
   if (!post) notFound()
+
+  // No EN copy → the article should not exist in English. Do NOT redirect to
+  // the DE URL here (per user's Fix 2 rule); return 404 so search engines
+  // don't index a thin/duplicated EN URL.
+  if (!hasEnBlogContent(post)) notFound()
+
+  // Legacy DE slug matched but the canonical EN URL is different → 301.
+  // Preserves any SEO value that accrued on the old /en/blog/{de-slug} URL.
+  if (!isEnSlug && post.slug_en && post.slug_en !== slug) {
+    permanentRedirect(`/en/blog/${post.slug_en}`)
+  }
 
   const [allPosts, allServices, allAreas, allModels] = await Promise.all([
     listPublicBlog().catch(() => []),
@@ -57,8 +80,11 @@ export default async function BlogDetailPageEn({ params }) {
     listPublicModels().catch(() => []),
   ])
 
+  // Related posts: same category, but ONLY those that also have EN copy.
+  // Guarantees language-locked internal linking (EN articles link only to
+  // other EN articles that actually exist in English).
   const relatedPosts = allPosts
-    .filter((p) => p.slug !== post.slug && p.category === post.category)
+    .filter((p) => p.slug !== post.slug && p.category === post.category && hasEnBlogContent(p) && p.slug_en)
     .slice(0, 3)
   const relatedServices = allServices.filter((s) => (post.related_services || []).includes(s.slug))
   const relatedLocations = allAreas.filter((a) => (post.related_locations || []).includes(a.slug))
@@ -72,6 +98,7 @@ export default async function BlogDetailPageEn({ params }) {
       relatedServices={relatedServices}
       relatedLocations={relatedLocations}
       relatedModels={relatedModels}
+      counterpartHref={`/blog/${post.slug}`}
     />
   )
 }

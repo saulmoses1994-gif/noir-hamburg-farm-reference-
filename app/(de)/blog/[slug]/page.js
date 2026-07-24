@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation'
 import BlogDetailBody from '@/components/public/BlogDetailBody'
-import { getPublicBlog, listPublicBlog } from '@/lib/blog'
+import { getPublicBlog, listPublicBlog, hasEnBlogContent } from '@/lib/blog'
 import { listPublicModels } from '@/lib/models'
 import { listServiceContent, listAreaContent } from '@/lib/service-content'
 import { buildMetadata, resolveArticleTitle } from '@/lib/seo'
-import { pick, t } from '@/lib/i18n'
+import { t } from '@/lib/i18n'
 
-// PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
+// PERF: ISR — CMS PUT handlers call revalidatePath() so edits propagate promptly.
 export const revalidate = 300
 export const dynamicParams = true
 
@@ -14,9 +14,7 @@ export async function generateStaticParams() {
   try {
     const posts = await listPublicBlog()
     return posts.map((p) => ({ slug: p.slug }))
-  } catch {
-    return []
-  }
+  } catch { return [] }
 }
 
 export async function generateMetadata({ params }) {
@@ -24,24 +22,22 @@ export async function generateMetadata({ params }) {
   const p = await getPublicBlog(slug)
   if (!p) return { title: t('de', 'blog.detail.notFoundTitle') }
   const lang = 'de'
-  // Guard against duplicate title tags: if the authored meta_title doesn't
-  // relate to this article's actual title (author copy-paste mistake), fall
-  // back to `${title} | Noir Hamburg`. Fixes SEMrush's duplicate-title error
-  // where a policy meta was pasted into a blog article's meta_title field.
-  const title = resolveArticleTitle(pick(p, 'title', lang), pick(p, 'meta_title', lang))
-  const description = pick(p, 'meta_description', lang) || pick(p, 'excerpt', lang) || ''
-  // Suppress the EN hreflang alternate when the EN version has no real
-  // content — the /en/blog/{slug} route is noindexed in that case and
-  // pointing to it would create a "hreflang → noindex" conflict.
-  const hasEnAlternate = !!(p.title_en || p.meta_title_en || p.content_en || p.excerpt_en)
+  // DE page renders DE fields directly — no `pick(lang)` fallback here.
+  const title = resolveArticleTitle(p.title, p.meta_title)
+  const description = p.meta_description || p.excerpt || ''
+  // MULTILINGUAL SEO: emit hreflang=EN alternate only when a real EN
+  // counterpart exists (title_en + content_en + slug_en). Otherwise this
+  // page is the sole indexable version.
+  const hasEnAlternate = hasEnBlogContent(p) && !!p.slug_en
   return buildMetadata({
     title,
     description,
     image: p.cover_image,
-    imageAlt: pick(p, 'title', lang),
+    imageAlt: p.title,
     path: `/blog/${slug}`,
     lang,
     hasEnAlternate,
+    enPath: hasEnAlternate ? `/en/blog/${p.slug_en}` : undefined,
   })
 }
 
@@ -57,6 +53,9 @@ export default async function BlogDetailPage({ params }) {
     listPublicModels().catch(() => []),
   ])
 
+  // Related posts: same category, and language-scoped — DE page shows any
+  // DE-published post in the same category. Slug used for the link is the
+  // DE slug (renders under /blog/{de-slug}).
   const relatedPosts = allPosts
     .filter((p) => p.slug !== post.slug && p.category === post.category)
     .slice(0, 3)
@@ -72,6 +71,8 @@ export default async function BlogDetailPage({ params }) {
       relatedServices={relatedServices}
       relatedLocations={relatedLocations}
       relatedModels={relatedModels}
+      // Language-switcher target: the EN URL of *this* article, when it exists.
+      counterpartHref={hasEnBlogContent(post) && post.slug_en ? `/en/blog/${post.slug_en}` : null}
     />
   )
 }

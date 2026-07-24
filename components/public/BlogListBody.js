@@ -5,6 +5,16 @@ import Breadcrumbs from '@/components/site/Breadcrumbs'
 import JsonLd from '@/components/site/JsonLd'
 import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
+import { hasEnBlogContent } from '@/lib/blog'
+
+// MULTILINGUAL BLOG helper: returns the language-appropriate detail URL for
+// a blog post. On EN we prefer /en/blog/{slug_en}; when a post has no EN
+// content we fall through to the DE URL (better UX than a 404, and the
+// listing already excludes such posts via the pre-filter in the route file).
+function postHref(post, lang) {
+  if (lang === 'en' && hasEnBlogContent(post) && post.slug_en) return `/en/blog/${post.slug_en}`
+  return `/blog/${post.slug}`
+}
 
 // Server component. Renders the /blog list (or filtered by ?category=...).
 // Pagination is intentionally omitted: with <=13 posts we always render all.
@@ -28,7 +38,7 @@ export default function BlogListBody({ lang, posts, categories, activeCategory }
       blogPost: posts.slice(0, 20).map((p) => ({
         '@type': 'BlogPosting',
         headline: pick(p, 'title', lang),
-        url: `${siteUrl()}${localePath(lang, `/blog/${p.slug}`)}`,
+        url: `${siteUrl()}${postHref(p, lang)}`,
         datePublished: p.created_at,
         image: p.cover_image || undefined,
         articleSection: p.category || undefined,
@@ -98,7 +108,7 @@ export default function BlogListBody({ lang, posts, categories, activeCategory }
               return (
                 <Link
                   key={p.id || p.slug}
-                  href={localePath(lang, `/blog/${p.slug}`)}
+                  href={postHref(p, lang)}
                   className="group block"
                   data-testid={`blog-card-${p.slug}`}
                 >

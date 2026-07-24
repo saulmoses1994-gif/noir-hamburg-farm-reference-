@@ -44,7 +44,11 @@ const PAGE_FIELDS = [
   'published',
 ]
 
-// Editable blog fields.
+// Editable blog fields. `slug_en` is the auto-derived (or editor-overridden)
+// URL slug for the EN version of an article, powering the split /en/blog/…
+// route. Uniqueness is enforced by a sparse unique index (created by
+// scripts/migrate_blog_slugs.mjs) and the API also normalises + resolves
+// collisions server-side (see resolveBlogSlugEn below).
 const BLOG_FIELDS = [
   'title', 'title_en',
   'category',
@@ -54,11 +58,62 @@ const BLOG_FIELDS = [
   'meta_title', 'meta_title_en',
   'meta_description', 'meta_description_en',
   'related_services', 'related_locations',
+  'faqs',
   'published',
+  'slug_en',
 ]
 
 async function readJson(request) {
   try { return await request.json() } catch { return {} }
+}
+
+// ────────────────────────────────────────────────────────────────────────
+//  resolveBlogSlugEn — canonicalises the EN URL slug for a blog post.
+//
+//  Rules (matching the plan agreed with the user):
+//    • If an explicit slug_en was provided by the editor, sanitise it
+//      (lowercase, ASCII-only, hyphenated) and enforce uniqueness by
+//      appending -2, -3, … if another blog post already owns it.
+//    • Otherwise, auto-derive from title_en using the same slugify()
+//      algorithm as the migration script + lib/blog.js. Also enforce
+//      uniqueness.
+//    • If neither slug_en nor title_en is present, return '' so no EN
+//      route is registered (post has no English version).
+//
+//  Uniqueness scope: `excludeSlug` (the post's own DE slug) is excluded
+//  from the collision check so re-saving a post doesn't collide with
+//  itself.
+// ────────────────────────────────────────────────────────────────────────
+const _DIACRITICS_MAP = { 'ä':'ae','ö':'oe','ü':'ue','ß':'ss','Ä':'ae','Ö':'oe','Ü':'ue' }
+function _slugifyForBlogEn(input) {
+  if (!input) return ''
+  return String(input)
+    .replace(/[äöüßÄÖÜ]/g, c => _DIACRITICS_MAP[c] || c)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 96)
+}
+async function resolveBlogSlugEn(db, titleEn, explicitSlugEn, excludeSlug) {
+  const explicit = explicitSlugEn ? _slugifyForBlogEn(explicitSlugEn) : ''
+  const derived = _slugifyForBlogEn(titleEn)
+  const base = explicit || derived
+  if (!base) return ''
+  let candidate = base
+  let n = 2
+  // Cap at 50 retries — collisions beyond that mean something is very wrong
+  // and appending a timestamp guarantees uniqueness without a hot loop.
+  while (n <= 50) {
+    const collision = await db.collection('blog').findOne({
+      slug_en: candidate,
+      ...(excludeSlug ? { slug: { $ne: excludeSlug } } : {}),
+    })
+    if (!collision) return candidate
+    candidate = `${base}-${n++}`
+  }
+  return `${base}-${Date.now()}`
 }
 
 async function route(request, ctx, method) {
@@ -374,6 +429,11 @@ async function route(request, ctx, method) {
       const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
       for (const k of ALLOW) if (k in body) doc[k] = body[k]
       doc.published = doc.published ?? false
+      // MULTILINGUAL BLOG: resolve slug_en (auto-derive from title_en when
+      // absent, sanitise+ensure uniqueness when provided). See helper below
+      // for the exact rules. Guarantees the EN route always has a stable
+      // URL from the first save.
+      doc.slug_en = await resolveBlogSlugEn(db, doc.title_en, doc.slug_en, slug)
       await db.collection('blog').insertOne(doc)
       try {
         revalidatePath('/blog'); revalidatePath('/en/blog')
@@ -392,10 +452,29 @@ async function route(request, ctx, method) {
       for (const k of BLOG_FIELDS) if (k in body) update[k] = body[k]
       update.updated_at = new Date()
       const db = await getDb()
+      // MULTILINGUAL BLOG: when title_en is being edited AND the editor
+      // hasn't explicitly set slug_en, re-derive slug_en from the new title.
+      // When editor cleared slug_en (empty string), also re-derive. Any
+      // explicit non-empty slug_en is honoured verbatim after sanitisation.
+      const titleEnChanged = 'title_en' in body
+      const slugEnEmpty = 'slug_en' in body && !body.slug_en
+      if (titleEnChanged || slugEnEmpty || 'slug_en' in body) {
+        const current = await db.collection('blog').findOne({ slug })
+        const newTitleEn = 'title_en' in body ? body.title_en : current?.title_en
+        const explicitSlugEn = 'slug_en' in body ? body.slug_en : current?.slug_en
+        update.slug_en = await resolveBlogSlugEn(db, newTitleEn, explicitSlugEn, slug)
+      }
+      // MULTILINGUAL BLOG: if slug_en changed, invalidate BOTH old and new
+      // EN routes so browsers navigating to the previous URL see the fresh
+      // 301 target immediately (not the stale 200 ISR cache).
+      const beforeSlugEn = update.slug_en ? (await db.collection('blog').findOne({ slug }))?.slug_en : null
       const result = await db.collection('blog').findOneAndUpdate({ slug }, { $set: update }, { returnDocument: 'after' })
       if (!result) return j({ detail: 'Blog post not found' }, { status: 404 })
       try {
-        revalidatePath(`/blog/${slug}`); revalidatePath(`/en/blog/${slug}`)
+        revalidatePath(`/blog/${slug}`)
+        // Old EN URL (if slug_en changed) + new EN URL
+        if (beforeSlugEn && beforeSlugEn !== result.slug_en) revalidatePath(`/en/blog/${beforeSlugEn}`)
+        if (result.slug_en) revalidatePath(`/en/blog/${result.slug_en}`)
         revalidatePath('/blog'); revalidatePath('/en/blog')
         revalidatePath('/sitemap.xml')
       } catch (e) { console.warn('[revalidate] failed', e?.message) }

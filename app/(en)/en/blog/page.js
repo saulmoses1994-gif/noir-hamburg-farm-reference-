@@ -1,5 +1,5 @@
 import BlogListBody from '@/components/public/BlogListBody'
-import { listPublicBlog } from '@/lib/blog'
+import { listPublicBlog, hasEnBlogContent } from '@/lib/blog'
 import { buildMetadata } from '@/lib/seo'
 import { t } from '@/lib/i18n'
 
@@ -24,7 +24,12 @@ export async function generateMetadata({ searchParams }) {
 export default async function BlogListPageEn({ searchParams }) {
   const sp = (await searchParams) || {}
   const activeCategory = typeof sp.category === 'string' ? sp.category : ''
-  const all = await listPublicBlog()
+  // MULTILINGUAL BLOG: only list posts that actually exist in English.
+  // A post is "in English" when it has both title_en + content_en AND an
+  // auto-derived slug_en. This guarantees the EN listing never links to a
+  // DE-only article (which would be cross-language linking) and prevents
+  // /en/blog/{slug} thin-content pages.
+  const all = (await listPublicBlog()).filter((p) => p.slug_en && hasEnBlogContent(p))
   const counts = {}
   for (const p of all) {
     if (p.category) counts[p.category] = (counts[p.category] || 0) + 1

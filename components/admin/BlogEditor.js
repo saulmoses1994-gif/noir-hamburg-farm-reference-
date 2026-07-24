@@ -122,6 +122,12 @@ export default function BlogEditor({ mode, initial }) {
         meta_description: doc.meta_description || '', meta_description_en: doc.meta_description_en || '',
         related_services: doc.related_services || [],
         related_locations: doc.related_locations || [],
+        faqs: doc.faqs || [],
+        // MULTILINGUAL: send slug_en. If the field is blank the server
+        // auto-derives it from title_en via resolveBlogSlugEn(). If the
+        // editor typed a custom slug, the server sanitises + enforces
+        // uniqueness. Either way the API returns the final value.
+        slug_en: (doc.slug_en || '').trim(),
         published: !!doc.published,
       }
       const url = mode === 'create' ? '/api/blog' : `/api/blog/${initial.slug}`
@@ -187,9 +193,29 @@ export default function BlogEditor({ mode, initial }) {
             <Field label="Titel (DE)" name="title" type="input" value={doc.title} onChange={(k, v) => { set(k, v); if (mode === 'create' && !doc.slug) set('slug', slugify(v)) }} />
             <Field label="Titel (EN)" name="title_en" type="input" value={doc.title_en} onChange={set} />
             <div>
-              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">Slug</label>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">Slug (DE)</label>
               <input type="text" value={doc.slug || ''} onChange={(e) => set('slug', e.target.value)} disabled={mode === 'edit'} className={cls('input') + (mode === 'edit' ? ' opacity-60 cursor-not-allowed' : '')} />
               <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">a-z, 0-9, hyphen — nicht änderbar</div>
+            </div>
+            {/* MULTILINGUAL BLOG: URL slug for the /en/blog/… version.
+                Leave empty to auto-derive from Titel (EN) on save. Editors
+                may override to shorten or personalise. Server sanitises
+                (lowercase, ASCII-only) and enforces uniqueness. */}
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                Slug (EN) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, auto-generiert aus Titel (EN)</span>
+              </label>
+              <input
+                type="text"
+                value={doc.slug_en || ''}
+                onChange={(e) => set('slug_en', e.target.value)}
+                placeholder={doc.title_en ? slugify(doc.title_en) : 'wird beim Speichern aus Titel (EN) generiert'}
+                className={cls('input')}
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">
+                URL: <code>/en/blog/{doc.slug_en || (doc.title_en ? slugify(doc.title_en) : '?')}</code>
+                {' · '}leerlassen für Auto-Generierung
+              </div>
             </div>
             <div>
               <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">Kategorie</label>
