@@ -63,7 +63,11 @@ export default function ModelGallery({ images, alt, counterLabel = 'photo' }) {
         data-testid="gallery-cover"
       >
         <img
-          src={optimizeImageUrl(list[0], { w: 1200, ar: '3/4', crop: 'fill' })}
+          src={optimizeImageUrl(list[0], { w: 900, ar: '3/4', crop: 'fill' })}
+          srcSet={`${optimizeImageUrl(list[0], { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(list[0], { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(list[0], { w: 900, ar: '3/4', crop: 'fill' })} 900w, ${optimizeImageUrl(list[0], { w: 1200, ar: '3/4', crop: 'fill' })} 1200w`}
+          sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) calc(100vw - 96px), 42vw"
+          width={1200}
+          height={1600}
           alt={alt}
           loading="eager"
           fetchPriority="high"
@@ -84,10 +88,15 @@ export default function ModelGallery({ images, alt, counterLabel = 'photo' }) {
               data-testid={`gallery-thumb-${i + 1}`}
             >
               <img
-                src={optimizeImageUrl(src, { w: 600, ar: '3/4', crop: 'fill' })}
+                src={optimizeImageUrl(src, { w: 400, ar: '3/4', crop: 'fill' })}
+                srcSet={`${optimizeImageUrl(src, { w: 200, ar: '3/4', crop: 'fill' })} 200w, ${optimizeImageUrl(src, { w: 300, ar: '3/4', crop: 'fill' })} 300w, ${optimizeImageUrl(src, { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(src, { w: 600, ar: '3/4', crop: 'fill' })} 600w`}
+                sizes="(max-width: 767px) calc((100vw - 48px) / 3), (max-width: 1023px) calc((100vw - 96px) / 3), calc(14vw)"
+                width={400}
+                height={533}
                 alt={`${alt} ${i + 2}`}
                 className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
                 loading="lazy"
+                decoding="async"
               />
             </button>
           ))}

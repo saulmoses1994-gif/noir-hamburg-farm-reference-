@@ -69,6 +69,8 @@ export default async function HomeEn() {
                     src={optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })}
                     srcSet={`${optimizeImageUrl(hero.image, { w: 400, ar: '4/5', crop: 'fill' })} 400w, ${optimizeImageUrl(hero.image, { w: 700, ar: '4/5', crop: 'fill' })} 700w, ${optimizeImageUrl(hero.image, { w: 900, ar: '4/5', crop: 'fill' })} 900w, ${optimizeImageUrl(hero.image, { w: 1200, ar: '4/5', crop: 'fill' })} 1200w`}
                     sizes="(max-width: 640px) calc(100vw - 3rem), (max-width: 1023px) calc(100vw - 6rem), 42vw"
+                    width={1200}
+                    height={1500}
                     alt={hero.alt}
                     loading="eager"
                     fetchPriority="high"

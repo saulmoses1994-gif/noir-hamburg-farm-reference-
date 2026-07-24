@@ -60,11 +60,26 @@ export default async function ServicesList() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#1A1414]/5">
             {services.map((s, i) => {
               const rawImg = serviceImages[s.slug] || s.image
-              const img = optimizeImageUrl(rawImg, { w: 1200, ar: '16:10', crop: 'fill' })
+              // PERF: Services grid tile — 2-col on md, 1-col on mobile.
+              // Container aspect is 16/10 so intrinsic 1200×750 reserves the
+              // exact aspect box. srcSet lets mobile pick 600w instead of
+              // downloading the full 1200 variant.
               return (
                 <Link key={s.slug} href={`/services/${s.slug}`} className="bg-white hover:bg-[#FBF7F4] transition-colors duration-500 group block relative overflow-hidden">
                   <div className="aspect-[16/10] overflow-hidden">
-                    {img && <img src={img} alt={pick(s, 'image_alt', lang) || s.title} className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" loading="lazy" />}
+                    {rawImg && (
+                      <img
+                        src={optimizeImageUrl(rawImg, { w: 1200, ar: '16:10', crop: 'fill' })}
+                        srcSet={`${optimizeImageUrl(rawImg, { w: 600, ar: '16:10', crop: 'fill' })} 600w, ${optimizeImageUrl(rawImg, { w: 900, ar: '16:10', crop: 'fill' })} 900w, ${optimizeImageUrl(rawImg, { w: 1200, ar: '16:10', crop: 'fill' })} 1200w, ${optimizeImageUrl(rawImg, { w: 1600, ar: '16:10', crop: 'fill' })} 1600w`}
+                        sizes="(max-width: 767px) calc(100vw - 48px), calc(50vw - 24px)"
+                        width={1200}
+                        height={750}
+                        alt={pick(s, 'image_alt', lang) || s.title}
+                        className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
                   </div>
                   <div className="p-6 md:p-8 lg:p-12">
                     <span className="overline accent-text">0{i + 1}</span>

@@ -69,6 +69,7 @@ export default async function Header({ lang = 'de', currentPath = '/', counterpa
                 width="120"
                 height="60"
                 loading="lazy"
+                decoding="async"
                 className="h-8 w-auto"
               />
             </a>

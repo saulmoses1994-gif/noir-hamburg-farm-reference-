@@ -44,7 +44,18 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
 
         <section className="relative h-[70vh] flex items-end" data-testid="escort-hamburg-page">
           <div className="absolute inset-0">
-            <img src={optimizeImageUrl(heroImage, { w: 2000, ar: '16/9', crop: 'fill' })} alt="Hamburg" loading="eager" fetchPriority="high" className="w-full h-full object-cover" data-testid="escort-hamburg-hero-image" />
+            <img
+              src={optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })}
+              srcSet={`${optimizeImageUrl(heroImage, { w: 640, ar: '16/9', crop: 'fill' })} 640w, ${optimizeImageUrl(heroImage, { w: 900, ar: '16/9', crop: 'fill' })} 900w, ${optimizeImageUrl(heroImage, { w: 1280, ar: '16/9', crop: 'fill' })} 1280w, ${optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })} 1600w, ${optimizeImageUrl(heroImage, { w: 2000, ar: '16/9', crop: 'fill' })} 2000w`}
+              sizes="100vw"
+              width={2000}
+              height={1125}
+              alt="Hamburg"
+              loading="eager"
+              fetchPriority="high"
+              className="w-full h-full object-cover"
+              data-testid="escort-hamburg-hero-image"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/50 to-[#1A1414]/25" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-16 max-w-5xl text-white">

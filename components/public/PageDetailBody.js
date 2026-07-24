@@ -43,7 +43,19 @@ export default function PageDetailBody({ lang, page, relatedServices = [], relat
         {page.hero_image ? (
           <section className="relative h-[55vh] flex items-end" data-testid="page-hero">
             <div className="absolute inset-0">
-              <img src={optimizeImageUrl(page.hero_image, { w: 1800, ar: '16/9', crop: 'fill' })} alt={title} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
+              {/* PERF: full-viewport LCP hero. 16/9 crop. srcSet lets small
+                  devices pick 900w while wide desktops pick 2400w. */}
+              <img
+                src={optimizeImageUrl(page.hero_image, { w: 1600, ar: '16/9', crop: 'fill' })}
+                srcSet={`${optimizeImageUrl(page.hero_image, { w: 640, ar: '16/9', crop: 'fill' })} 640w, ${optimizeImageUrl(page.hero_image, { w: 900, ar: '16/9', crop: 'fill' })} 900w, ${optimizeImageUrl(page.hero_image, { w: 1280, ar: '16/9', crop: 'fill' })} 1280w, ${optimizeImageUrl(page.hero_image, { w: 1600, ar: '16/9', crop: 'fill' })} 1600w, ${optimizeImageUrl(page.hero_image, { w: 2000, ar: '16/9', crop: 'fill' })} 2000w`}
+                sizes="100vw"
+                width={1600}
+                height={900}
+                alt={title}
+                loading="eager"
+                fetchPriority="high"
+                className="w-full h-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/55 to-transparent" />
             </div>
             <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

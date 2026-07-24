@@ -86,7 +86,19 @@ export default function AboutBody({ lang, settings = {} }) {
             </div>
             <aside className="lg:col-span-4 lg:col-start-9">
               <div className="editorial-image h-[60vh] bg-[#F2EAE4]">
-                <img src={optimizeImageUrl(aboutImage, { w: 1200, ar: '3/4', crop: 'fill' })} alt="Hamburg Editorial" data-testid="about-editorial-image" loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
+                {/* PERF: About-page editorial (LCP on this page). 3:4 crop. */}
+                <img
+                  src={optimizeImageUrl(aboutImage, { w: 900, ar: '3/4', crop: 'fill' })}
+                  srcSet={`${optimizeImageUrl(aboutImage, { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(aboutImage, { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(aboutImage, { w: 900, ar: '3/4', crop: 'fill' })} 900w, ${optimizeImageUrl(aboutImage, { w: 1200, ar: '3/4', crop: 'fill' })} 1200w`}
+                  sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) calc(100vw - 96px), 33vw"
+                  width={1200}
+                  height={1600}
+                  alt="Hamburg Editorial"
+                  data-testid="about-editorial-image"
+                  loading="eager"
+                  fetchPriority="high"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </aside>
           </div>

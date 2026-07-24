@@ -86,7 +86,17 @@ export default function AreaDetailBody({ lang, area, services = [], models = [],
         <section className="relative h-[60vh] flex items-end" data-testid="area-hero">
           <div className="absolute inset-0">
             {heroImage && (
-              <img src={optimizeImageUrl(heroImage, { w: 1800, ar: '16/9', crop: 'fill' })} alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
+              <img
+                src={optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })}
+                srcSet={`${optimizeImageUrl(heroImage, { w: 640, ar: '16/9', crop: 'fill' })} 640w, ${optimizeImageUrl(heroImage, { w: 900, ar: '16/9', crop: 'fill' })} 900w, ${optimizeImageUrl(heroImage, { w: 1280, ar: '16/9', crop: 'fill' })} 1280w, ${optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })} 1600w, ${optimizeImageUrl(heroImage, { w: 2000, ar: '16/9', crop: 'fill' })} 2000w`}
+                sizes="100vw"
+                width={1600}
+                height={900}
+                alt={heroAlt}
+                loading="eager"
+                fetchPriority="high"
+                className="w-full h-full object-cover"
+              />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
@@ -216,7 +226,17 @@ export default function AreaDetailBody({ lang, area, services = [], models = [],
                 >
                   {m.cover_image && (
                     <div className="aspect-[3/4] editorial-image bg-[#F2EAE4] overflow-hidden">
-                      <img src={m.cover_image} alt={m.name} loading="lazy" className="w-full h-full object-cover" />
+                      <img
+                        src={optimizeImageUrl(m.cover_image, { w: 800, ar: '3/4', crop: 'fill' })}
+                        srcSet={`${optimizeImageUrl(m.cover_image, { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(m.cover_image, { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(m.cover_image, { w: 800, ar: '3/4', crop: 'fill' })} 800w, ${optimizeImageUrl(m.cover_image, { w: 1200, ar: '3/4', crop: 'fill' })} 1200w`}
+                        sizes="(max-width: 639px) calc(100vw - 48px), (max-width: 1023px) calc(50vw - 40px), calc(33vw - 60px)"
+                        width={800}
+                        height={1067}
+                        alt={m.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                   <div className="pt-4">

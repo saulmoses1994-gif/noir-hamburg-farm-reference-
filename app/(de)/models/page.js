@@ -6,6 +6,7 @@ import JsonLd from '@/components/site/JsonLd'
 import { listPublicModels } from '@/lib/models'
 import { buildMetadata, breadcrumbSchema, siteUrl } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
+import { optimizeImageUrl } from '@/lib/cloudinary-url'
 
 // PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
 export const revalidate = 300
@@ -58,7 +59,22 @@ export default async function ModelsList() {
               return (
                 <Link key={m.slug} href={`/models/${m.slug}`} className="group block">
                   <div className="aspect-[3/4] bg-[#F2EAE4] overflow-hidden editorial-image relative">
-                    {m.cover_image && <img src={m.cover_image} alt={m.name} className="w-full h-full object-cover" loading="lazy" />}
+                    {m.cover_image && (
+                      // PERF: Model grid tile. 3-col on lg, 2-col on sm, 1-col
+                      // on mobile. Widths tuned for common device DPRs so a
+                      // mobile-DPR2 (~750 px card) picks 800w, not full-res.
+                      <img
+                        src={optimizeImageUrl(m.cover_image, { w: 800, ar: '3/4', crop: 'fill' })}
+                        srcSet={`${optimizeImageUrl(m.cover_image, { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(m.cover_image, { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(m.cover_image, { w: 800, ar: '3/4', crop: 'fill' })} 800w, ${optimizeImageUrl(m.cover_image, { w: 1200, ar: '3/4', crop: 'fill' })} 1200w`}
+                        sizes="(max-width: 639px) calc(100vw - 48px), (max-width: 1023px) calc(50vw - 40px), calc(33vw - 60px)"
+                        width={800}
+                        height={1067}
+                        alt={m.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
                     {m.featured && (
                       <span className="absolute top-4 left-4 px-2 py-0.5 bg-white/90 backdrop-blur text-[10px] font-mono uppercase tracking-[0.2em] accent-text rounded-full">Featured</span>
                     )}

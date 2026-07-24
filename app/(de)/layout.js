@@ -19,9 +19,27 @@ import '../globals.css'
 import ReactDOM from 'react-dom'
 import { Playfair_Display, DM_Sans, JetBrains_Mono } from 'next/font/google'
 
+// PERF (Pass B, CWV 2026-07): Font preload budget.
+// Baseline audit found 4 woff2 files preloaded (~135 KB) on every page.
+// Root cause: next/font preloads ALL declared weights/styles by default.
+// This competes with the LCP image / CSS for early bandwidth, delaying LCP.
+//
+// Strategy:
+//   • Playfair Display (heading, LCP text on text-first pages): KEEP preload.
+//     Dropped weight 500 — audit showed 0 non-synthetic usages of font-medium
+//     on font-heading elements; the browser synthesises 500 from 400 with
+//     imperceptible visual difference.
+//   • DM Sans (body): preload=false. Body text renders BELOW the H1 and is
+//     handled by display:swap during the ~50–100 ms font fetch. Not on the
+//     LCP path.
+//   • JetBrains Mono (overlines / breadcrumbs): preload=false. Small
+//     supporting text, never the LCP element.
+//
+// Net effect: 4 preloaded fonts → 2 preloaded fonts (Playfair 400 normal +
+// italic). Frees ~60–90 KB of critical-path bandwidth on every page.
 const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400'],
   style: ['normal', 'italic'],
   variable: '--font-heading',
   display: 'swap',
@@ -32,6 +50,7 @@ const dmSans = DM_Sans({
   weight: ['300', '400', '500', '600'],
   variable: '--font-body',
   display: 'swap',
+  preload: false,
 })
 
 const jbMono = JetBrains_Mono({
@@ -39,6 +58,7 @@ const jbMono = JetBrains_Mono({
   weight: ['400'],
   variable: '--font-mono',
   display: 'swap',
+  preload: false,
 })
 
 export const metadata = {

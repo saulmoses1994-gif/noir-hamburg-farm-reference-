@@ -6,6 +6,7 @@ import JsonLd from '@/components/site/JsonLd'
 import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { optimizeImageUrl } from '@/lib/cloudinary'
+import { buildResponsiveImage } from '@/lib/responsive-image'
 
 // Slugify for Table-of-Contents anchors — must match the one applied to
 // the article HTML when we inject `id` attributes onto <h2> headings.
@@ -163,14 +164,45 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
             )}
           </header>
 
-          {post.cover_image && (
-            <div className="editorial-image h-[60vh] mb-16 max-w-6xl mx-auto">
-              {/* Cloudinary transform: LCP-critical hero — cap at 1600w, auto */}
-              {/* format+quality, dpr_auto. Reduces payload from potentially */}
-              {/* several MB to ~200-400KB, directly improving CWV LCP score. */}
-              <img src={optimizeImageUrl(post.cover_image, { w: 1600, ar: '3/2', crop: 'fill' })} alt={title} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />
-            </div>
-          )}
+          {post.cover_image && (() => {
+            // PERF (Pass B, CWV 2026-07): Blog LCP cover.
+            // The container renders at h-[60vh] within max-w-6xl (1152 px). On
+            // mobile the image spans full viewport minus px-6 padding; on md+
+            // it grows to px-12 padding; on lg+ it caps at the 6xl max-width.
+            // The `sizes` attribute below reflects those breakpoints exactly
+            // so the browser picks the smallest srcSet candidate that still
+            // satisfies the physical pixel demand (DPR-aware).
+            //
+            // Widths chosen so a Pixel-class 412 CSS × 3 DPR = 1236 physical
+            // picks 1200w (~90 KB) instead of the old fixed 1600w (~200 KB).
+            //
+            // Intrinsic width/height = 1600×1067 (3:2 crop) reserves the
+            // correct aspect ratio in the layout tree before the pixels
+            // arrive, eliminating CLS.
+            const img = buildResponsiveImage({
+              url: post.cover_image,
+              ar: '3/2',
+              crop: 'fill',
+              class: 'cover',
+              baseWidth: 900,
+              sizes: '(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) calc(100vw - 96px), (max-width: 1279px) calc(100vw - 128px), 1152px',
+            })
+            return (
+              <div className="editorial-image h-[60vh] mb-16 max-w-6xl mx-auto">
+                <img
+                  src={img.src}
+                  srcSet={img.srcSet}
+                  sizes={img.sizes}
+                  width={img.width}
+                  height={img.height}
+                  alt={title}
+                  loading="eager"
+                  fetchPriority="high"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )
+          })()}
 
           {toc.length >= 3 && (
             <aside className="max-w-3xl mx-auto mb-12 p-6 bg-[#FBF7F4] border-l-4 border-[#8B1538] rounded-r-lg" data-testid="blog-toc">
@@ -277,7 +309,20 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
                   >
                     {m.cover_image && (
                       <div className="editorial-image aspect-[3/4] overflow-hidden mb-4">
-                        <img src={m.cover_image} alt={m.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        {/* Below-fold model tile: lazy + async decode. Cloudinary
+                            transform crops to 3:4 with c_fill+g_auto so the
+                            intrinsic w/h reserves the exact aspect box (no CLS). */}
+                        <img
+                          src={optimizeImageUrl(m.cover_image, { w: 600, ar: '3/4', crop: 'fill' })}
+                          srcSet={`${optimizeImageUrl(m.cover_image, { w: 300, ar: '3/4', crop: 'fill' })} 300w, ${optimizeImageUrl(m.cover_image, { w: 450, ar: '3/4', crop: 'fill' })} 450w, ${optimizeImageUrl(m.cover_image, { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(m.cover_image, { w: 900, ar: '3/4', crop: 'fill' })} 900w`}
+                          sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) 45vw, 288px"
+                          width={600}
+                          height={800}
+                          alt={m.name}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
                       </div>
                     )}
                     <h3 className="font-heading text-xl group-hover:accent-text">{m.name}</h3>
@@ -310,7 +355,20 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
                     >
                       {p.cover_image && (
                         <div className="editorial-image aspect-[4/3] overflow-hidden mb-4">
-                          <img src={p.cover_image} alt={relTitle} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          {/* Below-fold related-article thumb: lazy + async decode.
+                              Container is aspect-[4/3]; intrinsic 800×600 reserves
+                              the box before pixels arrive. */}
+                          <img
+                            src={optimizeImageUrl(p.cover_image, { w: 600, ar: '4/3', crop: 'fill' })}
+                            srcSet={`${optimizeImageUrl(p.cover_image, { w: 300, ar: '4/3', crop: 'fill' })} 300w, ${optimizeImageUrl(p.cover_image, { w: 450, ar: '4/3', crop: 'fill' })} 450w, ${optimizeImageUrl(p.cover_image, { w: 600, ar: '4/3', crop: 'fill' })} 600w, ${optimizeImageUrl(p.cover_image, { w: 800, ar: '4/3', crop: 'fill' })} 800w`}
+                            sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) 45vw, 288px"
+                            width={800}
+                            height={600}
+                            alt={relTitle}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
                         </div>
                       )}
                       <span className="overline text-[10px] accent-text">{p.category}</span>

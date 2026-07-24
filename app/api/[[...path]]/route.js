@@ -482,6 +482,55 @@ async function route(request, ctx, method) {
     }
 
     // ────────────────────────────────────────────────────────────────
+    //  POST /api/revalidate-all
+    //
+    //  Admin utility to force a full-site ISR refresh. Used AFTER a data
+    //  migration or backfill (or when the cached HTML was captured while
+    //  the DB was empty — e.g. the homepage services grid rendered empty
+    //  because listServiceContent() returned [] at first render, and the
+    //  stale HTML then persisted under ISR + Cloudflare
+    //  `stale-while-revalidate=1yr`).
+    //
+    //  Idempotent — safe to call multiple times. Returns the exact set of
+    //  paths that were revalidated so ops can verify from the response.
+    //  Layout-level revalidation cascades to every route under that root,
+    //  so calling with 'layout' scope on '/' and '/en' effectively refreshes
+    //  the entire DE + EN tree in two calls.
+    // ────────────────────────────────────────────────────────────────
+    if (p === '/revalidate-all' && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const revalidated = []
+      const tryRevalidate = (path, type) => {
+        try {
+          if (type) revalidatePath(path, type)
+          else revalidatePath(path)
+          revalidated.push(type ? `${path} (${type})` : path)
+        } catch (e) {
+          revalidated.push(`${path} FAILED: ${e?.message}`)
+        }
+      }
+      // Layout-level revalidation cascades to every child route.
+      tryRevalidate('/', 'layout')
+      tryRevalidate('/en', 'layout')
+      // Explicit invalidations for the most-cached, data-driven pages so
+      // Next.js is guaranteed to drop even highly-nested ISR entries.
+      tryRevalidate('/')
+      tryRevalidate('/en')
+      tryRevalidate('/models')
+      tryRevalidate('/en/models')
+      tryRevalidate('/services')
+      tryRevalidate('/en/services')
+      tryRevalidate('/blog')
+      tryRevalidate('/en/blog')
+      tryRevalidate('/areas')
+      tryRevalidate('/en/areas')
+      tryRevalidate('/sitemap.xml')
+      tryRevalidate('/robots.txt')
+      return j({ ok: true, revalidated, at: new Date().toISOString() })
+    }
+
+    // ────────────────────────────────────────────────────────────────
     //  POST /api/blog/migrate-en-slugs
     //
     //  One-shot admin migration. Backfills `slug_en` on every blog post

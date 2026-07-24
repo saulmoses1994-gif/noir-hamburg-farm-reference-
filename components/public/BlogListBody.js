@@ -6,6 +6,7 @@ import JsonLd from '@/components/site/JsonLd'
 import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { hasEnBlogContent } from '@/lib/blog'
+import { optimizeImageUrl } from '@/lib/cloudinary-url'
 
 // MULTILINGUAL BLOG helper: returns the language-appropriate detail URL for
 // a blog post. On EN we prefer /en/blog/{slug_en}; when a post has no EN
@@ -114,7 +115,21 @@ export default function BlogListBody({ lang, posts, categories, activeCategory }
                 >
                   <div className="editorial-image h-[420px] bg-[#F2EAE4]">
                     {p.cover_image && (
-                      <img src={p.cover_image} alt={ttl} loading="lazy" className="w-full h-full object-cover" />
+                      // PERF: Blog card thumb. Container is h-[420px]; card
+                      // spans full column width (1/3 on lg, 1/2 on md, 1/1
+                      // on mobile). Widths chosen so mobile-DPR2 (~750 px)
+                      // picks the 800w variant instead of a full-res image.
+                      <img
+                        src={optimizeImageUrl(p.cover_image, { w: 800, ar: '3/4', crop: 'fill' })}
+                        srcSet={`${optimizeImageUrl(p.cover_image, { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(p.cover_image, { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(p.cover_image, { w: 800, ar: '3/4', crop: 'fill' })} 800w, ${optimizeImageUrl(p.cover_image, { w: 1000, ar: '3/4', crop: 'fill' })} 1000w`}
+                        sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) calc(50vw - 40px), calc(33vw - 60px)"
+                        width={800}
+                        height={1067}
+                        alt={ttl}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
                     )}
                   </div>
                   <span className="overline mt-5 block accent-text">{p.category}</span>
