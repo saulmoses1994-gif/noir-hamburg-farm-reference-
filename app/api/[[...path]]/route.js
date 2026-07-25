@@ -10,6 +10,21 @@ import {
   getSessionUser, requireAdmin,
   attachAuthCookie, clearAuthCookie,
 } from '@/lib/auth'
+import { sanitizeFields } from '@/lib/html-sanitize'
+
+// HTML-bearing CMS fields per resource type — passed to sanitizeFields()
+// on every write path. Sanitization happens SERVER-SIDE before persistence
+// so the database itself is the trust boundary (SEC-001, 2026-07-25 audit).
+const HTML_FIELDS_BLOG     = ['content', 'content_en', 'excerpt', 'excerpt_en']
+const HTML_FIELDS_PAGE     = ['content', 'content_en', 'intro', 'intro_en']
+const HTML_FIELDS_MODEL    = ['bio', 'bio_en']
+const HTML_FIELDS_SERVICE  = ['description', 'description_en']
+const HTML_FIELDS_AREA     = ['intro', 'intro_en', 'description', 'description_en']
+const HTML_FIELDS_SETTINGS = [
+  'impressum_content', 'impressum_content_en',
+  'diskretion_content',
+  'about_content', 'about_content_en',
+]
 
 function cors(res) {
   res.headers.set('Access-Control-Allow-Origin', process.env.CORS_ORIGINS || '*')
@@ -193,6 +208,7 @@ async function route(request, ctx, method) {
       ]
       const update = {}
       for (const k of ALLOW) if (k in body) update[k] = body[k]
+      sanitizeFields(update, HTML_FIELDS_SERVICE)
       update.updated_at = new Date()
       const db = await getDb()
       const result = await db.collection('service_content').findOneAndUpdate(
@@ -238,6 +254,7 @@ async function route(request, ctx, method) {
       ]
       const update = {}
       for (const k of ALLOW) if (k in body) update[k] = body[k]
+      sanitizeFields(update, HTML_FIELDS_SETTINGS)
       update.updated_at = new Date()
       const db = await getDb()
       // Update the (single) settings doc.  If none exists, upsert one.
@@ -291,6 +308,7 @@ async function route(request, ctx, method) {
       ]
       const update = {}
       for (const k of ALLOW) if (k in body) update[k] = body[k]
+      sanitizeFields(update, HTML_FIELDS_AREA)
       update.updated_at = new Date()
       const db = await getDb()
       const result = await db.collection('area_content').findOneAndUpdate(
@@ -339,6 +357,7 @@ async function route(request, ctx, method) {
       const ALLOW = MODEL_FIELDS
       const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
       for (const k of ALLOW) if (k in body) doc[k] = body[k]
+      sanitizeFields(doc, HTML_FIELDS_MODEL)
       doc.available = doc.available ?? true
       doc.featured = doc.featured ?? false
       await db.collection('models').insertOne(doc)
@@ -360,6 +379,7 @@ async function route(request, ctx, method) {
       const ALLOW = MODEL_FIELDS
       const update = {}
       for (const k of ALLOW) if (k in body) update[k] = body[k]
+      sanitizeFields(update, HTML_FIELDS_MODEL)
       update.updated_at = new Date()
       const db = await getDb()
       const result = await db.collection('models').findOneAndUpdate(
@@ -428,6 +448,7 @@ async function route(request, ctx, method) {
       const ALLOW = BLOG_FIELDS
       const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
       for (const k of ALLOW) if (k in body) doc[k] = body[k]
+      sanitizeFields(doc, HTML_FIELDS_BLOG)
       doc.published = doc.published ?? false
       // MULTILINGUAL BLOG: resolve slug_en (auto-derive from title_en when
       // absent, sanitise+ensure uniqueness when provided). See helper below
@@ -450,6 +471,7 @@ async function route(request, ctx, method) {
       const body = await readJson(request)
       const update = {}
       for (const k of BLOG_FIELDS) if (k in body) update[k] = body[k]
+      sanitizeFields(update, HTML_FIELDS_BLOG)
       update.updated_at = new Date()
       const db = await getDb()
       // MULTILINGUAL BLOG: when title_en is being edited AND the editor
@@ -622,6 +644,7 @@ async function route(request, ctx, method) {
       if (existing) return j({ detail: 'A page with that slug already exists (including soft-deleted).' }, { status: 409 })
       const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
       for (const k of PAGE_FIELDS) if (k in body) doc[k] = body[k]
+      sanitizeFields(doc, HTML_FIELDS_PAGE)
       doc.published = doc.published ?? false
       await db.collection('pages').insertOne(doc)
       try { revalidatePath(`/p/${slug}`); revalidatePath('/sitemap.xml') } catch {}
@@ -636,6 +659,7 @@ async function route(request, ctx, method) {
       const body = await readJson(request)
       const update = {}
       for (const k of PAGE_FIELDS) if (k in body) update[k] = body[k]
+      sanitizeFields(update, HTML_FIELDS_PAGE)
       update.updated_at = new Date()
       const db = await getDb()
       const result = await db.collection('pages').findOneAndUpdate({ slug }, { $set: update }, { returnDocument: 'after' })
@@ -850,8 +874,15 @@ async function route(request, ctx, method) {
 
     return j({ detail: `Not Found: ${method} ${p}` }, { status: 404 })
   } catch (e) {
-    console.error('[api] error', e)
-    return j({ detail: 'Internal error', error: String(e?.message || e) }, { status: 500 })
+    // SEC-003 (2026-07-25 audit): never leak internal error text to the
+    // client.  Full stack + message stay in server logs for debugging;
+    // the response returns a generic sentinel + a short request ID so
+    // ops can correlate a support report with the correct log entry.
+    const requestId = (globalThis.crypto?.randomUUID?.() || String(Date.now()))
+      .replace(/-/g, '')
+      .slice(0, 12)
+    console.error(`[api] error ${requestId}`, e)
+    return j({ detail: 'Internal error', requestId }, { status: 500 })
   }
 }
 

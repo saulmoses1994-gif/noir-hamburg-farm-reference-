@@ -3629,3 +3629,165 @@ backend:
             PRODUCTION READINESS: ✅ READY
             The CWV Pass B changes are safe to deploy. After deployment, run POST /api/revalidate-all
             once as admin to refresh the ISR cache across all routes.
+
+security_fixes_regression:
+  - task: "Regression test after security fixes (SEC-001, SEC-002, SEC-003)"
+    implemented: true
+    working: true
+    file: "lib/html-sanitize.js + next.config.js + app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Security audit fixes (2026-07-25) implemented:
+            
+            SEC-001: HTML sanitization on CMS write paths
+            - Added lib/html-sanitize.js using sanitize-html@2.13.0
+            - Wired sanitizeFields() into every CMS write path in route.js:
+              * POST/PUT /api/blog → sanitizes content, content_en, excerpt, excerpt_en
+              * POST/PUT /api/models → sanitizes bio, bio_en
+              * POST/PUT /api/pages → sanitizes content, content_en, intro, intro_en
+              * PUT /api/settings → sanitizes impressum_content*, diskretion_content, about_content*
+              * PUT /api/admin/service-content/:slug → sanitizes description, description_en
+              * PUT /api/area-content/:slug → sanitizes intro*, description*
+            
+            SEC-002: Framing headers (clickjacking mitigation)
+            - Changed next.config.js from X-Frame-Options: ALLOWALL + frame-ancestors *
+            - To: X-Frame-Options: SAMEORIGIN + frame-ancestors 'self'
+            
+            SEC-003: Error leakage fix
+            - Changed top-level catch in route.js (line 876-886)
+            - From: {detail, error: e.message}
+            - To: {detail: "Internal error", requestId}
+            - Full error still logged server-side for debugging
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: Comprehensive security regression test completed with ALL 16 TESTS PASSED.
+            Test suite executed against http://localhost:3000 (preview environment).
+            
+            ═══════════════════════════════════════════════════════════════════════════════
+            PRIORITY 1: HTML SANITIZATION (6/6 PASSED) ✅
+            ═══════════════════════════════════════════════════════════════════════════════
+            Tested all 6 CMS write endpoints with malicious HTML payload:
+            Input: '<p>Safe text</p><script>alert("xss")</script><img src=x onerror=alert(1)><a href="javascript:evil()">bad</a>'
+            Expected output: '<p>Safe text</p><img src="x" /><a>bad</a>'
+            
+            ✅ PUT /api/blog/:slug (field: excerpt)
+               - Malicious HTML sanitized correctly
+               - <script> tags removed
+               - onerror attribute stripped
+               - javascript: href removed
+               - Safe content preserved
+               - Sanitization persisted to database
+               - Original value restored after test
+            
+            ✅ PUT /api/models/:slug (field: bio)
+               - Sanitization working correctly
+               - Round-trip verified (GET after PUT shows sanitized value)
+               - Original value restored
+            
+            ✅ PUT /api/pages/:slug (field: content)
+               - Sanitization working correctly
+               - Round-trip verified
+               - Original value restored
+            
+            ✅ PUT /api/settings (field: about_content)
+               - Sanitization working correctly
+               - Round-trip verified
+               - Original value restored
+            
+            ✅ PUT /api/admin/service-content/:slug (field: description)
+               - Sanitization working correctly
+               - Note: GET from /api/service-content/:slug, PUT to /api/admin/service-content/:slug
+               - Round-trip verified
+               - Original value restored
+            
+            ✅ PUT /api/area-content/:slug (field: intro)
+               - Sanitization working correctly
+               - Round-trip verified
+               - Original value restored
+            
+            SANITIZATION VERIFICATION:
+            • All forbidden patterns removed: <script>, onerror, javascript:
+            • Safe HTML preserved: <p>, <img> (with src sanitized), <a> (without malicious href)
+            • Database persistence confirmed: GET after PUT returns sanitized value
+            • No data loss: Original values successfully restored after each test
+            
+            ═══════════════════════════════════════════════════════════════════════════════
+            PRIORITY 2: REGRESSION TESTS (6/6 PASSED) ✅
+            ═══════════════════════════════════════════════════════════════════════════════
+            ✅ GET /api/health → 200, {status: 'ok'}
+            ✅ GET /api/blog → 200, array of blog posts
+            ✅ GET /api/models → 200, array of models
+            ✅ GET /api/service-content → 200, array of services
+            ✅ POST /api/auth/login (wrong password) → 401 (no crash)
+            ✅ POST /api/auth/login (correct password) → 200 + access_token cookie
+            
+            All existing endpoints working correctly after security fixes.
+            
+            ═══════════════════════════════════════════════════════════════════════════════
+            PRIORITY 3: SEC-002 FRAMING HEADERS (2/2 PASSED) ✅
+            ═══════════════════════════════════════════════════════════════════════════════
+            ✅ X-Frame-Options: SAMEORIGIN (was ALLOWALL)
+            ✅ Content-Security-Policy: frame-ancestors 'self'; (was frame-ancestors *;)
+            
+            Verified on GET / response headers. Clickjacking mitigation active.
+            
+            ═══════════════════════════════════════════════════════════════════════════════
+            PRIORITY 4: SEC-003 ERROR RESPONSE FORMAT (2/2 PASSED) ✅
+            ═══════════════════════════════════════════════════════════════════════════════
+            ✅ Error handler code structure verified in route.js
+               - Returns {detail: 'Internal error', requestId}
+               - Does NOT return {error: e.message}
+            ✅ No error leakage confirmed
+               - Old format 'error: e.message' removed from code
+               - Full error still logged server-side (console.error)
+            
+            Note: Triggering actual 500 errors is difficult without breaking the app,
+            so code structure was verified instead. The error handler at line 876-886
+            correctly implements the new format.
+            
+            ═══════════════════════════════════════════════════════════════════════════════
+            SUMMARY
+            ═══════════════════════════════════════════════════════════════════════════════
+            OVERALL: 16/16 tests passed (100%)
+            
+            CRITICAL VERIFICATIONS:
+            • HTML sanitization working on ALL 6 CMS write endpoints
+            • Malicious content (XSS vectors) successfully stripped
+            • Safe HTML content preserved
+            • Database persistence confirmed (sanitized values persist through GET)
+            • All original values restored (no data corruption)
+            • Framing headers correctly set (clickjacking mitigation active)
+            • Error responses no longer leak internal error messages
+            • No regressions in existing functionality
+            
+            SECURITY POSTURE:
+            ✅ SEC-001: XSS protection via server-side HTML sanitization - WORKING
+            ✅ SEC-002: Clickjacking protection via frame-ancestors - WORKING
+            ✅ SEC-003: Information disclosure prevention - WORKING
+            
+            All security fixes verified and production-ready.
+
+agent_communication:
+    - agent: "testing"
+      message: |
+        Security regression testing complete. All 16 tests passed.
+        
+        SEC-001 (HTML sanitization): Verified working on all 6 CMS write endpoints.
+        Malicious HTML (script tags, onerror handlers, javascript: URLs) successfully
+        stripped while preserving safe content. Database persistence confirmed.
+        
+        SEC-002 (Framing headers): X-Frame-Options and CSP frame-ancestors correctly
+        set to SAMEORIGIN/'self'. Clickjacking mitigation active.
+        
+        SEC-003 (Error leakage): Error handler code structure verified. Returns
+        generic {detail, requestId} instead of leaking error messages.
+        
+        No regressions detected. All existing endpoints working correctly.
+        
+        Ready for production deployment.

@@ -28,8 +28,13 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
-          { key: "Content-Security-Policy", value: "frame-ancestors *;" },
+          // SEC-002 (2026-07-25 audit): restrict framing to same-origin so
+          // the site — including /admin — cannot be embedded in third-party
+          // iframes (clickjacking mitigation).  `X-Frame-Options` is honoured
+          // by older browsers; `frame-ancestors` is the modern CSP directive
+          // that also blocks the CMS from being embedded.
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self';" },
           { key: "Access-Control-Allow-Origin", value: process.env.CORS_ORIGINS || "*" },
           { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "*" },
