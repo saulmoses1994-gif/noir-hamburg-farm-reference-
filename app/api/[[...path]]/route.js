@@ -11,6 +11,7 @@ import {
   attachAuthCookie, clearAuthCookie,
 } from '@/lib/auth'
 import { sanitizeFields } from '@/lib/html-sanitize'
+import { reflowPlainTextArticle } from '@/lib/blog-reflow'
 
 // HTML-bearing CMS fields per resource type — passed to sanitizeFields()
 // on every write path. Sanitization happens SERVER-SIDE before persistence
@@ -501,6 +502,112 @@ async function route(request, ctx, method) {
         revalidatePath('/sitemap.xml')
       } catch (e) { console.warn('[revalidate] failed', e?.message) }
       return j(cleanDoc(result))
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  POST /api/blog/reflow-plaintext/[slug]
+    //
+    //  One-shot admin migration for legacy blog posts whose bodies were
+    //  pasted as plain text (no HTML, no Markdown headings). Recognises
+    //  the German section-title conventions used by early articles
+    //  ("Einleitung", "Kapitel N – …", "Fazit", "Häufig gestellte
+    //  Fragen (FAQ)") and:
+    //    • Prefixes each recognised heading line with `## ` so the
+    //      renderer emits it as an <h2>.
+    //    • Extracts the numbered Q/A pairs beneath the FAQ heading
+    //      into the structured `faqs[]` field (which powers both the
+    //      visible FAQ list AND the FAQPage JSON-LD).
+    //    • Removes the FAQ block from the body — BlogDetailBody renders
+    //      the visible "Häufig gestellte Fragen" heading itself.
+    //
+    //  Idempotent: safe to call multiple times. Only mutates when there
+    //  is something to rewrite. Never touches authored HTML.
+    //
+    //  Backup: the ORIGINAL content is stashed in `content_backup` (and
+    //  the ORIGINAL FAQs in `faqs_backup`) before overwriting, so we
+    //  can undo the migration in the (unlikely) case a human dislikes
+    //  the output.
+    //
+    //  Returns a summary { headingCount, faqCount, changed, ... } so
+    //  ops can verify from the response body without re-fetching.
+    // ────────────────────────────────────────────────────────────────
+    if (parts[0] === 'blog' && parts[1] === 'reflow-plaintext' && parts[2] && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[2]
+      const db = await getDb()
+      const post = await db.collection('blog').findOne({ slug })
+      if (!post) return j({ detail: 'Blog post not found', slug }, { status: 404 })
+
+      const de = reflowPlainTextArticle(post.content || '')
+      const en = reflowPlainTextArticle(post.content_en || '')
+
+      if (!de.changed && !en.changed) {
+        return j({
+          ok: true,
+          slug,
+          changed: false,
+          reason: 'Content already contains HTML block tags or no recognised markers.',
+          de: { headingCount: de.headingCount, faqCount: de.faqCount },
+          en: { headingCount: en.headingCount, faqCount: en.faqCount },
+        })
+      }
+
+      const update = { updated_at: new Date() }
+      if (de.changed) {
+        update.content = de.content
+        // Merge FAQ arrays language-by-language: DE Q/A on the same
+        // index as EN Q/A. When only DE was reflowed we fill EN cells
+        // with an empty string so BlogEditor doesn't render `undefined`.
+        if (de.faqs?.length) {
+          const enFaqs = en.faqs || []
+          update.faqs = de.faqs.map((f, i) => ({
+            q: f.q, a: f.a,
+            q_en: enFaqs[i]?.q || '',
+            a_en: enFaqs[i]?.a || '',
+          }))
+        }
+      }
+      if (en.changed) {
+        update.content_en = en.content
+        // If DE didn't provide FAQs but EN did, still store them.
+        if (!update.faqs && en.faqs?.length) {
+          update.faqs = en.faqs.map((f) => ({ q: '', a: '', q_en: f.q, a_en: f.a }))
+        }
+      }
+      // Backup ORIGINAL fields once (never overwrite an existing backup).
+      const backupUpdate = {}
+      if (!post.content_backup && post.content) backupUpdate.content_backup = post.content
+      if (!post.content_en_backup && post.content_en) backupUpdate.content_en_backup = post.content_en
+      if (!post.faqs_backup && post.faqs) backupUpdate.faqs_backup = post.faqs
+
+      const setDoc = { ...update, ...backupUpdate }
+      // Sanitize any HTML that snuck into the migration output (belt +
+      // braces — the reflow only adds `## ` prefixes, not HTML tags).
+      sanitizeFields(setDoc, ['content', 'content_en'])
+
+      const result = await db.collection('blog').findOneAndUpdate(
+        { slug },
+        { $set: setDoc },
+        { returnDocument: 'after' }
+      )
+      // Revalidate every path that could surface this article.
+      try {
+        revalidatePath(`/blog/${slug}`)
+        if (result.slug_en) revalidatePath(`/en/blog/${result.slug_en}`)
+        revalidatePath('/blog')
+        revalidatePath('/en/blog')
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+
+      return j({
+        ok: true,
+        slug,
+        changed: true,
+        de: { headingCount: de.headingCount, faqCount: de.faqCount, changed: de.changed },
+        en: { headingCount: en.headingCount, faqCount: en.faqCount, changed: en.changed },
+        backedUp: Object.keys(backupUpdate),
+      })
     }
 
     // ────────────────────────────────────────────────────────────────
