@@ -3453,11 +3453,48 @@ agent_communication:
             Report a pass ONLY if all 12 checks pass. Report specific failing URLs.
 
 metadata:
-  latest_run_id: "cwv-pass-b-final-with-cls-fix"
+  latest_run_id: "sec-audit-fixes-sec001-sec002-sec003"
 
 test_plan:
   current_focus:
-    - "CWV Pass B DEPLOYED + JBMono preload restored to fix mobile blog CLS"
+    - "Security audit fixes: CMS HTML sanitization + framing headers + error leakage — awaiting production redeploy"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      SECURITY AUDIT FOLLOW-UP — 2026-07-25 (preview, awaiting redeploy):
+      Ran security_audit_agent, verdict CONDITIONAL PASS. Fixed 3 findings:
+
+      SEC-001 (MEDIUM) — Persistent-XSS sink from raw CMS HTML render.
+        • Added `lib/html-sanitize.js` with sanitize-html@2.13.0.
+        • Strict allowlist (tags, attributes, schemes) + iframe-hostname allowlist for
+          youtube/vimeo/spotify/google-maps.  Auto-adds rel="noopener noreferrer" to
+          target="_blank" anchors.  Strips inline event handlers + inline styles.
+        • Wired into ALL 8 CMS write paths in `app/api/[[...path]]/route.js`
+          (blog POST+PUT, models POST+PUT, pages POST+PUT, settings PUT,
+          service-content PUT, area-content PUT).
+        • Live-tested: PUT with `<script>` + `onerror` + `javascript:` href → stored value
+          contained none of them; safe `<p>` + `<img>` + `<a>` preserved.
+        • Testing agent: 6/6 sanitization round-trips passed on every endpoint.
+
+      SEC-002 (LOW) — Clickjacking / framable admin.
+        • `next.config.js` headers: `X-Frame-Options: ALLOWALL` → `SAMEORIGIN`,
+          `frame-ancestors *` → `frame-ancestors 'self'`.
+        • Verified on preview response headers.
+
+      SEC-003 (LOW) — Internal error message leaked in 500 responses.
+        • Top-level catch in `route.js` no longer returns `error: e.message`;
+          instead returns `{ detail: "Internal error", requestId }`.  Full error
+          stack still logged server-side with the requestId for correlation.
+
+      TEST TOTAL: 16/16 passed. No regressions. Backend + preview fully green.
+
+      NEEDS: user Republish to push these three fixes to https://noir-hamburg.com.
+      After redeploy the site's CMS is safe by construction (any HTML entering
+      via /admin is sanitised before it ever reaches Mongo).
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
