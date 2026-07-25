@@ -58,7 +58,12 @@ const jbMono = JetBrains_Mono({
   weight: ['400'],
   variable: '--font-mono',
   display: 'swap',
-  preload: false,
+  // Preload ON — mono text is used above the fold on blog articles
+  // (breadcrumb path, category overline, publication date). Without
+  // preload we observed a ~0.15 CLS shift at ~334 ms on mobile blog
+  // articles when the long uppercased breadcrumb title reflowed from
+  // 2 lines (fallback mono metrics) → 1 line (JB Mono metrics).
+  // The ~30 KB critical-path cost is worth the CLS win.
 })
 
 export const metadata = {

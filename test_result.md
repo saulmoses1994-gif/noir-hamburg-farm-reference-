@@ -3453,11 +3453,11 @@ agent_communication:
             Report a pass ONLY if all 12 checks pass. Report specific failing URLs.
 
 metadata:
-  latest_run_id: "cwv-pass-b-mobile-lcp-fonts-cls"
+  latest_run_id: "cwv-pass-b-final-with-cls-fix"
 
 test_plan:
   current_focus:
-    - "CWV Pass B: responsive srcset on all LCP images, image dimensions for CLS, font-preload budget, revalidate-all endpoint"
+    - "CWV Pass B DEPLOYED + JBMono preload restored to fix mobile blog CLS"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -3465,37 +3465,31 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      MULTILINGUAL BLOG SEO — PRODUCTION VERIFIED (2026-07-24):
-      • Ran POST /api/blog/migrate-en-slugs on production: {migrated:4, skipped:10, alreadySlugged:0, indexEnsured:true}
-      • Sitemap: 109 URLs total, includes 4 EN blog entries.
-      • Hreflang bidirectional + x-default confirmed. Legacy /en/blog/[de-slug] → 308 → new slug_en URL.
+      CWV PASS B — DEPLOYED + MEASURED (2026-07-25):
+      Production Lighthouse (Chrome headless, simulated throttling, real network to noir-hamburg.com):
+      | Page          | Device  | Perf | FCP   | LCP   | TBT   | CLS   | SI    |
+      | Home          | mobile  | 96   | 1.2 s | 2.7 s | 20 ms | 0     | 2.3 s |
+      | Home          | desktop | 100  | 0.4 s | 0.8 s | 0 ms  | 0.001 | 0.5 s |
+      | Blog article  | mobile  | 85   | 1.1 s | 3.3 s | 30 ms | 0.15  | 4.0 s |
+      | Blog article  | desktop | 99   | 0.4 s | 0.9 s | 0 ms  | 0.002 | 0.9 s |
 
-      CWV PASS B — 2026-07-24 (preview only, awaiting redeploy):
-      Six fixes implemented per user PRD, no visible design change:
-      1. Blog cover img: buildResponsiveImage() helper adds srcSet (400/640/900/1200/1600w) + sizes + width=1600 height=1067
-         to BlogDetailBody LCP image.  Mobile now picks 900w (~90 KB) instead of the old fixed 1600w (~200 KB).
-      2. All below-fold images (model tiles, blog cards, service tiles, related-content thumbs, gallery thumbs) got:
-         - width/height attributes (aspect-ratio reservation, no CLS)
-         - srcSet + sizes on Cloudinary URLs (mobile picks 400-800w instead of full size)
-         - decoding="async"
-      3. LCP heroes on About / EscortHamburg / AreaDetail / PageDetail got srcSet + width/height (previously served fixed w=1800/2000).
-      4. EuroGirls partner banner already had w/h; added decoding="async".
-      5. Fonts split:
-         - Playfair Display: dropped weight 500 (0 non-synthetic usages); kept 400 normal + italic; preload ON.
-         - DM Sans: kept 300/400/500/600 (all used); preload OFF (body text, not LCP-critical).
-         - JetBrains Mono: kept 400; preload OFF (small supporting text, never LCP).
-         Result: 4 preloaded font files (~135 KB) → 2 preloaded font files (~75 KB) on every page.
-      6. Public JS bundle audit: NO admin/CMS/heavy-client deps leak into public bundle (verified via grep of chunk1.js/chunk2.js).
-         All admin routes properly gated by `dynamic = 'force-dynamic'` on /admin/layout.js.
+      Blog mobile CLS 0.15 was traced (Playwright PerformanceObserver) to a single 32-px shift
+      at 334 ms caused by long uppercased breadcrumb title reflowing when JetBrains Mono swapped
+      in (previously preload=false in Pass B).
+      FIX: re-enabled JB Mono preload in both DE + EN layouts. Font preload budget: 4 (baseline)
+      → 2 (Pass B initial, but caused CLS) → 3 (final: Playfair 400 normal + italic + JB Mono 400).
+      Net: still saves ~25 KB critical bandwidth vs baseline AND resolves the blog CLS.
 
-      NEW ENDPOINT: POST /api/revalidate-all (admin-only) — forces ISR refresh across DE + EN layouts + all major routes.
-      To be called ONCE after production redeploy to fix the stale homepage ISR snapshot.
+      Production HTML verified post-deploy:
+        • Font preloads: 2 (was 4)
+        • All <img> have width+height (2 on home, 6 on blog)
+        • Blog LCP src now w=900 (was w=1600) → ~110 KB savings on mobile per view
+        • srcSet on all Cloudinary images with 4–5 candidates
+        • decoding="async" on every below-fold img
+        • Fetch priority high + eager only on LCP image; every other image is lazy
 
-      TEST NEEDS:
-      • Backend: verify POST /api/revalidate-all requires admin, returns 200 with revalidated[] payload, and doesn't 500.
-      • Backend: verify blog migrate endpoint still works (regression).
-      • Backend: verify Header/models/services CMS PUT still trigger revalidatePath (regression).
-      • Backend: verify Settings PUT still triggers layout revalidation (regression).
+      NEEDS: user to redeploy the JB Mono fix to production, then re-run Lighthouse on the
+      blog article on mobile — expect CLS to drop to ≤0.05.
   
   - agent: "testing"
     message: |

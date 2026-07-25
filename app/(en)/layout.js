@@ -29,7 +29,8 @@ const jbMono = JetBrains_Mono({
   weight: ['400'],
   variable: '--font-mono',
   display: 'swap',
-  preload: false,
+  // Preload ON — see app/(de)/layout.js for full rationale
+  // (breadcrumb reflow CLS on mobile blog articles).
 })
 
 export const metadata = {
