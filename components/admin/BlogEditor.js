@@ -353,30 +353,35 @@ export default function BlogEditor({ mode, initial }) {
 
   const set = (name, value) => setDoc((d) => ({ ...d, [name]: value }))
 
-  async function save() {
+  // `override` lets callers force specific fields (e.g. the publish toggle
+  // passes { published: true }) without depending on the async React state
+  // update landing before the fetch is fired. Fixes the "click Veröffentlichen
+  // but article stays Entwurf" race condition.
+  async function save(override = {}) {
     setSaving(true); setMsg(null)
     try {
+      const merged = { ...doc, ...override }
       const payload = {
-        slug: (doc.slug || '').trim(),
-        title: (doc.title || '').trim(),
-        title_en: doc.title_en || '',
-        category: doc.category || '',
-        excerpt: doc.excerpt || '', excerpt_en: doc.excerpt_en || '',
-        content: doc.content || '', content_en: doc.content_en || '',
-        cover_image: doc.cover_image || '',
-        meta_title: doc.meta_title || '', meta_title_en: doc.meta_title_en || '',
-        meta_description: doc.meta_description || '', meta_description_en: doc.meta_description_en || '',
-        related_services: doc.related_services || [],
-        related_locations: doc.related_locations || [],
-        faqs: doc.faqs || [],
-        faqs_de: doc.faqs_de || [],
-        faqs_en: doc.faqs_en || [],
+        slug: (merged.slug || '').trim(),
+        title: (merged.title || '').trim(),
+        title_en: merged.title_en || '',
+        category: merged.category || '',
+        excerpt: merged.excerpt || '', excerpt_en: merged.excerpt_en || '',
+        content: merged.content || '', content_en: merged.content_en || '',
+        cover_image: merged.cover_image || '',
+        meta_title: merged.meta_title || '', meta_title_en: merged.meta_title_en || '',
+        meta_description: merged.meta_description || '', meta_description_en: merged.meta_description_en || '',
+        related_services: merged.related_services || [],
+        related_locations: merged.related_locations || [],
+        faqs: merged.faqs || [],
+        faqs_de: merged.faqs_de || [],
+        faqs_en: merged.faqs_en || [],
         // MULTILINGUAL: send slug_en. If the field is blank the server
         // auto-derives it from title_en via resolveBlogSlugEn(). If the
         // editor typed a custom slug, the server sanitises + enforces
         // uniqueness. Either way the API returns the final value.
-        slug_en: (doc.slug_en || '').trim(),
-        published: !!doc.published,
+        slug_en: (merged.slug_en || '').trim(),
+        published: !!merged.published,
       }
       const url = mode === 'create' ? '/api/blog' : `/api/blog/${initial.slug}`
       const method = mode === 'create' ? 'POST' : 'PUT'
@@ -422,13 +427,17 @@ export default function BlogEditor({ mode, initial }) {
         <div className="flex items-center gap-3">
           {mode === 'edit' && <button onClick={() => setShowDelete(true)} className="text-xs font-mono uppercase tracking-[0.15em] text-[#8B1538] hover:underline">Löschen</button>}
           <button
-            onClick={() => { set('published', !doc.published); setTimeout(save, 50) }}
+            onClick={() => {
+              const nextPublished = !doc.published
+              set('published', nextPublished)
+              save({ published: nextPublished })
+            }}
             disabled={saving}
             className={`text-xs font-mono uppercase tracking-[0.15em] px-4 py-2 rounded-full border transition-colors ${isDraft ? 'border-[#2D7A4E] text-[#2D7A4E] hover:bg-[#DCEFE2]' : 'border-[#6B5F5F] text-[#6B5F5F] hover:bg-[#F2EAE4]'}`}
           >
             {isDraft ? 'Veröffentlichen' : 'Auf Entwurf setzen'}
           </button>
-          <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-5 disabled:opacity-50">
+          <button onClick={() => save()} disabled={saving} className="btn-primary !text-xs !py-2 !px-5 disabled:opacity-50">
             {saving ? 'Speichern …' : (mode === 'create' ? 'Erstellen' : 'Speichern')}
           </button>
         </div>

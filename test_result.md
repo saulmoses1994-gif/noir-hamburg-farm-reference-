@@ -3995,3 +3995,36 @@ cms_blog_editor_regression:
             should now be accessible without client-side exceptions, and the new
             faqs_de/faqs_en fields are fully supported by the backend API.
 
+
+agent_communication:
+  - agent: "main"
+    message: |
+      PUBLISH BUTTON RACE-CONDITION FIX — 2026-07-25
+
+      User report: "when I try to publish an article it is in status Entwurf now".
+
+      ROOT CAUSE (components/admin/BlogEditor.js line 425):
+        The Publish/Unpublish toggle used:
+          onClick={() => { set('published', !doc.published); setTimeout(save, 50) }}
+
+        `set()` schedules an async React state update via setDoc, but `save()`
+        reads `doc.published` from its captured closure. On slower renders (or
+        cold-start React reconcile), the fetch fires with the STALE value —
+        the article is saved with `published: false` even though the UI just
+        flipped the local badge to LIVE. Result: reliably intermittent "still
+        in Entwurf status after clicking Veröffentlichen".
+
+      FIX:
+        1. Refactored `save(override = {})` to accept an explicit override
+           object that is spread over `doc` before building the payload.
+           No more reliance on state landing before the fetch.
+        2. Publish toggle now calls:
+             const nextPublished = !doc.published
+             set('published', nextPublished)                // updates UI
+             save({ published: nextPublished })             // updates DB
+        3. Regular "Speichern" button unchanged behaviour: `save()` with no
+           override falls back to current `doc` values as before.
+
+      NO BACKEND CHANGES NEEDED — Prior 7/7 backend test pass already verified
+      POST/PUT accept `published: true` correctly.
+
