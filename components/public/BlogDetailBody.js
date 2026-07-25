@@ -8,6 +8,7 @@ import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { optimizeImageUrl } from '@/lib/cloudinary'
 import { buildResponsiveImage } from '@/lib/responsive-image'
 import { ensureFormattedHtml } from '@/lib/render-content'
+import { renderFaqAnswer, faqAnswerPlain } from '@/lib/faq-answer'
 
 // Slugify for Table-of-Contents anchors — must match the one applied to
 // the article HTML when we inject `id` attributes onto <h2> headings.
@@ -152,8 +153,9 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
       { name: title, url: detailPath },
     ]),
     // 3) FAQPage — emitted ONLY when a visible FAQ section renders below
-    //    (articleFaqs.length > 0). Text values are stripped of HTML so the
-    //    schema matches what the user sees, not what's stored in the DB.
+    //    (articleFaqs.length > 0). Text values are stripped of HTML *and*
+    //    of the safe markdown-link syntax so the schema value matches
+    //    what a user actually sees on the page (labels kept, URL removed).
     ...(articleFaqs.length
       ? [{
           '@context': 'https://schema.org',
@@ -161,7 +163,9 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
           mainEntity: articleFaqs.map((f) => ({
             '@type': 'Question',
             name: stripHtmlForSchema(f.q),
-            acceptedAnswer: { '@type': 'Answer', text: stripHtmlForSchema(f.a) },
+            // Sanitize HTML *and* strip markdown-link syntax + list markers
+            // so the schema text matches the reader-visible answer.
+            acceptedAnswer: { '@type': 'Answer', text: stripHtmlForSchema(faqAnswerPlain(f.a)) },
           })),
         }]
       : []),
@@ -315,7 +319,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
                       <span className="font-heading text-lg text-[#1A1414]">{f.q}</span>
                       <span aria-hidden="true" className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                     </summary>
-                    <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{f.a}</div>
+                    <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{renderFaqAnswer(f.a)}</div>
                   </details>
                 ))}
               </div>
