@@ -918,7 +918,7 @@ pre_cutover_polish_v2:
             
             SECTION 5 - ADMIN (7/7 passed): ✅ ALL PASSED
             /admin redirects 307 when unauth. POST /api/auth/login with admin@noir-hamburg.de /
-            NoirAdmin2026! returns 200 with access_token cookie. Authed GET /admin returns 200
+            <ADMIN_PASSWORD> returns 200 with access_token cookie. Authed GET /admin returns 200
             with all required testids (hero-unread-contacts, panel-activity, panel-health).
             
             CRITICAL FINDINGS:
@@ -1891,7 +1891,7 @@ agent_communication:
         
         Comprehensive testing of JWT auth + production data parity completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com
-        Admin credentials verified: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials verified: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -1922,8 +1922,8 @@ agent_communication:
         ✅ POST /api/auth/change-password with short password → 400 'New password too short (min 8 chars)'
         ✅ POST /api/auth/change-password valid rotation to TestingRotation2026! → 200 {ok:true}
         ✅ POST /api/auth/login with TestingRotation2026! → 200 (rotation persisted)
-        ✅ CRITICAL: Rotate back to NoirAdmin2026! → 200 {ok:true}
-        ✅ CRITICAL: Final verification login with NoirAdmin2026! → 200 (NOT LOCKED OUT)
+        ✅ CRITICAL: Rotate back to <ADMIN_PASSWORD> → 200 {ok:true}
+        ✅ CRITICAL: Final verification login with <ADMIN_PASSWORD> → 200 (NOT LOCKED OUT)
         
         SECTION 5: REGRESSION ON PHASE 1 (3/3 passed)
         ✅ GET /api/health, /api/service-content, /api/service-content/vip-escort-hamburg → all 200
@@ -1949,7 +1949,7 @@ agent_communication:
         Comprehensive 19-step test of admin-gated service content update endpoint completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com
         Test slug: vip-escort-hamburg
-        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -2029,7 +2029,7 @@ agent_communication:
         Comprehensive 17-step test of admin-gated area content update endpoint completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com
         Test slug: hafencity
-        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -2094,7 +2094,7 @@ agent_communication:
         
         Comprehensive 15-step test of admin-gated site_settings update endpoint completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com
-        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -2170,7 +2170,7 @@ agent_communication:
         Comprehensive 26-step test of Models CMS CRUD operations with soft-delete semantics completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com
         Test slugs: qa-model-alpha, qa-model-beta (hard-deleted after tests)
-        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -2261,7 +2261,7 @@ agent_communication:
         Comprehensive 29-step test of Blog CMS CRUD operations with draft/publish semantics and soft-delete completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com
         Test slugs: qa-blog-draft-x, qa-blog-live-y (hard-deleted after tests)
-        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -2356,7 +2356,7 @@ agent_communication:
         Comprehensive 30-step test of Pages CMS CRUD operations with draft/publish semantics and soft-delete completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com
         Test slugs: qa-page-draft, qa-page-live (hard-deleted after tests)
-        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -2441,7 +2441,7 @@ agent_communication:
         Comprehensive 25-step test of Contacts Inbox CRUD + flags/notes management completed successfully.
         Base URL: https://noir-migration.preview.emergentagent.com/api
         Test contact ID: 9150da75-5573-423e-ab77-ae4583afd387
-        Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+        Admin credentials: admin@noir-hamburg.de / <ADMIN_PASSWORD>
         
         Test Results by Section:
         
@@ -2976,7 +2976,7 @@ qa_full_pass:
             
             Comprehensive 9-section QA pass executed successfully.
             Base URL: https://noir-migration.preview.emergentagent.com
-            Admin: admin@noir-hamburg.de / NoirAdmin2026!
+            Admin: admin@noir-hamburg.de / <ADMIN_PASSWORD>
             
             ═══════════════════════════════════════════════════════════════════════════════
             SECTION 1 — PUBLIC ROUTE INVENTORY (136 URLs)

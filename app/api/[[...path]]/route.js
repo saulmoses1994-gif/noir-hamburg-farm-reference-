@@ -13,6 +13,16 @@ import {
 import { sanitizeFields } from '@/lib/html-sanitize'
 import { reflowPlainTextArticle } from '@/lib/blog-reflow'
 
+// Pull the leading H2 lines out of a Markdown-reflowed body so the CMS
+// preview modal can show admins exactly which headings will be created.
+function extractHeadings(md) {
+  if (typeof md !== 'string') return []
+  return md.split(/\n{2,}/)
+    .map((b) => b.trim())
+    .filter((b) => /^## /.test(b))
+    .map((b) => b.replace(/^## /, ''))
+}
+
 // HTML-bearing CMS fields per resource type — passed to sanitizeFields()
 // on every write path. Sanitization happens SERVER-SIDE before persistence
 // so the database itself is the trust boundary (SEC-001, 2026-07-25 audit).
@@ -571,19 +581,42 @@ async function route(request, ctx, method) {
       const guard = await requireAdmin(request, NextResponse)
       if (!guard.ok) return cors(guard.response)
       const slug = parts[2]
+      const url = new URL(request.url)
+      // Dry-run mode: return the counts + a preview of the outputs
+      // WITHOUT mutating the DB. Used by the CMS to show a confirm modal.
+      const dryRun = url.searchParams.get('dry_run') === '1'
       const db = await getDb()
       const post = await db.collection('blog').findOne({ slug })
       if (!post) return j({ detail: 'Blog post not found', slug }, { status: 404 })
-
       const de = reflowPlainTextArticle(post.content || '')
       const en = reflowPlainTextArticle(post.content_en || '')
 
+      const alreadyMigrated = !!(post.content_backup || post.faqs_de_backup || post.faqs_en_backup)
+
+      if (dryRun) {
+        return j({
+          ok: true, slug, dryRun: true,
+          alreadyMigrated,
+          de: {
+            headingCount: de.headingCount,
+            faqCount: de.faqCount,
+            changed: de.changed,
+            preview: { headings: extractHeadings(de.content), firstFaq: (de.faqs || [])[0] || null },
+          },
+          en: {
+            headingCount: en.headingCount,
+            faqCount: en.faqCount,
+            changed: en.changed,
+            preview: { headings: extractHeadings(en.content), firstFaq: (en.faqs || [])[0] || null },
+          },
+        })
+      }
+
       if (!de.changed && !en.changed) {
         return j({
-          ok: true,
-          slug,
-          changed: false,
-          reason: 'Content already contains HTML block tags or no recognised markers.',
+          ok: true, slug, changed: false,
+          alreadyMigrated,
+          reason: 'Content already reflowed (Markdown headings present) or no recognised markers.',
           de: { headingCount: de.headingCount, faqCount: de.faqCount },
           en: { headingCount: en.headingCount, faqCount: en.faqCount },
         })
@@ -600,6 +633,11 @@ async function route(request, ctx, method) {
         update.content_en = en.content
         if (en.faqs?.length) update.faqs_en = en.faqs
       }
+      // Legacy-fallback rule (2026-07-25 audit follow-up): once we've
+      // populated ANY new-schema FAQ array, wipe the legacy `faqs` field
+      // so BlogDetailBody never falls back to it. Prevents any chance of
+      // double-rendering identical Q/A pairs.
+      if (update.faqs_de || update.faqs_en) update.faqs = []
       // Backup ORIGINAL fields once (never overwrite an existing backup).
       const backupUpdate = {}
       if (!post.content_backup && post.content) backupUpdate.content_backup = post.content
@@ -635,6 +673,43 @@ async function route(request, ctx, method) {
         en: { headingCount: en.headingCount, faqCount: en.faqCount, changed: en.changed },
         backedUp: Object.keys(backupUpdate),
       })
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  POST /api/blog/reflow-plaintext-restore/[slug]
+    //
+    //  Undo a previous reflow migration. Restores content_backup,
+    //  faqs_backup, faqs_de_backup, faqs_en_backup back into the live
+    //  fields; leaves the backup entries in place for future use.
+    //  Admin-only. Idempotent (no-op when no backup exists).
+    // ────────────────────────────────────────────────────────────────
+    if (parts[0] === 'blog' && parts[1] === 'reflow-plaintext-restore' && parts[2] && method === 'POST') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const slug = parts[2]
+      const db = await getDb()
+      const post = await db.collection('blog').findOne({ slug })
+      if (!post) return j({ detail: 'Blog post not found', slug }, { status: 404 })
+      const set = { updated_at: new Date() }
+      const restored = []
+      if (post.content_backup) { set.content = post.content_backup; restored.push('content') }
+      if (post.content_en_backup) { set.content_en = post.content_en_backup; restored.push('content_en') }
+      // Legacy `faqs` restore: put the array back exactly as it was.
+      if (post.faqs_backup !== undefined) { set.faqs = post.faqs_backup; restored.push('faqs') }
+      if (post.faqs_de_backup !== undefined) { set.faqs_de = post.faqs_de_backup; restored.push('faqs_de') }
+      else if (post.content_backup) { set.faqs_de = []; restored.push('faqs_de(cleared)') }
+      if (post.faqs_en_backup !== undefined) { set.faqs_en = post.faqs_en_backup; restored.push('faqs_en') }
+      else if (post.content_en_backup) { set.faqs_en = []; restored.push('faqs_en(cleared)') }
+      if (restored.length === 0) {
+        return j({ ok: true, slug, restored: [], reason: 'No backup found for this article.' })
+      }
+      await db.collection('blog').findOneAndUpdate({ slug }, { $set: set })
+      try {
+        revalidatePath(`/blog/${slug}`)
+        if (post.slug_en) revalidatePath(`/en/blog/${post.slug_en}`)
+        revalidatePath('/blog'); revalidatePath('/en/blog'); revalidatePath('/sitemap.xml')
+      } catch (e) { /* noop */ }
+      return j({ ok: true, slug, restored })
     }
 
     // ────────────────────────────────────────────────────────────────

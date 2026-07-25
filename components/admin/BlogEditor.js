@@ -179,6 +179,136 @@ const CATEGORIES = [
   'Business Travel Hamburg', 'Privacy & Discretion',
 ]
 
+
+// ─────────────────────────────────────────────────────────────────────
+//  MigrationPanel — protected in-CMS entry point to the reflow migration
+//
+//  Wraps the internal `POST /api/blog/reflow-plaintext/[slug]` endpoint
+//  with a preview-first, confirm-required, restore-capable UI. Every
+//  request rides on the admin's existing HttpOnly session cookie — the
+//  password never touches the client bundle, URLs, or logs.
+//
+//  Security posture:
+//    • The endpoint itself is `requireAdmin`-gated server-side (401 for
+//      unauthenticated / non-admin callers).
+//    • Cookie is HttpOnly + Secure + SameSite=Lax → cross-site fetches
+//      cannot forge a session (CSRF-safe for state-changing POST).
+//    • No credential appears in any URL, header, or console log.
+// ─────────────────────────────────────────────────────────────────────
+function MigrationPanel({ slug }) {
+  const [preview, setPreview] = React.useState(null)
+  const [result, setResult] = React.useState(null)
+  const [busy, setBusy] = React.useState(false)
+  const [error, setError] = React.useState('')
+  const [expanded, setExpanded] = React.useState(false)
+
+  if (!slug) return null
+
+  const call = async (url, opts = {}) => {
+    setBusy(true); setError('')
+    try {
+      const r = await fetch(url, { method: 'POST', credentials: 'same-origin', ...opts })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d?.detail || 'Fehler')
+      return d
+    } catch (e) { setError(String(e.message || e)); return null }
+    finally { setBusy(false) }
+  }
+
+  const loadPreview = async () => {
+    const d = await call(`/api/blog/reflow-plaintext/${encodeURIComponent(slug)}?dry_run=1`)
+    if (d) { setPreview(d); setResult(null); setExpanded(true) }
+  }
+  const confirmMigrate = async () => {
+    if (!confirm('Migration jetzt ausführen? Ein Backup wird automatisch erstellt.')) return
+    const d = await call(`/api/blog/reflow-plaintext/${encodeURIComponent(slug)}`)
+    if (d) { setResult(d); setPreview(null) }
+  }
+  const restore = async () => {
+    if (!confirm('Backup wiederherstellen? Aktuelle Inhalte werden überschrieben.')) return
+    const d = await call(`/api/blog/reflow-plaintext-restore/${encodeURIComponent(slug)}`)
+    if (d) { setResult({ restored: d.restored }); setPreview(null) }
+  }
+
+  return (
+    <section className="bg-[#FBF7F4] border border-[#1A1414]/10 p-8 rounded-lg" data-testid="migration-panel">
+      <div className="flex items-baseline justify-between mb-2">
+        <h2 className="font-heading text-xl">Legacy-Artikel migrieren</h2>
+        <span className="font-mono text-xs text-[#6B5F5F]">Reflow • H2 + FAQs</span>
+      </div>
+      <p className="text-xs text-[#6B5F5F] mb-4 leading-relaxed">
+        Konvertiert plain-text Artikel-Inhalte in strukturierte H2-Überschriften
+        und übernimmt numerierte Q/A-Absätze in die deutschen FAQ-Felder. Der
+        Vorgang erstellt automatisch ein Backup und ist über „Zurücksetzen&quot;
+        rückgängig.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={loadPreview} disabled={busy}
+          className="px-4 py-2 rounded bg-white border border-[#1A1414]/15 text-sm disabled:opacity-50">
+          {busy ? '…' : 'Vorschau anzeigen'}
+        </button>
+        <button type="button" onClick={restore} disabled={busy}
+          className="px-4 py-2 rounded bg-white border border-[#1A1414]/15 text-sm disabled:opacity-50 text-[#6B5F5F]">
+          Backup wiederherstellen
+        </button>
+      </div>
+      {error && <div className="mt-3 text-xs text-[#B00020] bg-[#FDECEC] rounded p-3">{error}</div>}
+      {expanded && preview && (
+        <div className="mt-6 border border-[#1A1414]/10 rounded p-4 bg-white text-sm">
+          <div className="flex items-baseline justify-between mb-3">
+            <strong className="font-heading text-base">Migrations-Vorschau</strong>
+            {preview.alreadyMigrated && <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#8A5A00] bg-[#FEF3E4] px-2 py-0.5 rounded">Bereits migriert</span>}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#6B5F5F] mb-1">Deutsch</div>
+              <div>Überschriften: <strong>{preview.de.headingCount}</strong> · FAQs: <strong>{preview.de.faqCount}</strong></div>
+              {preview.de.preview.headings.length > 0 && (
+                <ul className="mt-2 space-y-1 text-xs text-[#3A2F2F] list-disc list-inside">
+                  {preview.de.preview.headings.slice(0, 10).map((h, i) => <li key={i}>{h}</li>)}
+                </ul>
+              )}
+              {preview.de.preview.firstFaq && (
+                <div className="mt-3 text-xs">
+                  <div className="text-[#6B5F5F]">Beispiel-FAQ:</div>
+                  <div className="font-medium mt-1">Q: {preview.de.preview.firstFaq.q}</div>
+                  <div className="text-[#6B5F5F] mt-1">A: {String(preview.de.preview.firstFaq.a).slice(0, 160)}…</div>
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#6B5F5F] mb-1">English</div>
+              <div>Headings: <strong>{preview.en.headingCount}</strong> · FAQs: <strong>{preview.en.faqCount}</strong></div>
+              {preview.en.preview.headings.length === 0 && preview.en.faqCount === 0 && (
+                <div className="text-xs text-[#6B5F5F] mt-2">Kein Reflow für EN-Inhalt notwendig (bereits strukturiert oder leer).</div>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2 pt-3 border-t border-[#1A1414]/10">
+            <button type="button" onClick={confirmMigrate} disabled={busy}
+              className="px-4 py-2 rounded bg-[#1A1414] text-white text-sm hover:bg-black disabled:opacity-50">
+              Migration ausführen
+            </button>
+            <button type="button" onClick={() => { setExpanded(false); setPreview(null) }}
+              className="px-4 py-2 rounded border border-[#1A1414]/15 text-sm">
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+      {result && (
+        <div className="mt-4 text-xs bg-[#EDF7ED] border border-[#4C9A50]/30 text-[#1B5E20] rounded p-3">
+          {result.restored ? (
+            <>Wiederhergestellt: <code>{result.restored.join(', ')}</code></>
+          ) : (
+            <>Erfolg. DE: {result.de?.headingCount} Überschriften, {result.de?.faqCount} FAQs. EN: {result.en?.headingCount} Überschriften, {result.en?.faqCount} FAQs. Backups: <code>{(result.backedUp || []).join(', ')}</code></>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default function BlogEditor({ mode, initial }) {
   const router = useRouter()
   const [doc, setDoc] = useState(initial)
@@ -397,6 +527,8 @@ export default function BlogEditor({ mode, initial }) {
           otherLangCount={(doc.faqs_de || []).length}
           otherLangLabel="Deutsch"
         />
+
+        <MigrationPanel slug={slug} />
 
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">SEO</h2>
