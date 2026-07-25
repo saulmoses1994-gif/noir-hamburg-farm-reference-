@@ -365,6 +365,8 @@ export default function BlogEditor({ mode, initial }) {
         slug: (merged.slug || '').trim(),
         title: (merged.title || '').trim(),
         title_en: merged.title_en || '',
+        h1: merged.h1 || '',                    // optional custom H1 override — DE
+        h1_en: merged.h1_en || '',              // optional custom H1 override — EN
         category: merged.category || '',
         excerpt: merged.excerpt || '', excerpt_en: merged.excerpt_en || '',
         content: merged.content || '', content_en: merged.content_en || '',
@@ -449,6 +451,40 @@ export default function BlogEditor({ mode, initial }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Field label="Titel (DE)" name="title" type="input" value={doc.title} onChange={(k, v) => { set(k, v); if (mode === 'create' && !doc.slug) set('slug', slugify(v)) }} />
             <Field label="Titel (EN)" name="title_en" type="input" value={doc.title_en} onChange={set} />
+            {/* Optional custom H1 override per language. Empty = fall back
+                to the corresponding Titel (SEO best practice: an article
+                page has exactly one <h1>, independent from <title> and
+                meta description). */}
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                H1 (DE) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, Fallback: Titel (DE)</span>
+              </label>
+              <input
+                type="text"
+                value={doc.h1 || ''}
+                onChange={(e) => set('h1', e.target.value)}
+                placeholder={doc.title || 'wird auf den Titel (DE) zurückgesetzt, wenn leer'}
+                className={cls('input')}
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">
+                Erscheint als sichtbare Hauptüberschrift &lt;h1&gt; auf der DE-Seite. Leer lassen für Standardverhalten.
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                H1 (EN) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, fallback: Titel (EN)</span>
+              </label>
+              <input
+                type="text"
+                value={doc.h1_en || ''}
+                onChange={(e) => set('h1_en', e.target.value)}
+                placeholder={doc.title_en || 'falls back to Titel (EN) when empty'}
+                className={cls('input')}
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">
+                Renders as the visible &lt;h1&gt; on the EN page. Leave empty to reuse Titel (EN).
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">Slug (DE)</label>
               <input type="text" value={doc.slug || ''} onChange={(e) => set('slug', e.target.value)} disabled={mode === 'edit'} className={cls('input') + (mode === 'edit' ? ' opacity-60 cursor-not-allowed' : '')} />

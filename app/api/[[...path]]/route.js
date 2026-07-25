@@ -77,6 +77,7 @@ const PAGE_FIELDS = [
 // collisions server-side (see resolveBlogSlugEn below).
 const BLOG_FIELDS = [
   'title', 'title_en',
+  'h1', 'h1_en',             // 2026-07: optional custom H1 override per language (falls back to title)
   'category', 'category_en',
   'tags', 'tags_en',
   'excerpt', 'excerpt_en',

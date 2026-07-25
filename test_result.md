@@ -4028,3 +4028,34 @@ agent_communication:
       NO BACKEND CHANGES NEEDED — Prior 7/7 backend test pass already verified
       POST/PUT accept `published: true` correctly.
 
+
+agent_communication:
+  - agent: "main"
+    message: |
+      CUSTOM H1 SUPPORT (BLOG CMS) — 2026-07-26
+
+      New optional fields `h1` (DE) and `h1_en` (EN) added to blog articles.
+      Backward compatible: legacy articles without these fields (or with
+      whitespace-only values) transparently keep the current behaviour of
+      using `title` / `title_en` as the visible <h1>.
+
+      FIELDS FULLY INDEPENDENT NOW (verified end-to-end):
+        • title / title_en      → canonical article title
+                                  (drives BlogPosting.headline in JSON-LD,
+                                   OG:title fallback, breadcrumb label)
+        • meta_title / meta_title_en → <title> tag + og:title
+        • meta_description / meta_description_en → <meta name="description">
+        • h1 / h1_en            → visible <h1> only (falls back to title
+                                  when empty or whitespace-only)
+
+      SEO GUARANTEES:
+        ✅ Exactly ONE <h1> per article page (DE + EN verified)
+        ✅ H1 independent from <title>, OG title, meta description
+        ✅ BlogPosting.headline still uses canonical title (not H1)
+        ✅ Legacy articles unchanged — no migration needed
+
+      FILES TOUCHED:
+        • app/api/[[...path]]/route.js  → added 'h1','h1_en' to BLOG_FIELDS
+        • components/admin/BlogEditor.js → 2 new input fields + save payload
+        • app/(de)/admin/(guarded)/blog/new/page.js → default empties added
+        • components/public/BlogDetailBody.js → pageH1 derived + rendered

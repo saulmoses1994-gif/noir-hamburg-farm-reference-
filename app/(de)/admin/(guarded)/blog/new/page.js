@@ -7,7 +7,9 @@ export default function AdminBlogNew() {
     <BlogEditor
       mode="create"
       initial={{
-        slug: '', title: '', title_en: '', category: '',
+        slug: '', title: '', title_en: '',
+        h1: '', h1_en: '',
+        category: '',
         excerpt: '', excerpt_en: '',
         content: '', content_en: '',
         cover_image: '',

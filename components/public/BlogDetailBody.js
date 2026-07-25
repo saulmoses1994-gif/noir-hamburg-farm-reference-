@@ -47,6 +47,12 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
   // missing (returns 404), so we can safely trust that title_en/content_en
   // are present when lang==='en'.
   const title = (isEn ? post.title_en : post.title) || ''
+  // Visible page <h1>. Editors can override the H1 independently from the
+  // article title (SEO best practice: H1 is separate from <title> tag and
+  // meta description). Empty custom H1 → fall back to the language-
+  // appropriate title. Backwards-compatible: existing articles without
+  // h1/h1_en fields transparently behave the same as before.
+  const pageH1 = ((isEn ? post.h1_en : post.h1) || '').trim() || title
   const excerpt = (isEn ? post.excerpt_en : post.excerpt) || ''
   const rawContent = ensureFormattedHtml((isEn ? post.content_en : post.content) || '')
 
@@ -228,7 +234,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
           <header className="max-w-4xl mx-auto text-center py-12 md:py-20">
             <span className="overline accent-text">{post.category}</span>
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-light tracking-tighter leading-tight mt-6">
-              {title}
+              {pageH1}
             </h1>
             {post.created_at && (
               <div className="overline mt-8">{dateFmt(post.created_at)}</div>
