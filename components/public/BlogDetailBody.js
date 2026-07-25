@@ -51,12 +51,23 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
 
   const { html: content, toc } = decorateH2s(rawContent)
 
-  // Per-article FAQs \u2014 language-locked, same principle as above.
-  const articleFaqs = (post.faqs || [])
-    .map((f) => ({
-      q: (isEn ? f.q_en : f.q) || '',
-      a: (isEn ? f.a_en : f.a) || '',
-    }))
+  // Per-article FAQs — language-locked (2026-07 schema).
+  //   • DE article → post.faqs_de only
+  //   • EN article → post.faqs_en only
+  //   • NO cross-language fallback: if the current language has no
+  //     entries, the FAQ section is hidden and no FAQPage schema is
+  //     emitted (per SEO spec).
+  //   • Legacy bilingual `faqs` array is still honoured for posts that
+  //     were saved with the old schema and never re-edited.
+  const legacyFaqs = Array.isArray(post.faqs) ? post.faqs : []
+  const newLangFaqs = Array.isArray(isEn ? post.faqs_en : post.faqs_de)
+    ? (isEn ? post.faqs_en : post.faqs_de)
+    : []
+  const articleFaqs = (newLangFaqs.length > 0 ? newLangFaqs.map((f) => ({ q: f.q, a: f.a }))
+                                              : legacyFaqs.map((f) => ({
+                                                  q: (isEn ? f.q_en : f.q) || '',
+                                                  a: (isEn ? f.a_en : f.a) || '',
+                                                })))
     .filter((f) => f.q && f.a)
 
   // Blog URL for THIS article — EN uses slug_en, DE uses the DE slug.

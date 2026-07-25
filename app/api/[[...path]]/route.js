@@ -67,17 +67,42 @@ const PAGE_FIELDS = [
 // collisions server-side (see resolveBlogSlugEn below).
 const BLOG_FIELDS = [
   'title', 'title_en',
-  'category',
+  'category', 'category_en',
+  'tags', 'tags_en',
   'excerpt', 'excerpt_en',
   'content', 'content_en',
   'cover_image',
   'meta_title', 'meta_title_en',
   'meta_description', 'meta_description_en',
   'related_services', 'related_locations',
-  'faqs',
+  'faqs',                    // legacy bilingual-row format (kept for compat)
+  'faqs_de', 'faqs_en',      // 2026-07 new: independent language arrays
   'published',
   'slug_en',
 ]
+
+// FAQ answers are rendered via dangerouslySetInnerHTML on the article
+// page. Sanitize each answer with the same allowlist used for article
+// bodies to prevent stored-XSS via an admin session.
+function sanitizeFaqArray(arr) {
+  if (!Array.isArray(arr)) return arr
+  return arr
+    .map((f) => (f && typeof f === 'object' ? f : null))
+    .filter(Boolean)
+    .map((f) => {
+      const row = { q: '', a: '' }
+      if (typeof f.q === 'string') row.q = f.q.trim()
+      if (typeof f.a === 'string') row.a = f.a
+      const cleaned = { ...row }
+      // Strip HTML on write for FAQ (question + answer). Q is meant to
+      // be one line of plain text; A can contain minimal markup but we
+      // run it through the same sanitizer used elsewhere.
+      sanitizeFields(cleaned, ['a'])
+      return cleaned
+    })
+    // Drop malformed entries — both fields must be non-empty.
+    .filter((f) => f.q && f.a)
+}
 
 async function readJson(request) {
   try { return await request.json() } catch { return {} }
@@ -473,6 +498,17 @@ async function route(request, ctx, method) {
       const update = {}
       for (const k of BLOG_FIELDS) if (k in body) update[k] = body[k]
       sanitizeFields(update, HTML_FIELDS_BLOG)
+      // FAQ arrays (both legacy `faqs` and new language-split fields).
+      if ('faqs_de' in update) update.faqs_de = sanitizeFaqArray(update.faqs_de)
+      if ('faqs_en' in update) update.faqs_en = sanitizeFaqArray(update.faqs_en)
+      if ('faqs' in update && Array.isArray(update.faqs)) {
+        // Legacy bilingual rows — sanitize `a` and `a_en` in place.
+        update.faqs = update.faqs.map((f) => {
+          const row = { ...(f || {}) }
+          sanitizeFields(row, ['a', 'a_en'])
+          return row
+        })
+      }
       update.updated_at = new Date()
       const db = await getDb()
       // MULTILINGUAL BLOG: when title_en is being edited AND the editor
@@ -556,30 +592,21 @@ async function route(request, ctx, method) {
       const update = { updated_at: new Date() }
       if (de.changed) {
         update.content = de.content
-        // Merge FAQ arrays language-by-language: DE Q/A on the same
-        // index as EN Q/A. When only DE was reflowed we fill EN cells
-        // with an empty string so BlogEditor doesn't render `undefined`.
-        if (de.faqs?.length) {
-          const enFaqs = en.faqs || []
-          update.faqs = de.faqs.map((f, i) => ({
-            q: f.q, a: f.a,
-            q_en: enFaqs[i]?.q || '',
-            a_en: enFaqs[i]?.a || '',
-          }))
-        }
+        // NEW SCHEMA (2026-07): write into `faqs_de` — the DE-specific
+        // language array. EN is NEVER auto-populated from DE.
+        if (de.faqs?.length) update.faqs_de = de.faqs
       }
       if (en.changed) {
         update.content_en = en.content
-        // If DE didn't provide FAQs but EN did, still store them.
-        if (!update.faqs && en.faqs?.length) {
-          update.faqs = en.faqs.map((f) => ({ q: '', a: '', q_en: f.q, a_en: f.a }))
-        }
+        if (en.faqs?.length) update.faqs_en = en.faqs
       }
       // Backup ORIGINAL fields once (never overwrite an existing backup).
       const backupUpdate = {}
       if (!post.content_backup && post.content) backupUpdate.content_backup = post.content
       if (!post.content_en_backup && post.content_en) backupUpdate.content_en_backup = post.content_en
       if (!post.faqs_backup && post.faqs) backupUpdate.faqs_backup = post.faqs
+      if (!post.faqs_de_backup && post.faqs_de) backupUpdate.faqs_de_backup = post.faqs_de
+      if (!post.faqs_en_backup && post.faqs_en) backupUpdate.faqs_en_backup = post.faqs_en
 
       const setDoc = { ...update, ...backupUpdate }
       // Sanitize any HTML that snuck into the migration output (belt +

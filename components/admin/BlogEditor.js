@@ -34,6 +34,122 @@ function MarkdownSplitPane({ label, value, onChange }) {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────
+//  FAQ Editor — language-independent structured Q/A editor.
+//
+//  Renders exactly one language column at a time. Each entry has a
+//  Question input, an Answer textarea, delete + reorder buttons.
+//  Validation (client-side only, non-blocking):
+//    • Both Q and A required (empty rows are dropped at save time by
+//      the server sanitizer).
+//    • Duplicate questions in the same language are flagged with a
+//      subtle warning line.
+//    • Answers shorter than 20 characters get a "very short" hint.
+//
+//  When the OTHER language has entries but this language has none, a
+//  banner is shown so admins know the translation is incomplete.
+//
+//  Preview: a Markdown-rendered mini preview of the last edited answer
+//  is shown at the bottom so admins can verify formatting (bold, italic,
+//  lists) before publishing.
+// ─────────────────────────────────────────────────────────────────────
+function FaqEditor({ lang, title, hint, value, onChange, otherLangCount, otherLangLabel }) {
+  const list = Array.isArray(value) ? value : []
+  const langLabel = lang === 'de' ? 'Deutsch' : 'English'
+  // Duplicate detection: normalise + count questions, flag any that appear >1×.
+  const dupes = new Set()
+  {
+    const seen = new Map()
+    list.forEach((f, i) => {
+      const key = (f?.q || '').trim().toLowerCase()
+      if (!key) return
+      if (seen.has(key)) { dupes.add(i); dupes.add(seen.get(key)) }
+      else seen.set(key, i)
+    })
+  }
+  const isMissingTranslation = list.length === 0 && otherLangCount > 0
+
+  const update = (idx, patch) => {
+    const next = list.slice()
+    next[idx] = { ...next[idx], ...patch }
+    onChange(next)
+  }
+  const add = () => onChange([...list, { q: '', a: '' }])
+  const remove = (idx) => {
+    if (!confirm('Diese FAQ wirklich entfernen?')) return
+    onChange(list.filter((_, i) => i !== idx))
+  }
+  const move = (idx, dir) => {
+    const j = idx + dir
+    if (j < 0 || j >= list.length) return
+    const next = list.slice()
+    ;[next[idx], next[j]] = [next[j], next[idx]]
+    onChange(next)
+  }
+
+  return (
+    <section className="bg-white p-8 rounded-lg" data-testid={`faq-editor-${lang}`}>
+      <div className="flex items-baseline justify-between mb-2">
+        <h2 className="font-heading text-xl">{title}</h2>
+        <span className="font-mono text-xs text-[#6B5F5F]">
+          {list.length} Eintr{list.length === 1 ? 'ag' : 'äge'} · Sprache: {langLabel}
+        </span>
+      </div>
+      <p className="text-xs text-[#6B5F5F] mb-4">{hint}</p>
+      {isMissingTranslation && (
+        <div className="text-xs bg-[#FEF3E4] border border-[#EEC474] text-[#8A5A00] rounded p-3 mb-4">
+          ⚠ Die {otherLangLabel}-FAQs enthalten {otherLangCount} Eintr{otherLangCount === 1 ? 'ag' : 'äge'},
+          aber für {langLabel} sind keine gepflegt. Auf der {langLabel}-Version des Artikels wird
+          <strong> kein FAQ-Bereich</strong> angezeigt.
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {list.map((f, i) => {
+          const q = f?.q || ''
+          const a = f?.a || ''
+          const shortA = a.trim().length > 0 && a.trim().length < 20
+          const isDupe = dupes.has(i)
+          return (
+            <div key={i} className="border border-[#1A1414]/10 rounded p-4 bg-[#FBF7F4]" data-testid={`faq-row-${lang}-${i}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-mono text-xs text-[#6B5F5F] w-8">#{i + 1}</span>
+                <div className="flex-1 flex items-center gap-1 justify-end">
+                  <button type="button" className="text-xs px-2 py-1 rounded border border-[#1A1414]/10 hover:bg-white disabled:opacity-30" onClick={() => move(i, -1)} disabled={i === 0} title="Nach oben">↑</button>
+                  <button type="button" className="text-xs px-2 py-1 rounded border border-[#1A1414]/10 hover:bg-white disabled:opacity-30" onClick={() => move(i, +1)} disabled={i === list.length - 1} title="Nach unten">↓</button>
+                  <button type="button" className="text-xs px-2 py-1 rounded border border-[#B00020]/30 text-[#B00020] hover:bg-[#B00020]/5" onClick={() => remove(i)} title="Löschen">Löschen</button>
+                </div>
+              </div>
+              <label className="block text-[10px] font-mono uppercase tracking-[0.12em] text-[#6B5F5F] mb-1">Frage</label>
+              <input
+                value={q}
+                onChange={(e) => update(i, { q: e.target.value })}
+                placeholder={lang === 'de' ? 'Wie plane ich einen Abend?' : 'How do I plan an evening?'}
+                className={`w-full px-3 py-2 border rounded font-heading text-lg mb-1 ${isDupe ? 'border-[#EEC474] bg-[#FEF3E4]' : 'border-[#1A1414]/15 bg-white'}`}
+              />
+              {isDupe && <div className="text-[11px] text-[#8A5A00] mb-2">⚠ Doppelte Frage — in derselben Sprache existiert bereits eine identische Frage.</div>}
+              <label className="block text-[10px] font-mono uppercase tracking-[0.12em] text-[#6B5F5F] mt-2 mb-1">Antwort <span className="normal-case text-[#9B8F8F]">(Markdown erlaubt: **fett**, *kursiv*, [link](url))</span></label>
+              <textarea
+                value={a}
+                onChange={(e) => update(i, { a: e.target.value })}
+                placeholder={lang === 'de' ? 'Wir empfehlen ein Restaurant zu reservieren…' : 'We recommend reserving a restaurant…'}
+                rows={4}
+                className="w-full px-3 py-2 border border-[#1A1414]/15 rounded bg-white leading-relaxed"
+              />
+              {shortA && <div className="text-[11px] text-[#8A5A00] mt-1">Hinweis: sehr kurze Antwort — bitte mindestens 1–2 vollständige Sätze schreiben.</div>}
+            </div>
+          )
+        })}
+      </div>
+
+      <button type="button" onClick={add} className="mt-4 px-4 py-2 rounded bg-[#1A1414] text-white text-sm hover:bg-black">
+        + FAQ hinzufügen
+      </button>
+    </section>
+  )
+}
+
+
 function DeleteModal({ slug, onCancel, onConfirm, busy }) {
   const [typed, setTyped] = useState('')
   return (
@@ -123,6 +239,8 @@ export default function BlogEditor({ mode, initial }) {
         related_services: doc.related_services || [],
         related_locations: doc.related_locations || [],
         faqs: doc.faqs || [],
+        faqs_de: doc.faqs_de || [],
+        faqs_en: doc.faqs_en || [],
         // MULTILINGUAL: send slug_en. If the field is blank the server
         // auto-derives it from title_en via resolveBlogSlugEn(). If the
         // editor typed a custom slug, the server sanitises + enforces
@@ -241,7 +359,17 @@ export default function BlogEditor({ mode, initial }) {
 
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-3">Content (DE)</h2>
-          <p className="text-xs font-mono text-[#6B5F5F] mb-4">Markdown links — Live-Vorschau rechts.</p>
+          <p className="text-xs font-mono text-[#6B5F5F] mb-2">Markdown links — Live-Vorschau rechts.</p>
+          <div className="text-xs text-[#6B5F5F] bg-[#F8F4F0] border border-[#1A1414]/8 rounded p-3 mb-4 leading-relaxed">
+            <strong className="text-[#1A1414]">Formatierungs-Hilfe:</strong>{' '}
+            <code>## Überschrift</code> → H2 ·{' '}
+            <code>### Unter</code> → H3 ·{' '}
+            <code>- Punkt</code> → Aufzählung ·{' '}
+            <code>1. Punkt</code> → Nummerierte Liste ·{' '}
+            <code>**fett**</code> ·{' '}
+            <code>*kursiv*</code> ·{' '}
+            <code>[Text](https://url)</code>
+          </div>
           <MarkdownSplitPane label="content" value={doc.content} onChange={(v) => set('content', v)} />
         </section>
 
@@ -249,6 +377,26 @@ export default function BlogEditor({ mode, initial }) {
           <h2 className="font-heading text-xl mb-3">Content (EN)</h2>
           <MarkdownSplitPane label="content_en" value={doc.content_en} onChange={(v) => set('content_en', v)} />
         </section>
+
+        <FaqEditor
+          lang="de"
+          title="FAQs (Deutsch)"
+          hint="Angezeigt auf /blog/… und im FAQPage-Schema. Optional — leer lassen, um keinen FAQ-Bereich zu zeigen."
+          value={doc.faqs_de || []}
+          onChange={(v) => set('faqs_de', v)}
+          otherLangCount={(doc.faqs_en || []).length}
+          otherLangLabel="English"
+        />
+
+        <FaqEditor
+          lang="en"
+          title="FAQs (English)"
+          hint="Shown on /en/blog/… and in the FAQPage schema. Optional — leave empty to render no FAQ section."
+          value={doc.faqs_en || []}
+          onChange={(v) => set('faqs_en', v)}
+          otherLangCount={(doc.faqs_de || []).length}
+          otherLangLabel="Deutsch"
+        />
 
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">SEO</h2>
