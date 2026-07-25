@@ -29,6 +29,8 @@ export async function generateMetadata({ params }) {
   // counterpart exists (title_en + content_en + slug_en). Otherwise this
   // page is the sole indexable version.
   const hasEnAlternate = hasEnBlogContent(p) && !!p.slug_en
+  // Build ISO 8601 dates. Fall back to created_at when updated_at is missing.
+  const toIso = (v) => { try { return v ? new Date(v).toISOString() : undefined } catch { return undefined } }
   return buildMetadata({
     title,
     description,
@@ -38,6 +40,14 @@ export async function generateMetadata({ params }) {
     lang,
     hasEnAlternate,
     enPath: hasEnAlternate ? `/en/blog/${p.slug_en}` : undefined,
+    // Article-specific OpenGraph — becomes <meta property="og:type" content="article">
+    // plus article:published_time / modified_time / author / section / tag[].
+    ogType: 'article',
+    publishedTime: toIso(p.created_at),
+    modifiedTime: toIso(p.updated_at || p.created_at),
+    authors: ['Noir Hamburg'],
+    section: p.category || undefined,
+    tags: Array.isArray(p.tags) ? p.tags.filter(Boolean) : undefined,
   })
 }
 

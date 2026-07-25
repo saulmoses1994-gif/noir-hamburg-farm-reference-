@@ -59,7 +59,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
     }))
     .filter((f) => f.q && f.a)
 
-  // Blog URL for THIS article \u2014 EN uses slug_en, DE uses the DE slug.
+  // Blog URL for THIS article — EN uses slug_en, DE uses the DE slug.
   // Never crosses language boundaries.
   const articleSlug = isEn ? (post.slug_en || post.slug) : post.slug
   const detailPath = isEn ? `/en/blog/${articleSlug}` : `/blog/${articleSlug}`
@@ -68,34 +68,89 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
   const contactHref = localePath(lang, '/kontakt')
   const modelsHref = localePath(lang, '/models')
 
+  // ─────────────────────────────────────────────────────────────────
+  //  Structured data (JSON-LD) — one BlogPosting + one BreadcrumbList
+  //  + one FAQPage (only when a visible FAQ block is rendered below).
+  //  All URLs are absolute HTTPS; all dates are strict ISO 8601. The
+  //  entire block is server-rendered — no client-side hydration copy.
+  // ─────────────────────────────────────────────────────────────────
+  const siteBase = siteUrl()
+  const articleUrlAbs = `${siteBase}${detailPath}`
+  // Ensure the cover-image URL is absolute HTTPS. Cloudinary and Pexels
+  // fallbacks are already absolute; a bare path (e.g. /uploads/foo.jpg)
+  // would otherwise get emitted as a relative URL in structured data.
+  const toAbs = (u) => {
+    if (!u) return undefined
+    if (/^https?:\/\//i.test(u)) return u.replace(/^http:/, 'https:')
+    return `${siteBase}${u.startsWith('/') ? u : `/${u}`}`
+  }
+  const imageAbs = toAbs(post.cover_image)
+  // ISO 8601 dates — Mongo stores timestamps that can be Date objects or
+  // ISO strings depending on how they were serialised across the wire.
+  const toIsoDate = (d) => {
+    if (!d) return undefined
+    try { return new Date(d).toISOString() } catch { return undefined }
+  }
+  const datePublished = toIsoDate(post.created_at)
+  const dateModified  = toIsoDate(post.updated_at || post.created_at)
+  const articleSection = (isEn ? (post.category_en || post.category) : post.category) || undefined
+
+  // FAQPage schema must exactly match the visible FAQ text — strip any
+  // HTML markup from admin-entered rich text and collapse whitespace.
+  const stripHtmlForSchema = (s) => {
+    if (!s) return ''
+    return String(s)
+      .replace(/<[^>]+>/g, '')     // drop tags
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
   const jsonLd = [
+    // 1) BlogPosting — the article itself. Dynamically populated from the
+    //    admin-panel data; nothing hard-coded per article.
     {
       '@context': 'https://schema.org',
-      '@type': 'Article',
+      '@type': 'BlogPosting',
       headline: title,
       description: excerpt || undefined,
-      image: post.cover_image || undefined,
-      datePublished: post.created_at,
-      dateModified: post.updated_at || post.created_at,
-      author: { '@type': 'Organization', name: 'Noir Hamburg' },
-      publisher: { '@type': 'Organization', name: 'Noir Hamburg' },
+      image: imageAbs ? [imageAbs] : undefined,
+      datePublished,
+      dateModified,
+      author: {
+        '@type': 'Organization',
+        name: 'Noir Hamburg',
+        url: siteBase,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Noir Hamburg',
+        url: siteBase,
+      },
       inLanguage: isEn ? 'en' : 'de',
-      articleSection: post.category || undefined,
-      mainEntityOfPage: { '@type': 'WebPage', '@id': `${siteUrl()}${detailPath}` },
+      articleSection,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': articleUrlAbs },
     },
+    // 2) BreadcrumbList — three items, localised, final item includes both
+    //    headline and absolute article URL (per SEO spec).
     breadcrumbSchema([
       { name: t(lang, 'crumb.home'), url: homeHref },
       { name: t(lang, 'crumb.blog'), url: blogHref },
-      { name: title },
+      { name: title, url: detailPath },
     ]),
+    // 3) FAQPage — emitted ONLY when a visible FAQ section renders below
+    //    (articleFaqs.length > 0). Text values are stripped of HTML so the
+    //    schema matches what the user sees, not what's stored in the DB.
     ...(articleFaqs.length
       ? [{
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: articleFaqs.map((f) => ({
             '@type': 'Question',
-            name: f.q,
-            acceptedAnswer: { '@type': 'Answer', text: f.a },
+            name: stripHtmlForSchema(f.q),
+            acceptedAnswer: { '@type': 'Answer', text: stripHtmlForSchema(f.a) },
           })),
         }]
       : []),

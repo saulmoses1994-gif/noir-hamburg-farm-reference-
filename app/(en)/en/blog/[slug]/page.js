@@ -41,6 +41,14 @@ export async function generateMetadata({ params }) {
   const canonicalSlug = post.slug_en || slug
   const title = resolveArticleTitle(post.title_en, post.meta_title_en)
   const description = post.meta_description_en || post.excerpt_en || ''
+  const toIso = (v) => { try { return v ? new Date(v).toISOString() : undefined } catch { return undefined } }
+  // EN category / tags fall back to the DE values when a language-specific
+  // translation was not authored — better than emitting nothing.
+  const section = post.category_en || post.category || undefined
+  const rawTags = Array.isArray(post.tags_en) && post.tags_en.length
+    ? post.tags_en
+    : (Array.isArray(post.tags) ? post.tags : [])
+  const tags = rawTags.filter(Boolean)
   return buildMetadata({
     title,
     description,
@@ -52,6 +60,13 @@ export async function generateMetadata({ params }) {
     enPath: `/en/blog/${canonicalSlug}`,
     // Also emit the DE alternate for a proper hreflang pair.
     dePath: `/blog/${post.slug}`,
+    // Article OpenGraph — see DE page for full rationale.
+    ogType: 'article',
+    publishedTime: toIso(post.created_at),
+    modifiedTime: toIso(post.updated_at || post.created_at),
+    authors: ['Noir Hamburg'],
+    section,
+    tags: tags.length ? tags : undefined,
   })
 }
 
