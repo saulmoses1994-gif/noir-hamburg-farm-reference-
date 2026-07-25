@@ -6,6 +6,7 @@ import JsonLd from '@/components/site/JsonLd'
 import { t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { optimizeImageUrl } from '@/lib/cloudinary'
+import { ensureFormattedHtml } from '@/lib/render-content'
 import {
   ABOUT_DEFAULT_HTML_DE,
   ABOUT_DEFAULT_HTML_EN,
@@ -28,7 +29,7 @@ export default function AboutBody({ lang, settings = {} }) {
   const cmsContent = isEn
     ? (settings.about_content_en || settings.about_content || '')
     : (settings.about_content || '')
-  const content = cmsContent || (isEn ? ABOUT_DEFAULT_HTML_EN : ABOUT_DEFAULT_HTML_DE)
+  const content = ensureFormattedHtml(cmsContent) || (isEn ? ABOUT_DEFAULT_HTML_EN : ABOUT_DEFAULT_HTML_DE)
   const enFallback = isEn && !settings.about_content_en && !!settings.about_content
 
   const advantages = isEn ? ADVANTAGES_EN : ADVANTAGES_DE

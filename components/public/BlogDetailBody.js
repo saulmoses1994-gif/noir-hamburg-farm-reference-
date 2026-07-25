@@ -7,6 +7,7 @@ import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { optimizeImageUrl } from '@/lib/cloudinary'
 import { buildResponsiveImage } from '@/lib/responsive-image'
+import { ensureFormattedHtml } from '@/lib/render-content'
 
 // Slugify for Table-of-Contents anchors — must match the one applied to
 // the article HTML when we inject `id` attributes onto <h2> headings.
@@ -46,7 +47,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
   // are present when lang==='en'.
   const title = (isEn ? post.title_en : post.title) || ''
   const excerpt = (isEn ? post.excerpt_en : post.excerpt) || ''
-  const rawContent = (isEn ? post.content_en : post.content) || ''
+  const rawContent = ensureFormattedHtml((isEn ? post.content_en : post.content) || '')
 
   const { html: content, toc } = decorateH2s(rawContent)
 

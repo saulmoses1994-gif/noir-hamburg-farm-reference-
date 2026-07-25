@@ -6,6 +6,7 @@ import JsonLd from '@/components/site/JsonLd'
 import { pick, t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { optimizeImageUrl } from '@/lib/cloudinary'
+import { ensureFormattedHtml } from '@/lib/render-content'
 // EN fallback follows rule (a): if _en fields are empty, we render DE and
 // show a small "EN preview" banner above the article.
 export default function PageDetailBody({ lang, page, relatedServices = [], relatedLocations = [] }) {
@@ -13,7 +14,7 @@ export default function PageDetailBody({ lang, page, relatedServices = [], relat
   const title = pick(page, 'title', lang) || ''
   const h1 = pick(page, 'h1', lang) || title
   const intro = pick(page, 'intro', lang) || ''
-  const content = pick(page, 'content', lang) || ''
+  const content = ensureFormattedHtml(pick(page, 'content', lang) || '')
   const enFallback = isEn && !page.content_en
   const detailPath = localePath(lang, `/p/${page.slug}`)
   const homeHref = lang === 'en' ? '/en' : '/'

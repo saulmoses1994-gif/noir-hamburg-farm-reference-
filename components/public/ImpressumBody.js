@@ -5,6 +5,7 @@ import JsonLd from '@/components/site/JsonLd'
 import { t, localePath } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { IMPRESSUM_DEFAULT_HTML } from '@/lib/impressum_default'
+import { ensureFormattedHtml } from '@/lib/render-content'
 
 export default function ImpressumBody({ lang, settings = {} }) {
   const isEn = lang === 'en'
@@ -17,7 +18,7 @@ export default function ImpressumBody({ lang, settings = {} }) {
   const cmsContent = isEn
     ? (settings.impressum_content_en || settings.impressum_content || '')
     : (settings.impressum_content || '')
-  const content = cmsContent || IMPRESSUM_DEFAULT_HTML
+  const content = ensureFormattedHtml(cmsContent) || IMPRESSUM_DEFAULT_HTML
 
   const jsonLd = [
     {
