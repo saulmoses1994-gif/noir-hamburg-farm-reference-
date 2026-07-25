@@ -14,6 +14,7 @@ export default function AdminBlogNew() {
         meta_title: '', meta_title_en: '',
         meta_description: '', meta_description_en: '',
         related_services: [], related_locations: [],
+        faqs_de: [], faqs_en: [],
         published: false,
       }}
     />

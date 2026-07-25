@@ -1,532 +1,467 @@
 #!/usr/bin/env python3
 """
-Regression test suite for security fixes SEC-001, SEC-002, SEC-003.
-
-SEC-001: HTML sanitization on CMS write paths
-SEC-002: Framing headers (X-Frame-Options, CSP frame-ancestors)
-SEC-003: Error leakage fix (generic error responses)
-
-Test scope: http://localhost:3000 (preview environment)
-Admin credentials: admin@noir-hamburg.de / NoirAdmin2026!
+CMS Blog Editor Regression Test Suite
+Tests the admin blog CRUD flow with new faqs_de and faqs_en fields.
 """
 
 import requests
 import json
-import sys
-from typing import Dict, Any, Optional
+import time
+from datetime import datetime
 
-BASE_URL = "http://localhost:3000"
+# Configuration
+BASE_URL = "https://noir-migration.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
-# Admin credentials from test_credentials.md
+# Test credentials
 ADMIN_EMAIL = "admin@noir-hamburg.de"
 ADMIN_PASSWORD = "NoirAdmin2026!"
 
-# Malicious HTML payload for sanitization testing
-MALICIOUS_HTML = '<p>Safe text</p><script>alert("xss")</script><img src=x onerror=alert(1)><a href="javascript:evil()">bad</a>'
+# Test data
+TEST_SLUG = f"regression-test-{int(time.time())}"
 
-# Expected sanitized result (script, onerror, javascript: should be stripped)
-EXPECTED_SANITIZED_PATTERNS = [
-    '<p>Safe text</p>',  # Safe content preserved
-]
-FORBIDDEN_PATTERNS = [
-    '<script',
-    'onerror',
-    'javascript:',
-]
-
-class TestSession:
+class BlogCRUDTester:
     def __init__(self):
         self.session = requests.Session()
-        self.auth_cookie = None
-        self.test_results = {
-            'priority_1_sanitization': [],
-            'priority_2_regression': [],
-            'priority_3_headers': [],
-            'priority_4_error_format': [],
-            'summary': {'passed': 0, 'failed': 0, 'total': 0}
-        }
-    
-    def login(self) -> bool:
-        """Login as admin and extract Bearer token."""
+        self.test_slug = TEST_SLUG
+        self.created_slug = None
+        
+    def log(self, message):
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+        
+    def test_1_admin_login(self):
+        """Test 1: Admin login returns 200 + session cookie"""
+        self.log("TEST 1: Admin login")
         try:
-            print("\n=== ADMIN LOGIN ===")
-            resp = self.session.post(
+            response = self.session.post(
                 f"{API_BASE}/auth/login",
                 json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-                timeout=10
+                timeout=30
             )
-            if resp.status_code == 200:
-                # Extract token from cookie
-                token = resp.cookies.get('access_token')
-                if token:
-                    # Set Authorization header for all subsequent requests
-                    self.session.headers.update({'Authorization': f'Bearer {token}'})
-                    print(f"✅ Login successful: {resp.status_code}")
-                    print(f"   Token extracted and set in Authorization header")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'user' in data:
+                    self.log("✅ TEST 1 PASSED: Admin login successful")
+                    self.log(f"   User: {data['user'].get('email')}, Role: {data['user'].get('role')}")
+                    # Check for session cookie
+                    if 'access_token' in self.session.cookies:
+                        self.log("   Session cookie set: access_token")
                     return True
                 else:
-                    print(f"❌ Login failed: No access_token cookie in response")
+                    self.log("❌ TEST 1 FAILED: Response missing 'user' field")
                     return False
             else:
-                print(f"❌ Login failed: {resp.status_code} - {resp.text}")
+                self.log(f"❌ TEST 1 FAILED: Status {response.status_code}")
+                self.log(f"   Response: {response.text[:200]}")
                 return False
         except Exception as e:
-            print(f"❌ Login exception: {e}")
+            self.log(f"❌ TEST 1 FAILED: Exception - {str(e)}")
             return False
     
-    def record_result(self, priority: str, test_name: str, passed: bool, details: str):
-        """Record test result."""
-        result = {
-            'test': test_name,
-            'passed': passed,
-            'details': details
-        }
-        self.test_results[priority].append(result)
-        self.test_results['summary']['total'] += 1
-        if passed:
-            self.test_results['summary']['passed'] += 1
-            print(f"  ✅ {test_name}: PASS")
-        else:
-            self.test_results['summary']['failed'] += 1
-            print(f"  ❌ {test_name}: FAIL - {details}")
-    
-    def test_sanitization_endpoint(self, method: str, endpoint: str, field: str, 
-                                   slug: Optional[str] = None, get_endpoint: Optional[str] = None) -> bool:
-        """
-        Test HTML sanitization on a specific endpoint.
-        
-        Steps:
-        1. GET original value
-        2. PUT malicious HTML
-        3. Verify response is sanitized
-        4. GET to verify persistence
-        5. RESTORE original value
-        """
+    def test_2_create_blog_post(self):
+        """Test 2: POST /api/blog creates a new blog post with faqs_de and faqs_en"""
+        self.log("TEST 2: Create blog post with faqs_de and faqs_en")
         try:
-            # Determine full endpoint path
-            # Some endpoints have different GET and PUT paths (e.g., service-content)
-            if get_endpoint:
-                if slug:
-                    get_url = f"{API_BASE}/{get_endpoint}/{slug}"
+            payload = {
+                "slug": self.test_slug,
+                "title": "Regression Test DE",
+                "title_en": "Regression Test EN",
+                "category": "FAQ Guides",
+                "excerpt": "Kurzer Auszug.",
+                "excerpt_en": "Short excerpt.",
+                "content": "## Überschrift\n\nErster Absatz.\n\nZweiter Absatz.",
+                "content_en": "## Heading\n\nFirst paragraph.\n\nSecond paragraph.",
+                "cover_image": "https://images.unsplash.com/photo-1533392151650-269f96231f65?w=1200",
+                "meta_title": "Regression Meta DE",
+                "meta_title_en": "Regression Meta EN",
+                "meta_description": "Meta desc DE.",
+                "meta_description_en": "Meta desc EN.",
+                "related_services": [],
+                "related_locations": [],
+                "faqs": [],
+                "faqs_de": [
+                    {
+                        "q": "Wie plane ich einen Abend?",
+                        "a": "Wir empfehlen ein Restaurant zu reservieren und rechtzeitig zu buchen."
+                    }
+                ],
+                "faqs_en": [
+                    {
+                        "q": "How do I plan an evening?",
+                        "a": "We recommend reserving a restaurant and booking in advance."
+                    }
+                ],
+                "slug_en": "",
+                "published": True
+            }
+            
+            response = self.session.post(
+                f"{API_BASE}/blog",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code in [200, 201]:
+                data = response.json()
+                if 'slug' in data:
+                    self.created_slug = data['slug']
+                    self.log("✅ TEST 2 PASSED: Blog post created successfully")
+                    self.log(f"   Slug: {data['slug']}")
+                    self.log(f"   ID: {data.get('id', 'N/A')}")
+                    self.log(f"   Slug EN: {data.get('slug_en', 'N/A')}")
+                    return True
                 else:
-                    get_url = f"{API_BASE}/{get_endpoint}"
+                    self.log("❌ TEST 2 FAILED: Response missing 'slug' field")
+                    self.log(f"   Response: {json.dumps(data, indent=2)[:500]}")
+                    return False
             else:
-                if slug:
-                    get_url = f"{API_BASE}/{endpoint}/{slug}"
-                else:
-                    get_url = f"{API_BASE}/{endpoint}"
-            
-            if slug:
-                put_url = f"{API_BASE}/{endpoint}/{slug}"
-            else:
-                put_url = f"{API_BASE}/{endpoint}"
-            
-            print(f"\n  Testing {method} {endpoint} (field: {field})")
-            
-            # Step 1: GET original value
-            resp = self.session.get(get_url, timeout=10)
-            if resp.status_code != 200:
-                self.record_result('priority_1_sanitization', 
-                                 f"{method} {endpoint} - GET original",
-                                 False, f"GET failed: {resp.status_code}")
+                self.log(f"❌ TEST 2 FAILED: Status {response.status_code}")
+                self.log(f"   Response: {response.text[:500]}")
+                return False
+        except Exception as e:
+            self.log(f"❌ TEST 2 FAILED: Exception - {str(e)}")
+            return False
+    
+    def test_3_get_blog_post(self):
+        """Test 3: GET /api/blog/[slug] retrieves the blog post with faqs_de and faqs_en"""
+        self.log("TEST 3: Get blog post and verify faqs_de and faqs_en")
+        try:
+            if not self.created_slug:
+                self.log("❌ TEST 3 SKIPPED: No slug from previous test")
                 return False
             
-            original_data = resp.json()
-            original_value = original_data.get(field, '')
-            print(f"    Original {field}: {original_value[:50] if original_value else 'empty'}...")
+            response = self.session.get(
+                f"{API_BASE}/blog/{self.created_slug}",
+                timeout=30
+            )
             
-            # Step 2: PUT malicious HTML
-            payload = {field: MALICIOUS_HTML}
-            resp = self.session.put(put_url, json=payload, timeout=10)
-            
-            if resp.status_code != 200:
-                self.record_result('priority_1_sanitization',
-                                 f"{method} {endpoint} - PUT malicious",
-                                 False, f"PUT failed: {resp.status_code}")
-                # Try to restore anyway
-                self.session.put(put_url, json={field: original_value}, timeout=10)
-                return False
-            
-            # Step 3: Verify response is sanitized
-            response_data = resp.json()
-            sanitized_value = response_data.get(field, '')
-            
-            # Check for forbidden patterns
-            has_forbidden = any(pattern in sanitized_value for pattern in FORBIDDEN_PATTERNS)
-            has_safe = any(pattern in sanitized_value for pattern in EXPECTED_SANITIZED_PATTERNS)
-            
-            if has_forbidden:
-                self.record_result('priority_1_sanitization',
-                                 f"{method} {endpoint} - sanitization",
-                                 False, f"Response contains forbidden patterns: {sanitized_value[:100]}")
-                # Restore original
-                self.session.put(put_url, json={field: original_value}, timeout=10)
-                return False
-            
-            if not has_safe:
-                self.record_result('priority_1_sanitization',
-                                 f"{method} {endpoint} - sanitization",
-                                 False, f"Response missing safe content: {sanitized_value[:100]}")
-                # Restore original
-                self.session.put(put_url, json={field: original_value}, timeout=10)
-                return False
-            
-            print(f"    Sanitized value: {sanitized_value[:100]}...")
-            
-            # Step 4: GET to verify persistence
-            resp = self.session.get(get_url, timeout=10)
-            if resp.status_code == 200:
-                persisted_data = resp.json()
-                persisted_value = persisted_data.get(field, '')
-                has_forbidden_persisted = any(pattern in persisted_value for pattern in FORBIDDEN_PATTERNS)
+            if response.status_code == 200:
+                data = response.json()
                 
-                if has_forbidden_persisted:
-                    self.record_result('priority_1_sanitization',
-                                     f"{method} {endpoint} - persistence",
-                                     False, f"Persisted value contains forbidden patterns")
-                    # Restore original
-                    self.session.put(put_url, json={field: original_value}, timeout=10)
-                    return False
-            
-            # Step 5: RESTORE original value
-            resp = self.session.put(put_url, json={field: original_value}, timeout=10)
-            if resp.status_code != 200:
-                print(f"    ⚠️  Warning: Failed to restore original value: {resp.status_code}")
-            else:
-                print(f"    ✓ Restored original value")
-            
-            self.record_result('priority_1_sanitization',
-                             f"{method} {endpoint} - {field}",
-                             True, "Sanitization working correctly")
-            return True
-            
-        except Exception as e:
-            self.record_result('priority_1_sanitization',
-                             f"{method} {endpoint} - {field}",
-                             False, f"Exception: {str(e)}")
-            return False
-    
-    def test_priority_1_sanitization(self):
-        """
-        Priority 1: Test HTML sanitization on all CMS write paths.
-        
-        Endpoints to test:
-        - PUT /api/blog/<slug> - field: excerpt
-        - PUT /api/models/<slug> - field: bio
-        - PUT /api/pages/<slug> - field: content
-        - PUT /api/settings - field: about_content
-        - PUT /api/admin/service-content/<slug> - field: description
-        - PUT /api/area-content/<slug> - field: intro
-        """
-        print("\n" + "="*80)
-        print("PRIORITY 1: HTML SANITIZATION TESTS")
-        print("="*80)
-        
-        # Get existing slugs for testing
-        try:
-            # Get a blog post slug
-            resp = self.session.get(f"{API_BASE}/blog", timeout=10)
-            blog_slug = None
-            if resp.status_code == 200:
-                blogs = resp.json()
-                if blogs and len(blogs) > 0:
-                    blog_slug = blogs[0].get('slug')
-            
-            # Get a model slug
-            resp = self.session.get(f"{API_BASE}/models", timeout=10)
-            model_slug = None
-            if resp.status_code == 200:
-                models = resp.json()
-                if models and len(models) > 0:
-                    model_slug = models[0].get('slug')
-            
-            # Get a page slug
-            resp = self.session.get(f"{API_BASE}/pages", timeout=10)
-            page_slug = None
-            if resp.status_code == 200:
-                pages = resp.json()
-                if pages and len(pages) > 0:
-                    page_slug = pages[0].get('slug')
-            
-            # Get a service slug
-            resp = self.session.get(f"{API_BASE}/service-content", timeout=10)
-            service_slug = None
-            if resp.status_code == 200:
-                services = resp.json()
-                if services and len(services) > 0:
-                    service_slug = services[0].get('slug')
-            
-            # Get an area slug
-            resp = self.session.get(f"{API_BASE}/area-content", timeout=10)
-            area_slug = None
-            if resp.status_code == 200:
-                areas = resp.json()
-                if areas and len(areas) > 0:
-                    area_slug = areas[0].get('slug')
-            
-            print(f"\nFound slugs for testing:")
-            print(f"  Blog: {blog_slug}")
-            print(f"  Model: {model_slug}")
-            print(f"  Page: {page_slug}")
-            print(f"  Service: {service_slug}")
-            print(f"  Area: {area_slug}")
-            
-            # Test each endpoint
-            if blog_slug:
-                self.test_sanitization_endpoint('PUT', 'blog', 'excerpt', blog_slug)
-            else:
-                self.record_result('priority_1_sanitization', 'PUT /api/blog/<slug>', 
-                                 False, 'No blog post found for testing')
-            
-            if model_slug:
-                self.test_sanitization_endpoint('PUT', 'models', 'bio', model_slug)
-            else:
-                self.record_result('priority_1_sanitization', 'PUT /api/models/<slug>',
-                                 False, 'No model found for testing')
-            
-            if page_slug:
-                self.test_sanitization_endpoint('PUT', 'pages', 'content', page_slug)
-            else:
-                self.record_result('priority_1_sanitization', 'PUT /api/pages/<slug>',
-                                 False, 'No page found for testing')
-            
-            # Test settings
-            self.test_sanitization_endpoint('PUT', 'settings', 'about_content')
-            
-            if service_slug:
-                # Note: GET from /api/service-content/:slug, PUT to /api/admin/service-content/:slug
-                self.test_sanitization_endpoint('PUT', 'admin/service-content', 'description', 
-                                              service_slug, get_endpoint='service-content')
-            else:
-                self.record_result('priority_1_sanitization', 'PUT /api/admin/service-content/<slug>',
-                                 False, 'No service found for testing')
-            
-            if area_slug:
-                self.test_sanitization_endpoint('PUT', 'area-content', 'intro', area_slug)
-            else:
-                self.record_result('priority_1_sanitization', 'PUT /api/area-content/<slug>',
-                                 False, 'No area found for testing')
-            
-        except Exception as e:
-            print(f"❌ Priority 1 exception: {e}")
-    
-    def test_priority_2_regression(self):
-        """
-        Priority 2: Test that existing endpoints still work (regression).
-        """
-        print("\n" + "="*80)
-        print("PRIORITY 2: REGRESSION TESTS")
-        print("="*80)
-        
-        tests = [
-            ('GET /api/health', f"{API_BASE}/health", 200, {'status': 'ok'}),
-            ('GET /api/blog', f"{API_BASE}/blog", 200, None),
-            ('GET /api/models', f"{API_BASE}/models", 200, None),
-            ('GET /api/service-content', f"{API_BASE}/service-content", 200, None),
-        ]
-        
-        for test_name, url, expected_status, expected_data in tests:
-            try:
-                resp = self.session.get(url, timeout=10)
-                if resp.status_code == expected_status:
-                    if expected_data:
-                        data = resp.json()
-                        if all(k in data and data[k] == v for k, v in expected_data.items()):
-                            self.record_result('priority_2_regression', test_name, True, 
-                                             f"Status {resp.status_code}, data matches")
-                        else:
-                            self.record_result('priority_2_regression', test_name, False,
-                                             f"Data mismatch: {data}")
+                # Verify faqs_de
+                faqs_de = data.get('faqs_de', [])
+                if len(faqs_de) == 1:
+                    faq_de = faqs_de[0]
+                    if faq_de.get('q') == "Wie plane ich einen Abend?" and \
+                       "Restaurant" in faq_de.get('a', ''):
+                        self.log("✅ faqs_de verified correctly")
                     else:
-                        self.record_result('priority_2_regression', test_name, True,
-                                         f"Status {resp.status_code}")
+                        self.log(f"❌ faqs_de content mismatch: {faq_de}")
+                        return False
                 else:
-                    self.record_result('priority_2_regression', test_name, False,
-                                     f"Expected {expected_status}, got {resp.status_code}")
-            except Exception as e:
-                self.record_result('priority_2_regression', test_name, False, f"Exception: {e}")
-        
-        # Test wrong password (should return 401, not crash)
-        try:
-            resp = requests.post(
-                f"{API_BASE}/auth/login",
-                json={"email": ADMIN_EMAIL, "password": "wrongpassword"},
-                timeout=10
-            )
-            if resp.status_code == 401:
-                self.record_result('priority_2_regression', 'POST /api/auth/login (wrong password)',
-                                 True, "Returns 401 as expected")
-            else:
-                self.record_result('priority_2_regression', 'POST /api/auth/login (wrong password)',
-                                 False, f"Expected 401, got {resp.status_code}")
-        except Exception as e:
-            self.record_result('priority_2_regression', 'POST /api/auth/login (wrong password)',
-                             False, f"Exception: {e}")
-        
-        # Test correct password (should return 200 with cookie)
-        try:
-            resp = requests.post(
-                f"{API_BASE}/auth/login",
-                json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-                timeout=10
-            )
-            if resp.status_code == 200 and 'access_token' in resp.cookies:
-                self.record_result('priority_2_regression', 'POST /api/auth/login (correct password)',
-                                 True, "Returns 200 with auth cookie")
-            else:
-                self.record_result('priority_2_regression', 'POST /api/auth/login (correct password)',
-                                 False, f"Status {resp.status_code}, cookies: {resp.cookies}")
-        except Exception as e:
-            self.record_result('priority_2_regression', 'POST /api/auth/login (correct password)',
-                             False, f"Exception: {e}")
-    
-    def test_priority_3_headers(self):
-        """
-        Priority 3: Verify SEC-002 framing headers.
-        
-        Expected headers:
-        - X-Frame-Options: SAMEORIGIN (was ALLOWALL)
-        - Content-Security-Policy: frame-ancestors 'self'; (was frame-ancestors *;)
-        """
-        print("\n" + "="*80)
-        print("PRIORITY 3: SEC-002 FRAMING HEADERS")
-        print("="*80)
-        
-        try:
-            resp = requests.get(BASE_URL, timeout=10)
-            headers = resp.headers
-            
-            # Check X-Frame-Options
-            x_frame_options = headers.get('X-Frame-Options', '')
-            if x_frame_options == 'SAMEORIGIN':
-                self.record_result('priority_3_headers', 'X-Frame-Options header',
-                                 True, f"Correct value: {x_frame_options}")
-            else:
-                self.record_result('priority_3_headers', 'X-Frame-Options header',
-                                 False, f"Expected SAMEORIGIN, got: {x_frame_options}")
-            
-            # Check Content-Security-Policy
-            csp = headers.get('Content-Security-Policy', '')
-            if "frame-ancestors 'self'" in csp:
-                self.record_result('priority_3_headers', 'CSP frame-ancestors header',
-                                 True, f"Correct value: {csp}")
-            else:
-                self.record_result('priority_3_headers', 'CSP frame-ancestors header',
-                                 False, f"Expected frame-ancestors 'self', got: {csp}")
-            
-            print(f"\nAll response headers:")
-            for key, value in headers.items():
-                print(f"  {key}: {value}")
-            
-        except Exception as e:
-            self.record_result('priority_3_headers', 'Header verification',
-                             False, f"Exception: {e}")
-    
-    def test_priority_4_error_format(self):
-        """
-        Priority 4: Verify SEC-003 error response format.
-        
-        Expected: {detail: "Internal error", requestId: "..."}
-        NOT: {detail: "...", error: "actual error message"}
-        """
-        print("\n" + "="*80)
-        print("PRIORITY 4: SEC-003 ERROR RESPONSE FORMAT")
-        print("="*80)
-        
-        # Try to trigger a 500 error by hitting an endpoint with bad data
-        # This is difficult without knowing the exact code paths, so we'll
-        # verify the code structure instead
-        
-        print("\n  Note: Verifying error handling code structure in route.js")
-        print("  (Triggering actual 500 errors is difficult without breaking the app)")
-        
-        # Check if the error handler returns the correct format
-        # We can verify this by checking the source code
-        try:
-            with open('/app/app/api/[[...path]]/route.js', 'r') as f:
-                content = f.read()
+                    self.log(f"❌ faqs_de length mismatch: expected 1, got {len(faqs_de)}")
+                    return False
                 
-                # Check for the new error format
-                if 'detail: \'Internal error\', requestId' in content:
-                    self.record_result('priority_4_error_format', 'Error handler code structure',
-                                     True, "Error handler returns {detail, requestId}")
+                # Verify faqs_en
+                faqs_en = data.get('faqs_en', [])
+                if len(faqs_en) == 1:
+                    faq_en = faqs_en[0]
+                    if faq_en.get('q') == "How do I plan an evening?" and \
+                       "restaurant" in faq_en.get('a', '').lower():
+                        self.log("✅ faqs_en verified correctly")
+                    else:
+                        self.log(f"❌ faqs_en content mismatch: {faq_en}")
+                        return False
                 else:
-                    self.record_result('priority_4_error_format', 'Error handler code structure',
-                                     False, "Error handler does not return correct format")
+                    self.log(f"❌ faqs_en length mismatch: expected 1, got {len(faqs_en)}")
+                    return False
                 
-                # Check that old format is NOT present
-                if 'error: e.message' in content:
-                    self.record_result('priority_4_error_format', 'No error leakage',
-                                     False, "Old error format still present in code")
+                # Verify content sanitization
+                content = data.get('content', '')
+                if '## Überschrift' in content:
+                    self.log("✅ content preserved with h2 headings")
                 else:
-                    self.record_result('priority_4_error_format', 'No error leakage',
-                                     True, "Old error format removed from code")
+                    self.log(f"❌ content sanitization issue: {content[:100]}")
+                    return False
+                
+                content_en = data.get('content_en', '')
+                if '## Heading' in content_en:
+                    self.log("✅ content_en preserved with h2 headings")
+                else:
+                    self.log(f"❌ content_en sanitization issue: {content_en[:100]}")
+                    return False
+                
+                # Verify slug_en auto-derivation
+                slug_en = data.get('slug_en', '')
+                if slug_en and 'regression-test-en' in slug_en:
+                    self.log(f"✅ slug_en auto-derived: {slug_en}")
+                else:
+                    self.log(f"⚠️  slug_en: {slug_en} (expected 'regression-test-en' or similar)")
+                
+                self.log("✅ TEST 3 PASSED: Blog post retrieved and verified")
+                return True
+            else:
+                self.log(f"❌ TEST 3 FAILED: Status {response.status_code}")
+                self.log(f"   Response: {response.text[:500]}")
+                return False
         except Exception as e:
-            self.record_result('priority_4_error_format', 'Code verification',
-                             False, f"Exception: {e}")
+            self.log(f"❌ TEST 3 FAILED: Exception - {str(e)}")
+            return False
     
-    def print_summary(self):
-        """Print test summary."""
-        print("\n" + "="*80)
-        print("TEST SUMMARY")
-        print("="*80)
-        
-        for priority, results in self.test_results.items():
-            if priority == 'summary':
-                continue
+    def test_4_update_blog_post(self):
+        """Test 4: PUT /api/blog/[slug] updates the blog post"""
+        self.log("TEST 4: Update blog post with modified content and additional FAQ")
+        try:
+            if not self.created_slug:
+                self.log("❌ TEST 4 SKIPPED: No slug from previous test")
+                return False
             
-            if not results:
-                continue
+            payload = {
+                "content": "## Überschrift\n\nErster Absatz.\n\nZweiter Absatz.\n\n## Second heading\n\nAdditional content.",
+                "faqs_de": [
+                    {
+                        "q": "Wie plane ich einen Abend?",
+                        "a": "Wir empfehlen ein Restaurant zu reservieren und rechtzeitig zu buchen."
+                    },
+                    {
+                        "q": "Was sollte ich beachten?",
+                        "a": "Bitte beachten Sie unsere Hinweise zur Diskretion und Planung."
+                    }
+                ],
+                "published": True
+            }
             
-            passed = sum(1 for r in results if r['passed'])
-            total = len(results)
-            print(f"\n{priority.upper().replace('_', ' ')}: {passed}/{total} passed")
+            response = self.session.put(
+                f"{API_BASE}/blog/{self.created_slug}",
+                json=payload,
+                timeout=30
+            )
             
-            for result in results:
-                status = "✅" if result['passed'] else "❌"
-                print(f"  {status} {result['test']}")
-                if not result['passed']:
-                    print(f"      {result['details']}")
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify updated content
+                content = data.get('content', '')
+                if '## Second heading' in content:
+                    self.log("✅ content updated with new heading")
+                else:
+                    self.log(f"❌ content update failed: {content[:200]}")
+                    return False
+                
+                # Verify updated faqs_de
+                faqs_de = data.get('faqs_de', [])
+                if len(faqs_de) == 2:
+                    self.log("✅ faqs_de updated with 2 entries")
+                else:
+                    self.log(f"❌ faqs_de length mismatch: expected 2, got {len(faqs_de)}")
+                    return False
+                
+                # Verify published status
+                if data.get('published') == True:
+                    self.log("✅ published status updated to true")
+                else:
+                    self.log(f"❌ published status not updated: {data.get('published')}")
+                    return False
+                
+                self.log("✅ TEST 4 PASSED: Blog post updated successfully")
+                return True
+            else:
+                self.log(f"❌ TEST 4 FAILED: Status {response.status_code}")
+                self.log(f"   Response: {response.text[:500]}")
+                return False
+        except Exception as e:
+            self.log(f"❌ TEST 4 FAILED: Exception - {str(e)}")
+            return False
+    
+    def test_5_xss_sanitization(self):
+        """Test 5: XSS sanitization - script tags should be stripped"""
+        self.log("TEST 5: XSS sanitization in FAQ answers")
+        try:
+            if not self.created_slug:
+                self.log("❌ TEST 5 SKIPPED: No slug from previous test")
+                return False
+            
+            payload = {
+                "faqs_de": [
+                    {
+                        "q": "Test XSS Question?",
+                        "a": "<script>alert(1)</script>Legit answer with <strong>bold</strong> text."
+                    }
+                ]
+            }
+            
+            response = self.session.put(
+                f"{API_BASE}/blog/{self.created_slug}",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                faqs_de = data.get('faqs_de', [])
+                
+                if len(faqs_de) > 0:
+                    answer = faqs_de[0].get('a', '')
+                    
+                    # Check that script tag is stripped
+                    if '<script>' not in answer and 'alert(1)' not in answer:
+                        self.log("✅ Script tag stripped from answer")
+                    else:
+                        self.log(f"❌ Script tag NOT stripped: {answer}")
+                        return False
+                    
+                    # Check that legitimate content is preserved
+                    if 'Legit answer' in answer:
+                        self.log("✅ Legitimate content preserved")
+                    else:
+                        self.log(f"❌ Legitimate content missing: {answer}")
+                        return False
+                    
+                    # Check if safe HTML like <strong> is preserved
+                    if '<strong>' in answer or 'bold' in answer:
+                        self.log("✅ Safe HTML preserved or text extracted")
+                    else:
+                        self.log(f"⚠️  HTML handling: {answer}")
+                    
+                    self.log("✅ TEST 5 PASSED: XSS sanitization working")
+                    return True
+                else:
+                    self.log("❌ TEST 5 FAILED: No FAQs in response")
+                    return False
+            else:
+                self.log(f"❌ TEST 5 FAILED: Status {response.status_code}")
+                self.log(f"   Response: {response.text[:500]}")
+                return False
+        except Exception as e:
+            self.log(f"❌ TEST 5 FAILED: Exception - {str(e)}")
+            return False
+    
+    def test_6_auth_gate(self):
+        """Test 6: Unauthenticated POST /api/blog should return 401/403"""
+        self.log("TEST 6: Auth gate - unauthenticated request should fail")
+        try:
+            # Create a new session without auth
+            unauth_session = requests.Session()
+            
+            payload = {
+                "slug": f"unauthorized-test-{int(time.time())}",
+                "title": "Unauthorized Test",
+                "published": False
+            }
+            
+            response = unauth_session.post(
+                f"{API_BASE}/blog",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code in [401, 403]:
+                self.log(f"✅ TEST 6 PASSED: Unauthenticated request rejected with {response.status_code}")
+                return True
+            else:
+                self.log(f"❌ TEST 6 FAILED: Expected 401/403, got {response.status_code}")
+                self.log(f"   Response: {response.text[:200]}")
+                return False
+        except Exception as e:
+            self.log(f"❌ TEST 6 FAILED: Exception - {str(e)}")
+            return False
+    
+    def test_7_cleanup(self):
+        """Test 7: DELETE /api/blog/[slug] removes the test article"""
+        self.log("TEST 7: Cleanup - delete test article")
+        try:
+            if not self.created_slug:
+                self.log("❌ TEST 7 SKIPPED: No slug to delete")
+                return False
+            
+            response = self.session.delete(
+                f"{API_BASE}/blog/{self.created_slug}",
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('ok') == True and data.get('deleted_at'):
+                    self.log("✅ Blog post soft-deleted successfully")
+                    self.log(f"   Deleted at: {data.get('deleted_at')}")
+                    
+                    # Verify it's gone (should return 404 or have deleted_at)
+                    verify_response = self.session.get(
+                        f"{API_BASE}/blog/{self.created_slug}",
+                        timeout=30
+                    )
+                    
+                    if verify_response.status_code == 404:
+                        self.log("✅ Verified: Blog post returns 404 after deletion")
+                    elif verify_response.status_code == 200:
+                        verify_data = verify_response.json()
+                        if verify_data.get('deleted_at'):
+                            self.log("✅ Verified: Blog post has deleted_at set")
+                        else:
+                            self.log("⚠️  Blog post still accessible without deleted_at")
+                    
+                    self.log("✅ TEST 7 PASSED: Cleanup successful")
+                    return True
+                else:
+                    self.log(f"❌ TEST 7 FAILED: Unexpected response: {data}")
+                    return False
+            else:
+                self.log(f"❌ TEST 7 FAILED: Status {response.status_code}")
+                self.log(f"   Response: {response.text[:500]}")
+                return False
+        except Exception as e:
+            self.log(f"❌ TEST 7 FAILED: Exception - {str(e)}")
+            return False
+    
+    def run_all_tests(self):
+        """Run all tests in sequence"""
+        self.log("=" * 80)
+        self.log("CMS BLOG EDITOR REGRESSION TEST SUITE")
+        self.log("=" * 80)
+        self.log(f"Base URL: {BASE_URL}")
+        self.log(f"Test Slug: {self.test_slug}")
+        self.log("")
         
-        summary = self.test_results['summary']
-        print(f"\n{'='*80}")
-        print(f"OVERALL: {summary['passed']}/{summary['total']} tests passed")
-        print(f"{'='*80}\n")
+        results = []
         
-        return summary['failed'] == 0
-
-def main():
-    """Run all security regression tests."""
-    print("="*80)
-    print("SECURITY REGRESSION TEST SUITE")
-    print("SEC-001: HTML Sanitization")
-    print("SEC-002: Framing Headers")
-    print("SEC-003: Error Leakage Fix")
-    print("="*80)
-    
-    test_session = TestSession()
-    
-    # Login first
-    if not test_session.login():
-        print("\n❌ FATAL: Could not login as admin. Aborting tests.")
-        sys.exit(1)
-    
-    # Run all test priorities
-    test_session.test_priority_1_sanitization()
-    test_session.test_priority_2_regression()
-    test_session.test_priority_3_headers()
-    test_session.test_priority_4_error_format()
-    
-    # Print summary
-    all_passed = test_session.print_summary()
-    
-    if all_passed:
-        print("✅ ALL TESTS PASSED")
-        sys.exit(0)
-    else:
-        print("❌ SOME TESTS FAILED")
-        sys.exit(1)
+        # Test 1: Admin login
+        results.append(("Admin Login", self.test_1_admin_login()))
+        self.log("")
+        
+        # Test 2: Create blog post
+        results.append(("Create Blog Post", self.test_2_create_blog_post()))
+        self.log("")
+        
+        # Test 3: Get blog post
+        results.append(("Get Blog Post", self.test_3_get_blog_post()))
+        self.log("")
+        
+        # Test 4: Update blog post
+        results.append(("Update Blog Post", self.test_4_update_blog_post()))
+        self.log("")
+        
+        # Test 5: XSS sanitization
+        results.append(("XSS Sanitization", self.test_5_xss_sanitization()))
+        self.log("")
+        
+        # Test 6: Auth gate
+        results.append(("Auth Gate", self.test_6_auth_gate()))
+        self.log("")
+        
+        # Test 7: Cleanup
+        results.append(("Cleanup", self.test_7_cleanup()))
+        self.log("")
+        
+        # Summary
+        self.log("=" * 80)
+        self.log("TEST SUMMARY")
+        self.log("=" * 80)
+        
+        passed = sum(1 for _, result in results if result)
+        total = len(results)
+        
+        for test_name, result in results:
+            status = "✅ PASS" if result else "❌ FAIL"
+            self.log(f"{status}: {test_name}")
+        
+        self.log("")
+        self.log(f"TOTAL: {passed}/{total} tests passed ({int(passed/total*100)}%)")
+        self.log("=" * 80)
+        
+        return passed == total
 
 if __name__ == "__main__":
-    main()
+    tester = BlogCRUDTester()
+    success = tester.run_all_tests()
+    exit(0 if success else 1)

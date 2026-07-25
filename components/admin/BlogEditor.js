@@ -196,11 +196,11 @@ const CATEGORIES = [
 //    • No credential appears in any URL, header, or console log.
 // ─────────────────────────────────────────────────────────────────────
 function MigrationPanel({ slug }) {
-  const [preview, setPreview] = React.useState(null)
-  const [result, setResult] = React.useState(null)
-  const [busy, setBusy] = React.useState(false)
-  const [error, setError] = React.useState('')
-  const [expanded, setExpanded] = React.useState(false)
+  const [preview, setPreview] = useState(null)
+  const [result, setResult] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [expanded, setExpanded] = useState(false)
 
   if (!slug) return null
 
@@ -528,7 +528,7 @@ export default function BlogEditor({ mode, initial }) {
           otherLangLabel="Deutsch"
         />
 
-        <MigrationPanel slug={slug} />
+        <MigrationPanel slug={mode === 'edit' ? initial.slug : ''} />
 
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-6">SEO</h2>
