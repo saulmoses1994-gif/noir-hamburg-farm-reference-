@@ -55,6 +55,7 @@ export default function PageDetailBody({ lang, page, relatedServices = [], relat
                 alt={title}
                 loading="eager"
                 fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/55 to-transparent" />

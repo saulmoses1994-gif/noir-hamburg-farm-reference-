@@ -275,6 +275,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
                   alt={title}
                   loading="eager"
                   fetchPriority="high"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               </div>

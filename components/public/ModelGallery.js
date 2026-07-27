@@ -71,6 +71,7 @@ export default function ModelGallery({ images, alt, counterLabel = 'photo' }) {
           alt={alt}
           loading="eager"
           fetchPriority="high"
+          decoding="async"
           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
         />
       </button>

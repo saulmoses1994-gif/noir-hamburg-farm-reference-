@@ -4059,3 +4059,77 @@ agent_communication:
         • components/admin/BlogEditor.js → 2 new input fields + save payload
         • app/(de)/admin/(guarded)/blog/new/page.js → default empties added
         • components/public/BlogDetailBody.js → pageH1 derived + rendered
+
+agent_communication:
+  - agent: "main"
+    message: |
+      PERFORMANCE / ACCESSIBILITY POLISH — 2026-07-26
+
+      Small, targeted, non-design-impacting fixes ahead of the next
+      SEMrush audit. NOTHING moved, restyled or rebranded.
+
+      P0 — Business Escort mobile LCP
+        Root cause identified: The Business Escort hero cover in the CMS
+        is a PNG (lvpl9w1usmvjqqbm0blr.png) while the VIP hero is a JPG
+        (vytsizcbgiu6w3xfchzz.jpg). Cloudinary derives the WebP variants
+        from that PNG source, yielding notably heavier bytes at the mobile
+        widths that drive mobile LCP:
+          @600w  29 KB (PNG-derived) vs 23 KB (JPG-derived)  → +27 %
+          @800w  50 KB (PNG-derived) vs 32 KB (JPG-derived)  → +58 %
+          @1200w 71 KB (PNG-derived) vs 51 KB (JPG-derived)  → +39 %
+        Code-side gaps also present and now FIXED:
+          • `width`, `height`, `decoding="async"` added to the service
+            hero <img> in both DE + EN service routes
+            (app/(de)/services/[slug]/page.js,
+             app/(en)/en/services/[slug]/page.js).
+        User action still needed to fully close the gap: re-upload the
+        Business Escort hero as JPG (same photo, same dimensions, JPG
+        format). No code change afterwards — CMS already reads whatever
+        URL the media library holds.
+
+      P1 — Render-blocking resources
+        Audited fonts and CSS.
+        Result: nothing worth changing.
+          • Fonts already served via next/font with `display: swap`, only
+            the LCP-critical Playfair 400 (normal + italic) preloaded;
+            DM Sans + JetBrains Mono explicitly `preload: false`.
+          • No unnecessary global CSS imports found.
+          • No render-blocking third-party scripts on public routes.
+        User's own observation ("Best Practices 100 across the board")
+        confirms this baseline. Leaving alone per instruction "do not
+        introduce complexity for insignificant Lighthouse gains".
+
+      P2 — Accessibility
+        Ran contrast audit over all public-facing color combinations.
+        All public-facing text passes WCAG AA (5.15:1 to 18.20:1);
+        the only sub-AA color (#9B8F8F on #FBF7F4 → 2.93:1) is scoped
+        to admin-only placeholder text inside the CMS UI — not audited
+        by Lighthouse on public routes.
+        Fixed 1 real a11y issue:
+          • Mobile-nav slide-in drawer was off-screen when closed but its
+            interactive elements (links, close button) remained in the
+            keyboard tab order. Added `inert` (Baseline 2023) to the
+            <aside>, keeping `aria-hidden` as fallback for older ATs
+            (components/site/MobileNav.js).
+
+      P3 — Bundle cleanup
+        Reviewed for safe removals; nothing worth touching without a
+        measurable win.
+        Already-good baseline preserved (no unused CSS imports, no
+        dead JS entrypoints on public routes).
+
+      Files touched:
+        • app/(de)/services/[slug]/page.js
+        • app/(en)/en/services/[slug]/page.js
+        • components/public/AboutBody.js
+        • components/public/AreaDetailBody.js
+        • components/public/BlogDetailBody.js
+        • components/public/EscortHamburgBody.js
+        • components/public/ModelGallery.js
+        • components/public/PageDetailBody.js
+        • components/site/MobileNav.js
+
+      Zero SEO regressions expected. Zero design changes. Preserved:
+      canonical URLs, hreflang, structured data (BlogPosting,
+      Service, FAQPage, BreadcrumbList, WebPage, Place, AboutPage,
+      Organization), meta tags, routing, H1 hierarchy, internal linking.

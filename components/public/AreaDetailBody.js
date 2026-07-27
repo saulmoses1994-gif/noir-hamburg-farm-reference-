@@ -95,6 +95,7 @@ export default function AreaDetailBody({ lang, area, services = [], models = [],
                 alt={heroAlt}
                 loading="eager"
                 fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             )}

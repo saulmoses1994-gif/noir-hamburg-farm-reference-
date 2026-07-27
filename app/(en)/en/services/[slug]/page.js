@@ -110,7 +110,7 @@ export default async function ServiceDetailEn({ params }) {
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
           <div className="absolute inset-0">
-            {heroImage && <img src={heroW800} srcSet={heroSrcSet} sizes="100vw" alt={heroAlt} loading="eager" fetchPriority="high" className="w-full h-full object-cover" />}
+            {heroImage && <img src={heroW800} srcSet={heroSrcSet} sizes="100vw" width={1600} height={900} alt={heroAlt} loading="eager" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/60 to-transparent" />
           </div>
           <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-12 max-w-4xl text-white">

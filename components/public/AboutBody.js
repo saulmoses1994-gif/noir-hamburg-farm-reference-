@@ -98,6 +98,7 @@ export default function AboutBody({ lang, settings = {} }) {
                   data-testid="about-editorial-image"
                   loading="eager"
                   fetchPriority="high"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               </div>

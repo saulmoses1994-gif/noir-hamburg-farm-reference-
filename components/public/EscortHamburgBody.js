@@ -53,6 +53,7 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
               alt="Hamburg"
               loading="eager"
               fetchPriority="high"
+              decoding="async"
               className="w-full h-full object-cover"
               data-testid="escort-hamburg-hero-image"
             />

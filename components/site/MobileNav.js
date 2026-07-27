@@ -65,11 +65,20 @@ export default function MobileNav({
         className={`xl:hidden fixed inset-0 z-[70] bg-black/60 transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
       />
 
-      {/* Slide-in drawer */}
+      {/* Slide-in drawer.
+          A11y: when closed the drawer is translated off-screen but its
+          interactive elements (links, buttons) remain in the DOM. Without
+          `inert` they'd still be focusable via Tab and clickable via
+          screen-reader gestures — a common Lighthouse a11y warning.
+          `inert` (Baseline 2023) removes the entire subtree from the tab
+          order, blocks pointer events, and hides it from the a11y tree
+          while it's closed. `aria-hidden` is kept for older ATs that
+          don't yet honour `inert`. */}
       <aside
         id="mobile-nav"
         aria-label={labels.menu}
         aria-hidden={!open}
+        inert={!open ? '' : undefined}
         className={`xl:hidden fixed top-0 right-0 z-[80] h-full w-[86%] max-w-[380px] bg-white shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1414]/8">
