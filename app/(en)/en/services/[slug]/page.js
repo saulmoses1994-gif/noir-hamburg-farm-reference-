@@ -185,6 +185,17 @@ export default async function ServiceDetailEn({ params }) {
                 )}
               </div>
             </div>
+
+            <aside className="lg:col-span-4 space-y-10">
+              <div>
+                <span className="overline mb-3 block">Related Services</span>
+                <ul className="space-y-3">
+                  {(s.related_services || []).slice(0, 7).map((sl) => (
+                    <li key={sl}><Link href={`/en/services/${sl}`} className="font-heading text-xl hover:accent-text transition-colors capitalize">{sl.replace(/-/g, ' ')}</Link></li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
           </div>
         </section>
       </main>
