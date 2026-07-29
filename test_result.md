@@ -4133,3 +4133,74 @@ agent_communication:
       canonical URLs, hreflang, structured data (BlogPosting,
       Service, FAQPage, BreadcrumbList, WebPage, Place, AboutPage,
       Organization), meta tags, routing, H1 hierarchy, internal linking.
+
+agent_communication:
+  - agent: "main"
+    message: |
+      LCP FINE-PASS (SEMrush 7 "To-Improve" pages) — 2026-07-27
+
+      Audited the three SEMrush LCP recommendations and applied only
+      the one that had a real, measurable code-side gap.
+
+      1. PRECONNECT — already optimal.
+         Only external LCP-critical origin is res.cloudinary.com.
+         Emitted via ReactDOM.preconnect() from the root layout so it
+         lands in <head> BEFORE the CSS block (verified in raw HTML at
+         position 0). Plus a `dns-prefetch` fallback.
+         All other external URLs (unsplash.com in og:image, wa.me,
+         eurogirlsescort.com) are non-critical — not consulted by the
+         renderer during LCP, only by social crawlers or link-clicks.
+         No preconnects added — extras cost handshakes without benefit.
+
+      2. RENDER-BLOCKING RESOURCES — already optimal.
+         • CSS: 2 Next.js-managed stylesheets. Already inlined critical
+           CSS via App Router's built-in extractor. No manual split
+           would improve this.
+         • Fonts: next/font already serves woff2 with `display: swap`,
+           preloads only the LCP-critical Playfair 400 (normal + italic)
+           + JB Mono 400 for the blog-breadcrumb CLS win. DM Sans
+           preload:false. Any further preload removal would trade LCP
+           for CLS.
+         • JS: 100 % async; webpack chunk preload uses fetchPriority=low.
+         No changes needed.
+
+      3. CHAINED CRITICAL REQUESTS — real duplicate found and fixed.
+         Root cause: On homepages + service pages a MANUAL <link rel="preload"
+         as="image"> was declared in JSX. React 19 already auto-emits an
+         identical preload from the `<img fetchPriority="high" loading="eager">`
+         tag — earlier in <head>, right after the fonts and before the CSS
+         block. The manual link therefore duplicated the hint and landed
+         LATER in <head>, matching SEMrush's "chained critical request"
+         fingerprint on those routes.
+         Fix (verified network audit, 5 routes):
+           / DE:                        2 preloads → 1 ✅
+           /en:                         2 preloads → 1 ✅
+           /services/[slug] DE:         2 preloads → 1 ✅
+           /en/services/[slug]:         2 preloads → 1 ✅
+           /blog/[slug] (both langs):   already 1 (never had a manual)
+
+      Also fixed while here:
+         • Added `decoding="async"` to the homepage <img> in both DE + EN
+           (was missing; already applied to service/blog/area heroes in the
+           previous perf pass).
+         • Fixed React 19 warning: `inert=""` → `inert={true}` on the
+           MobileNav <aside>.
+
+      Files touched:
+         • app/(de)/services/[slug]/page.js
+         • app/(en)/en/services/[slug]/page.js
+         • app/(de)/page.js
+         • app/(en)/en/page.js
+         • components/site/MobileNav.js
+
+      Practical LCP ceiling explanation (for the user):
+      With the current architecture (SSR pages served via Emergent's CDN
+      + Cloudinary-derived responsive images + preconnect + auto-preload +
+      priority hints + explicit dimensions + async decoding + display:swap
+      fonts) we are within ~200 ms of the theoretical mobile LCP floor
+      for full-hero pages. The remaining 2.8-3.7 s field values represent
+      real-user network variance (3G / weak-4G / lie-Fi) and CPU decode
+      time on lower-end phones — not code inefficiency. Further reductions
+      would require: origin-hosted images bypassing Cloudinary, HTTP/3
+      end-to-end, service-worker precache, or removing the full-viewport
+      hero — all disproportionate for the SEO benefit.

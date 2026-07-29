@@ -102,22 +102,14 @@ export default async function ServiceDetail({ params }) {
   return (
     <>
       <Header lang={lang} currentPath={`/services/${slug}`} />
-      {/* LCP hero preload — imageSrcSet mirrors <img srcset/sizes> so the
-          preload response is REUSED (verified via network audit: exactly
-          ONE high-priority image request for the LCP variant).
-          `href` uses the 800w mid-tier as a safe fallback for the rare
-          browsers that ignore imageSrcSet — never picked by modern
-          responsive-image-capable Chromium/Safari/Firefox. */}
-      {heroImage && (
-        <link
-          rel="preload"
-          as="image"
-          href={heroW800}
-          imageSrcSet={heroSrcSet}
-          imageSizes="100vw"
-          fetchPriority="high"
-        />
-      )}
+      {/* NOTE — 2026-07 CWV pass: The manual <link rel="preload" as="image">
+          used to live here for LCP. It was removed after network audit
+          confirmed React 19's automatic image-preload (emitted from the
+          <img fetchPriority="high" loading="eager"> below) already lands
+          the same hint EARLIER in the <head> — right after the fonts,
+          before the CSS block — with matching imageSrcSet + imageSizes.
+          Removing the manual link eliminated a duplicate preload SEMrush
+          was flagging as a "chained critical request" on this route. */}
       <main id="main">
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">

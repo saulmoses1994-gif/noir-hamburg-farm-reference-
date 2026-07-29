@@ -78,7 +78,7 @@ export default function MobileNav({
         id="mobile-nav"
         aria-label={labels.menu}
         aria-hidden={!open}
-        inert={!open ? '' : undefined}
+        inert={!open ? true : undefined}
         className={`xl:hidden fixed top-0 right-0 z-[80] h-full w-[86%] max-w-[380px] bg-white shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1414]/8">

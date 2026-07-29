@@ -93,19 +93,11 @@ export default async function ServiceDetailEn({ params }) {
   return (
     <>
       <Header lang={lang} currentPath={`/en/services/${slug}`} />
-      {/* LCP hero preload — imageSrcSet mirrors <img srcset/sizes> so the
-          preload response is REUSED (verified via network audit: exactly
-          ONE high-priority image request for the LCP variant). */}
-      {heroImage && (
-        <link
-          rel="preload"
-          as="image"
-          href={heroW800}
-          imageSrcSet={heroSrcSet}
-          imageSizes="100vw"
-          fetchPriority="high"
-        />
-      )}
+      {/* NOTE — 2026-07 CWV pass: manual <link rel="preload" as="image">
+          removed. React 19's auto-preload from the <img fetchPriority="high"
+          loading="eager"> below already emits the same hint earlier in
+          <head>. Deduping resolves the SEMrush "chained critical requests"
+          flag on this route. */}
       <main id="main">
         <JsonLd data={jsonLd} />
         <section className="relative h-[60vh] flex items-end">
