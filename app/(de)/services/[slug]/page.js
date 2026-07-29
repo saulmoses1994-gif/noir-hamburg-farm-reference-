@@ -10,6 +10,7 @@ import { getSettings } from '@/lib/settings'
 import { optimizeImageUrl } from '@/lib/cloudinary'
 import { buildMetadata, breadcrumbSchema, siteUrl, organizationRef } from '@/lib/seo'
 import { pick } from '@/lib/i18n'
+import { renderFaqAnswer, faqAnswerPlain } from '@/lib/faq-answer'
 
 // PERF: switched from 'force-dynamic' to ISR — CMS PUT handlers already call revalidatePath()
 export const revalidate = 300
@@ -91,7 +92,9 @@ export default async function ServiceDetail({ params }) {
       '@context': 'https://schema.org', '@type': 'FAQPage',
       mainEntity: faqs.map((f) => ({
         '@type': 'Question', name: pick(f, 'q', lang),
-        acceptedAnswer: { '@type': 'Answer', text: pick(f, 'a', lang) },
+        // Strip safe markdown-link syntax + list markers so the schema
+        // text matches the reader-visible answer (no `[label](/path)` leak).
+        acceptedAnswer: { '@type': 'Answer', text: faqAnswerPlain(pick(f, 'a', lang)) },
       })),
     }] : []),
   ]
@@ -129,13 +132,26 @@ export default async function ServiceDetail({ params }) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             <div className="lg:col-span-8">
               {tagline && <h2 className="font-heading text-3xl lg:text-4xl mb-8">{tagline}</h2>}
-              <p className="text-base lg:text-lg font-light text-[#3F3838] leading-relaxed">{pick(s, 'long_copy', lang)}</p>
+              {/* Body content rendered via `renderFaqAnswer` — supports
+                  paragraph breaks (blank lines), unordered lists (`- item`)
+                  and safe internal markdown links (`[label](/path)`).
+                  Legacy string values still render as a single paragraph. */}
+              <div className="text-base lg:text-lg font-light text-[#3F3838] leading-relaxed space-y-4 service-body">
+                {renderFaqAnswer(pick(s, 'long_copy', lang))}
+              </div>
 
               {sections.map((sec, i) => (
                 <div key={i} className="mt-14">
                   <h2 className="font-heading text-2xl lg:text-3xl text-[#1A1414] mb-5">{pick(sec, 'h2', lang)}</h2>
-                  <div className="space-y-4 text-[#3F3838] leading-relaxed">
-                    {(pick(sec, 'body', lang) || []).map((p, j) => <p key={j}>{p}</p>)}
+                  <div className="text-[#3F3838] leading-relaxed space-y-4 service-body">
+                    {(() => {
+                      const body = pick(sec, 'body', lang)
+                      // Legacy: `body` is an array of paragraph strings.
+                      // Join with blank lines so the safe renderer can also
+                      // parse embedded lists / internal markdown links.
+                      const text = Array.isArray(body) ? body.join('\n\n') : (body || '')
+                      return renderFaqAnswer(text)
+                    })()}
                   </div>
                 </div>
               ))}
@@ -165,7 +181,7 @@ export default async function ServiceDetail({ params }) {
                           <span className="font-heading text-lg text-[#1A1414]">{pick(f, 'q', lang)}</span>
                           <span aria-hidden="true" className="accent-text text-2xl group-open:rotate-45 transition-transform">+</span>
                         </summary>
-                        <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{pick(f, 'a', lang)}</div>
+                        <div className="px-5 pb-5 text-sm text-[#6B5F5F] leading-relaxed">{renderFaqAnswer(pick(f, 'a', lang))}</div>
                       </details>
                     ))}
                   </div>

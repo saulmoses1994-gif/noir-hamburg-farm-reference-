@@ -4204,3 +4204,44 @@ agent_communication:
       would require: origin-hosted images bypassing Cloudinary, HTTP/3
       end-to-end, service-worker precache, or removing the full-viewport
       hero — all disproportionate for the SEO benefit.
+
+agent_communication:
+  - agent: "main"
+    message: |
+      LUXURY ESCORT HAMBURG SEO UPGRADE — 2026-07-29
+
+      Implemented the docx implementation spec exactly:
+        • meta_title, meta_description, h1 replaced per spec
+        • image_alt improved per ALT-text guidance ("Sophisticated Luxury
+          Escort in Hamburg — Noir Hamburg")
+        • 15 H2 sections × 1,460 words of new body copy (spec target 1,300–1,500)
+        • 6 FAQ items replaced (spec verbatim), preserving q_en/a_en where
+          present so EN page keeps working
+        • Contextual internal links integrated per spec (used working URLs:
+          /kontakt for /contact, /p/diskretion-und-datenschutz-noir-hamburg
+          for /privacy; the spec's /contact and /privacy return 404 on prod)
+        • Service, BreadcrumbList schemas untouched (dynamic from CMS fields)
+        • FAQPage schema auto-updated from new faqs[] and uses faqAnswerPlain()
+          to strip markdown-link syntax from Answer.text values (clean)
+        • Canonical URL, existing /services/[slug] route, layout, images,
+          responsive behaviour, hero-image preload/priority hints preserved.
+        • Word count verified in rendered HTML: 2,160 visible words in <main>.
+
+      CODE CHANGES (small, generic, safe):
+        - components/public/BlogDetailBody.js  (already had renderFaqAnswer;
+          no change this round)
+        - app/(de)/services/[slug]/page.js:
+            • import {renderFaqAnswer, faqAnswerPlain}
+            • FAQPage.acceptedAnswer.text uses faqAnswerPlain()
+            • long_copy renders via renderFaqAnswer (paragraphs + lists + safe links)
+            • section body renders via renderFaqAnswer (joined with \n\n)
+            • FAQ answers render via renderFaqAnswer
+        - app/(en)/en/services/[slug]/page.js: same 4 edits
+      No design change, no layout change, no component swap.
+
+      IMPORTANT:
+      Production content persisted (PUT 200, revalidate 200). BUT the
+      inline `[label](/url)` internal-link syntax will render as raw text
+      on production until Republish deploys the new renderer code. Once
+      Republish is clicked, the same page automatically flips all inline
+      links to `<a>` anchors — no further content edit needed.
