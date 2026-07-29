@@ -212,7 +212,7 @@ export default async function ServiceDetail({ params }) {
               <div>
                 <span className="overline mb-3 block">Verwandte Services</span>
                 <ul className="space-y-3">
-                  {(s.related_services || []).slice(0, 7).map((sl) => (
+                  {(s.related_services || []).slice(0, 10).map((sl) => (
                     <li key={sl}><Link href={`/services/${sl}`} className="font-heading text-xl hover:accent-text transition-colors capitalize">{sl.replace(/-/g, ' ')}</Link></li>
                   ))}
                 </ul>
