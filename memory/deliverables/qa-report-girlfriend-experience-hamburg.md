@@ -1,12 +1,18 @@
-# QA Report — Girlfriend Experience Hamburg (Preview)
+# QA Report (v2 — after content expansion) — Girlfriend Experience Hamburg (Preview)
 
 Environment: https://noir-migration.preview.emergentagent.com  
 Slug: `girlfriend-experience-hamburg`
 
 ## Summary
-Preview implementation of the corrected SEO document is applied. **No blocking issues.** All meta lengths within limits, both languages fully translated (no German fallback on EN), all JSON-LD blocks valid, SSR verified, cross-service internal linking is the richest of any cornerstone to date.
+Content expanded to full cornerstone SEO depth as requested. **No blocking issues.** Every user-supplied sentence is preserved verbatim; new material is unique GFE-specific depth (chemistry, unhurried atmosphere, personality selection lens, Hamburg-specific dining/leisure detail, curated-not-catalogue positioning). Word counts land inside the requested target windows. Cluster similarity is now the lowest of any cornerstone.
 
-## 1. HTTP / SSR
+## 1. Word count (target 600–800 DE / 500–700 EN)
+| Language | Words (long_copy + all section bodies) | Target | Result |
+|---|---:|---:|---|
+| DE | **777** | 600–800 | ✅ inside range |
+| EN | **683** | 500–700 | ✅ inside range |
+
+## 2. HTTP / SSR
 | Check | DE | EN |
 |---|---|---|
 | HTTP status | 200 ✅ | 200 ✅ |
@@ -14,84 +20,81 @@ Preview implementation of the corrected SEO document is applied. **No blocking i
 | SSR JSON-LD | ✅ | ✅ |
 | robots meta | index, follow ✅ | index, follow ✅ |
 
-## 2. Metadata
+## 3. Metadata
 | Check | DE | EN |
 |---|---|---|
-| Title (chars, decoded) | **82 ✅** | **80 ✅** |
+| Title (decoded chars) | **82 ✅** | **80 ✅** |
 | Meta description (chars) | **157 ✅** (≤160) | **110 ✅** (≤160) |
 | Canonical | ✅ | ✅ |
 | hreflang de / en / x-default | ✅ | ✅ |
 | OG title / description / image | ✅ | ✅ |
 | Twitter card tags | 4 ✅ | 4 ✅ |
 
-Titles:
-- DE: `Girlfriend Experience Hamburg | Authentische & stilvolle Begleitung | Noir Hamburg`
-- EN: `Girlfriend Experience Hamburg | Authentic & Elegant Companionship | Noir Hamburg`
+Metadata unchanged from prior QA — already within SEO limits.
 
-Meta descriptions:
-- DE: `Girlfriend Experience Hamburg mit diskreter, authentischer und stilvoller Begleitung für gemeinsame Zeit, Restaurantbesuche und besondere Momente in Hamburg.`
-- EN: `Authentic, discreet and elegant companionship for dining, shared experiences and memorable moments in Hamburg.`
-
-Note: HTML raw title shows 86 chars because `&` is HTML-encoded as `&amp;`; Google indexes the decoded version (82 chars). Same for EN (80 chars decoded).
-
-## 3. Heading Structure
+## 4. Heading Structure
 | Check | DE | EN |
 |---|---|---|
-| H1 count | 1 (`Girlfriend Experience Hamburg`) ✅ | 1 (`Girlfriend Experience Hamburg`) ✅ |
-| H2 count | 11 (1 tagline + 9 sections + 1 FAQ heading) ✅ | 11 — **all in English, zero German fallback** ✅ |
+| H1 count | 1 ✅ | 1 ✅ |
+| H2 count | 11 ✅ | 11 ✅ (**zero German fallback**) |
 | H3 count | 0 (parity with live cornerstones) | 0 |
 
-EN H2 list (fully localised):
-1. Authentic and elegant companionship
-2. Authentic Companionship
-3. Discretion
-4. Shared Experiences
-5. Fine Dining
-6. Personally Selected Companions
-7. International Guests
-8. Why Noir Hamburg
-9. Typical Occasions
-10. Contact
-11. FAQ — Girlfriend Experience Hamburg
-
-## 4. Structured Data (JSON-LD)
+## 5. Structured Data (JSON-LD)
 | Block | DE | EN |
 |---|---|---|
 | Service | ✅ valid | ✅ valid |
 | BreadcrumbList (3 items) | ✅ valid | ✅ valid |
 | FAQPage | ✅ 8 Q&A | ✅ 8 Q&A |
 
-All three JSON-LD blocks parse cleanly.
+All three JSON-LD blocks parse cleanly. No markdown leakage.
 
-## 5. Internal Linking (natural anchors) — richest of any cornerstone
-DE cross-links: `Dinner Companion Hamburg`, `Business Escort Hamburg`, `Travel Companion Hamburg`, `Luxury Escort Hamburg`, plus `Über uns`, `Kontakt`, `Diskretion und Datenschutz`.
-EN cross-links: `Dinner Companion Hamburg`, `Business Escort Hamburg`, `Travel Companion Hamburg`, plus `About Us`, `Contact`, `Discretion & Privacy`.
+## 6. Internal Linking (natural anchors)
+- **DE cross-links 4 sibling services:** `Dinner Companion Hamburg`, `Business Escort Hamburg`, `Travel Companion Hamburg`, `Luxury Escort Hamburg` + `Über uns`, `Kontakt`, `Diskretion und Datenschutz`.
+- **EN cross-links 3 sibling services:** `Dinner Companion Hamburg`, `Business Escort Hamburg`, `Travel Companion Hamburg` + `About Us`, `Contact`, `Discretion & Privacy`.
 
-All anchors natural, contextual, brand-consistent. ✅ **DE cross-links 4 sibling services (highest so far); EN cross-links 3.**
+All anchor text natural, contextual, brand-consistent. ✅
 
-## 6. Duplicate-content check
-| Pair | Similarity |
-|---|---|
-| GFE ↔ Luxury | 2.8 % |
-| GFE ↔ VIP | 5.7 % |
-| GFE ↔ Business | 6.2 % |
-| GFE ↔ Hotel | 8.9 % |
-| GFE ↔ Event | **17.1 %** |
-| GFE ↔ Dinner | **17.9 %** |
-| GFE ↔ Travel | **24.5 %** |
+## 7. Duplicate-content check — DRAMATIC IMPROVEMENT vs v1
+Similarity vs live cornerstones (before → after expansion):
 
-Exact-sentence overlap analysis:
-- **GFE ↔ Travel: 5 overlaps** — 100 % legitimate cross-link boilerplate (Privacy, About Us, Contact — DE + EN mirrors).
-- **GFE ↔ Dinner: 5 overlaps** — 100 % legitimate cross-link boilerplate.
-- **GFE ↔ Event: 4 overlaps** — 100 % legitimate cross-link boilerplate.
-- **GFE ↔ Hotel: 1 overlap** — Privacy link.
-- **GFE ↔ Luxury / VIP / Business: 0 overlaps** ✅
+| Pair | Before | After | Δ |
+|---|---:|---:|---:|
+| GFE ↔ Luxury | 2.8 % | **2.4 %** | ↓ |
+| GFE ↔ VIP | 5.7 % | **3.2 %** | ↓ |
+| GFE ↔ Business | 6.2 % | **2.0 %** | ↓ |
+| GFE ↔ Hotel | 8.9 % | **5.8 %** | ↓ |
+| GFE ↔ Event | 17.1 % | **6.7 %** | ↓↓ |
+| GFE ↔ Dinner | 17.9 % | **6.6 %** | ↓↓ |
+| GFE ↔ Travel | 24.5 % | **7.3 %** | ↓↓↓ |
 
-**Zero body-content overlap.** The elevated similarity ratios are entirely a function of GFE being the shortest cornerstone (~4,180 chars vs 5–6 K on others), so the identical site-wide cross-link paragraphs (Privacy, About Us, Contact) proportionally dominate the SequenceMatcher score.
+**All ratios now sit in the 2 – 8 % band — the tightest cluster of any cornerstone.**
 
-**These will be normalised centrally during the already-scheduled Consolidated Site-Wide SEO Audit + Internal-Linking Pass** (queued to run right after this deployment). Not a blocker.
+Exact-sentence overlaps (before → after):
 
-## 7. Core Web Vitals surface
+| Pair | Before | After | Note |
+|---|---:|---:|---|
+| GFE ↔ Luxury / VIP / Business | 0 | **0** | ✅ |
+| GFE ↔ Hotel | 1 | **0** | ✅ improved |
+| GFE ↔ Event | 4 | **1** | ✅ improved |
+| GFE ↔ Dinner | 5 | **1** | ✅ improved |
+| GFE ↔ Travel | 5 | **1** | ✅ improved |
+
+The single remaining overlap in each of Event / Dinner / Travel is the same one boilerplate sentence — the standard "Über uns" cross-link CTA. Zero body-content overlap. This last boilerplate line will be normalised centrally during the already-filed **Consolidated Site-Wide SEO Audit + Internal-Linking Pass** immediately after this deployment.
+
+## 8. Semantic depth added (all unique, no filler)
+Themes newly introduced that are absent from other cornerstones:
+- Unhurried "chemistry" positioning (evening moves at guest's rhythm, no scripted role, no polite distance).
+- Selection lens — curiosity, cultural depth, humour, real listening — beyond appearance.
+- Hamburg-specific micro-geography (Eppendorf → HafenCity → Neustadt → Landungsbrücken).
+- Culinary scene texture — Hanseatic classics, Japanese omakase, Elbe-view Mediterranean.
+- "Curated-not-catalogued" small-circle philosophy.
+- Moments that "make the difference" — quiet weekends, personal milestones, avoiding a solo evening.
+- Handling of anonymity across venues (private apartment / hotel restaurant / cultural venue).
+- Individually written enquiry replies, no boilerplate.
+
+Natural semantic variations & related keywords now present: `Zweisamkeit`, `Chemie`, `ungezwungen`, `Vertrautheit`, `Kuratierung`, `Feingefühl`; `chemistry`, `unhurried`, `at ease`, `curated`, `sensitivity`, `effortless conversation`, `familiarity`.
+
+## 9. Core Web Vitals surface
 | Check | DE | EN |
 |---|---|---|
 | `<img>` total | 2 | 2 |
@@ -99,21 +102,23 @@ Exact-sentence overlap analysis:
 | Missing `width` / `height` | 0 ✅ | 0 ✅ |
 | `<link rel="preload">` | 2 ✅ | 2 ✅ |
 
-## 8. Quality parity with live cornerstones
-| Slug | Sections | FAQs | long_copy DE | long_copy EN |
-|---|---|---|---|---|
-| luxury-escort-hamburg (LIVE) | 14 | 8 | 615 | 367 |
-| vip-escort-hamburg (LIVE) | 10 | 8 | 492 | 515 |
-| business-escort-hamburg (LIVE) | 10 | 8 | 437 | 539 |
-| hotel-escort-hamburg (LIVE) | 7 | 8 | 596 | 549 |
-| event-escort-hamburg (LIVE) | 9 | 8 | 529 | 495 |
-| dinner-companion-hamburg (LIVE) | 8 | 8 | 584 | 522 |
-| travel-companion-hamburg (LIVE) | 9 | 8 | 551 | 489 |
-| **girlfriend-experience-hamburg (PREVIEW)** | **9** | **8** | **341** | **214** |
+Page size grew from ~178 KB → ~193 KB HTML — well within a healthy LCP budget, no CWV impact expected.
 
-Section count and FAQ count on par. Long-copy is shorter than average because the source document's hero/long-copy is deliberately concise (this is user-supplied verbatim copy). If you'd like a fuller opening block after the site-wide audit, we can expand it during that pass.
+## 10. Quality parity with live cornerstones
+| Slug | DE words | EN words | Sections | FAQs |
+|---|---:|---:|---:|---:|
+| luxury-escort-hamburg (LIVE) | 1694 | 357 | 14 | 8 |
+| vip-escort-hamburg (LIVE) | 580 | 339 | 10 | 8 |
+| business-escort-hamburg (LIVE) | 367 | 276 | 10 | 8 |
+| hotel-escort-hamburg (LIVE) | 325 | 339 | 7 | 8 |
+| event-escort-hamburg (LIVE) | 346 | 366 | 9 | 8 |
+| dinner-companion-hamburg (LIVE) | 359 | 361 | 8 | 8 |
+| travel-companion-hamburg (LIVE) | 358 | 394 | 9 | 8 |
+| **girlfriend-experience-hamburg (PREVIEW v2)** | **777** | **683** | **9** | **8** |
+
+Girlfriend Experience Hamburg is now the **deepest-content cornerstone** by EN word count and 2nd deepest by DE (behind only Luxury Escort's 1694). Full parity achieved as requested.
 
 ## Verdict
-✅ **Ready for production** — no changes required.
+✅ **Ready for production** — content expansion complete, no changes required, cluster similarity drastically improved.
 
 Awaiting production approval.
