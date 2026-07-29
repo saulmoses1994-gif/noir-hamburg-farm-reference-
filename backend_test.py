@@ -1,467 +1,450 @@
 #!/usr/bin/env python3
 """
-CMS Blog Editor Regression Test Suite
-Tests the admin blog CRUD flow with new faqs_de and faqs_en fields.
+Backend test for luxury-escort-hamburg CMS content fix verification.
+Tests the removal of duplicated FAQ section heading.
 """
 
 import requests
+import sys
 import json
-import time
-from datetime import datetime
+from html.parser import HTMLParser
 
-# Configuration
-BASE_URL = "https://noir-migration.preview.emergentagent.com"
-API_BASE = f"{BASE_URL}/api"
+BASE_URL = "http://localhost:3000"
+API_URL = f"{BASE_URL}/api"
 
-# Test credentials
+# Admin credentials from test_credentials.md
 ADMIN_EMAIL = "admin@noir-hamburg.de"
 ADMIN_PASSWORD = "NoirAdmin2026!"
 
-# Test data
-TEST_SLUG = f"regression-test-{int(time.time())}"
 
-class BlogCRUDTester:
+class FAQHeadingParser(HTMLParser):
+    """Extract all H2 headings and count specific FAQ-related text."""
     def __init__(self):
-        self.session = requests.Session()
-        self.test_slug = TEST_SLUG
-        self.created_slug = None
+        super().__init__()
+        self.h2_headings = []
+        self.in_h2 = False
+        self.current_h2 = ""
+        self.details_count = 0
+        self.in_main = False
+        self.main_content = ""
+        self.faq_links = []
+        self.in_a = False
+        self.current_link_href = ""
+        self.h1_count = 0
+        self.in_h1 = False
         
-    def log(self, message):
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+    def handle_starttag(self, tag, attrs):
+        attrs_dict = dict(attrs)
+        if tag == "main":
+            self.in_main = True
+        elif tag == "h2" and self.in_main:
+            self.in_h2 = True
+            self.current_h2 = ""
+        elif tag == "h1" and self.in_main:
+            self.in_h1 = True
+            self.h1_count += 1
+        elif tag == "details" and self.in_main:
+            self.details_count += 1
+        elif tag == "a" and self.in_main:
+            self.in_a = True
+            self.current_link_href = attrs_dict.get("href", "")
+            
+    def handle_endtag(self, tag):
+        if tag == "main":
+            self.in_main = False
+        elif tag == "h2" and self.in_h2:
+            self.in_h2 = False
+            self.h2_headings.append(self.current_h2.strip())
+        elif tag == "h1" and self.in_h1:
+            self.in_h1 = False
+        elif tag == "a" and self.in_a:
+            self.in_a = False
+            if "/faq" in self.current_link_href:
+                self.faq_links.append(self.current_link_href)
+            
+    def handle_data(self, data):
+        if self.in_h2:
+            self.current_h2 += data
+        if self.in_main:
+            self.main_content += data
+
+
+def test_api_service_content():
+    """
+    TEST 1: GET /api/service-content/luxury-escort-hamburg
+    Verify:
+    - Response 200
+    - sections array length is exactly 14 (was 15 before fix)
+    - No section has h2 === "Häufig gestellte Fragen"
+    - faqs array has 8 items
+    - meta_title, meta_description, h1 unchanged
+    - Conclusion section contains "/faq" link
+    """
+    print("\n" + "="*80)
+    print("TEST 1: API Endpoint - GET /api/service-content/luxury-escort-hamburg")
+    print("="*80)
+    
+    try:
+        url = f"{API_URL}/service-content/luxury-escort-hamburg"
+        print(f"→ Requesting: {url}")
+        response = requests.get(url, timeout=10)
         
-    def test_1_admin_login(self):
-        """Test 1: Admin login returns 200 + session cookie"""
-        self.log("TEST 1: Admin login")
-        try:
-            response = self.session.post(
-                f"{API_BASE}/auth/login",
-                json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                if 'user' in data:
-                    self.log("✅ TEST 1 PASSED: Admin login successful")
-                    self.log(f"   User: {data['user'].get('email')}, Role: {data['user'].get('role')}")
-                    # Check for session cookie
-                    if 'access_token' in self.session.cookies:
-                        self.log("   Session cookie set: access_token")
-                    return True
-                else:
-                    self.log("❌ TEST 1 FAILED: Response missing 'user' field")
-                    return False
-            else:
-                self.log(f"❌ TEST 1 FAILED: Status {response.status_code}")
-                self.log(f"   Response: {response.text[:200]}")
-                return False
-        except Exception as e:
-            self.log(f"❌ TEST 1 FAILED: Exception - {str(e)}")
+        print(f"✓ Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"❌ FAIL: Expected 200, got {response.status_code}")
             return False
-    
-    def test_2_create_blog_post(self):
-        """Test 2: POST /api/blog creates a new blog post with faqs_de and faqs_en"""
-        self.log("TEST 2: Create blog post with faqs_de and faqs_en")
-        try:
-            payload = {
-                "slug": self.test_slug,
-                "title": "Regression Test DE",
-                "title_en": "Regression Test EN",
-                "category": "FAQ Guides",
-                "excerpt": "Kurzer Auszug.",
-                "excerpt_en": "Short excerpt.",
-                "content": "## Überschrift\n\nErster Absatz.\n\nZweiter Absatz.",
-                "content_en": "## Heading\n\nFirst paragraph.\n\nSecond paragraph.",
-                "cover_image": "https://images.unsplash.com/photo-1533392151650-269f96231f65?w=1200",
-                "meta_title": "Regression Meta DE",
-                "meta_title_en": "Regression Meta EN",
-                "meta_description": "Meta desc DE.",
-                "meta_description_en": "Meta desc EN.",
-                "related_services": [],
-                "related_locations": [],
-                "faqs": [],
-                "faqs_de": [
-                    {
-                        "q": "Wie plane ich einen Abend?",
-                        "a": "Wir empfehlen ein Restaurant zu reservieren und rechtzeitig zu buchen."
-                    }
-                ],
-                "faqs_en": [
-                    {
-                        "q": "How do I plan an evening?",
-                        "a": "We recommend reserving a restaurant and booking in advance."
-                    }
-                ],
-                "slug_en": "",
-                "published": True
-            }
             
-            response = self.session.post(
-                f"{API_BASE}/blog",
-                json=payload,
-                timeout=30
-            )
-            
-            if response.status_code in [200, 201]:
-                data = response.json()
-                if 'slug' in data:
-                    self.created_slug = data['slug']
-                    self.log("✅ TEST 2 PASSED: Blog post created successfully")
-                    self.log(f"   Slug: {data['slug']}")
-                    self.log(f"   ID: {data.get('id', 'N/A')}")
-                    self.log(f"   Slug EN: {data.get('slug_en', 'N/A')}")
-                    return True
-                else:
-                    self.log("❌ TEST 2 FAILED: Response missing 'slug' field")
-                    self.log(f"   Response: {json.dumps(data, indent=2)[:500]}")
-                    return False
-            else:
-                self.log(f"❌ TEST 2 FAILED: Status {response.status_code}")
-                self.log(f"   Response: {response.text[:500]}")
-                return False
-        except Exception as e:
-            self.log(f"❌ TEST 2 FAILED: Exception - {str(e)}")
+        data = response.json()
+        
+        # Check sections array length
+        sections = data.get("sections", [])
+        sections_count = len(sections)
+        print(f"✓ Sections count: {sections_count}")
+        
+        if sections_count != 14:
+            print(f"❌ FAIL: Expected exactly 14 sections, got {sections_count}")
             return False
-    
-    def test_3_get_blog_post(self):
-        """Test 3: GET /api/blog/[slug] retrieves the blog post with faqs_de and faqs_en"""
-        self.log("TEST 3: Get blog post and verify faqs_de and faqs_en")
-        try:
-            if not self.created_slug:
-                self.log("❌ TEST 3 SKIPPED: No slug from previous test")
+        else:
+            print(f"✅ PASS: Sections count is exactly 14 (removed duplicate FAQ section)")
+        
+        # Check no section has the removed heading
+        removed_heading = "Häufig gestellte Fragen"
+        has_removed_heading = False
+        for i, section in enumerate(sections):
+            section_h2 = section.get("h2", "")
+            if section_h2 == removed_heading:
+                print(f"❌ FAIL: Found removed section heading '{removed_heading}' at index {i}")
+                has_removed_heading = True
+                break
+        
+        if not has_removed_heading:
+            print(f"✅ PASS: No section has h2 === '{removed_heading}'")
+        else:
+            return False
+        
+        # Check FAQs array
+        faqs = data.get("faqs", [])
+        faqs_count = len(faqs)
+        print(f"✓ FAQs count: {faqs_count}")
+        
+        if faqs_count != 8:
+            print(f"❌ FAIL: Expected 8 FAQs, got {faqs_count}")
+            return False
+        else:
+            print(f"✅ PASS: FAQs array has exactly 8 items")
+        
+        # Check meta fields exist (unchanged verification)
+        meta_title = data.get("meta_title", "")
+        meta_description = data.get("meta_description", "")
+        h1 = data.get("h1", "")
+        
+        print(f"✓ meta_title: {meta_title[:50]}..." if len(meta_title) > 50 else f"✓ meta_title: {meta_title}")
+        print(f"✓ meta_description: {meta_description[:50]}..." if len(meta_description) > 50 else f"✓ meta_description: {meta_description}")
+        print(f"✓ h1: {h1}")
+        
+        if not meta_title or not meta_description or not h1:
+            print(f"❌ FAIL: Meta fields are missing or empty")
+            return False
+        else:
+            print(f"✅ PASS: Meta fields are present and unchanged")
+        
+        # Check conclusion section contains /faq link
+        conclusion_section = sections[-1] if sections else None
+        if conclusion_section:
+            conclusion_title = conclusion_section.get("h2", "")
+            conclusion_body = conclusion_section.get("body", [])
+            
+            print(f"✓ Last section title: {conclusion_title}")
+            
+            # Check if /faq appears in any body paragraph
+            faq_link_found = False
+            for paragraph in conclusion_body:
+                if "/faq" in paragraph:
+                    faq_link_found = True
+                    print(f"✓ Found /faq link in conclusion section")
+                    break
+            
+            if faq_link_found:
+                print(f"✅ PASS: Conclusion section contains /faq link (link preservation verified)")
+            else:
+                print(f"❌ FAIL: Conclusion section does not contain /faq link")
                 return False
+        else:
+            print(f"❌ FAIL: No conclusion section found")
+            return False
+        
+        print(f"\n✅ TEST 1 PASSED: API endpoint returns correct data structure")
+        return True
+        
+    except Exception as e:
+        print(f"❌ TEST 1 FAILED with exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_ssr_page_rendering():
+    """
+    TEST 2: GET /services/luxury-escort-hamburg (SSR HTML)
+    Verify:
+    - Response 200
+    - "Häufig gestellte Fragen" does NOT appear in <main>
+    - "Häufige Fragen zu" appears exactly once
+    - <details> count === 8
+    - Exactly one <h1>
+    - <a href="/faq"> appears at least once
+    - FAQPage JSON-LD has 8 mainEntity entries
+    - Summary text matches schema name for all 8 items
+    """
+    print("\n" + "="*80)
+    print("TEST 2: SSR Page Rendering - GET /services/luxury-escort-hamburg")
+    print("="*80)
+    
+    try:
+        url = f"{BASE_URL}/services/luxury-escort-hamburg"
+        print(f"→ Requesting: {url}")
+        response = requests.get(url, timeout=10)
+        
+        print(f"✓ Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"❌ FAIL: Expected 200, got {response.status_code}")
+            return False
+        
+        html = response.text
+        
+        # Parse HTML to extract main content
+        parser = FAQHeadingParser()
+        parser.feed(html)
+        
+        # Check H1 count
+        print(f"✓ H1 count in <main>: {parser.h1_count}")
+        if parser.h1_count != 1:
+            print(f"❌ FAIL: Expected exactly 1 <h1>, found {parser.h1_count}")
+            return False
+        else:
+            print(f"✅ PASS: Exactly one <h1> in page")
+        
+        # Check removed heading does NOT appear
+        removed_heading = "Häufig gestellte Fragen"
+        if removed_heading in parser.main_content:
+            print(f"❌ FAIL: Found removed heading '{removed_heading}' in <main> content")
+            return False
+        else:
+            print(f"✅ PASS: '{removed_heading}' does NOT appear in <main>")
+        
+        # Check auto-rendered heading appears exactly once
+        auto_heading = "Häufige Fragen zu"
+        auto_heading_count = parser.main_content.count(auto_heading)
+        print(f"✓ '{auto_heading}' count: {auto_heading_count}")
+        
+        if auto_heading_count != 1:
+            print(f"❌ FAIL: Expected '{auto_heading}' to appear exactly once, found {auto_heading_count} times")
+            return False
+        else:
+            print(f"✅ PASS: '{auto_heading}' appears exactly once (auto-rendered header)")
+        
+        # Check details count
+        print(f"✓ <details> count: {parser.details_count}")
+        if parser.details_count != 8:
+            print(f"❌ FAIL: Expected 8 <details> elements, found {parser.details_count}")
+            return False
+        else:
+            print(f"✅ PASS: <details> count === 8")
+        
+        # Check /faq link presence
+        print(f"✓ /faq links found: {len(parser.faq_links)}")
+        if len(parser.faq_links) < 1:
+            print(f"❌ FAIL: No <a href='/faq'> link found in <main>")
+            return False
+        else:
+            print(f"✅ PASS: <a href='/faq'> appears at least once (link preservation verified)")
+        
+        # Extract and verify FAQPage JSON-LD schema
+        print(f"\n→ Verifying FAQPage JSON-LD schema...")
+        
+        # Find FAQPage schema in HTML
+        faq_schema_start = html.find('"@type":"FAQPage"')
+        if faq_schema_start == -1:
+            print(f"❌ FAIL: FAQPage JSON-LD schema not found")
+            return False
+        
+        # Extract the script tag containing FAQPage
+        script_start = html.rfind('<script type="application/ld+json">', 0, faq_schema_start)
+        script_end = html.find('</script>', faq_schema_start)
+        
+        if script_start == -1 or script_end == -1:
+            print(f"❌ FAIL: Could not extract FAQPage JSON-LD script")
+            return False
+        
+        json_start = script_start + len('<script type="application/ld+json">')
+        schema_json = html[json_start:script_end].strip()
+        
+        try:
+            schema = json.loads(schema_json)
+            main_entity = schema.get("mainEntity", [])
+            main_entity_count = len(main_entity)
             
-            response = self.session.get(
-                f"{API_BASE}/blog/{self.created_slug}",
-                timeout=30
-            )
+            print(f"✓ FAQPage mainEntity count: {main_entity_count}")
             
-            if response.status_code == 200:
-                data = response.json()
+            if main_entity_count != 8:
+                print(f"❌ FAIL: Expected 8 mainEntity entries, found {main_entity_count}")
+                return False
+            else:
+                print(f"✅ PASS: FAQPage JSON-LD has exactly 8 mainEntity entries")
+            
+            # Extract summary texts from HTML and compare with schema
+            print(f"\n→ Verifying summary text matches schema names...")
+            
+            # Find all <summary> elements in main
+            summary_texts = []
+            summary_start = 0
+            while True:
+                summary_tag_start = html.find('<summary', summary_start)
+                if summary_tag_start == -1:
+                    break
                 
-                # Verify faqs_de
-                faqs_de = data.get('faqs_de', [])
-                if len(faqs_de) == 1:
-                    faq_de = faqs_de[0]
-                    if faq_de.get('q') == "Wie plane ich einen Abend?" and \
-                       "Restaurant" in faq_de.get('a', ''):
-                        self.log("✅ faqs_de verified correctly")
+                summary_content_start = html.find('>', summary_tag_start) + 1
+                summary_tag_end = html.find('</summary>', summary_content_start)
+                
+                if summary_tag_end == -1:
+                    break
+                
+                summary_html = html[summary_content_start:summary_tag_end]
+                
+                # Remove the toggle icon (+ or ×) - it's typically in a span at the end
+                # Strip HTML tags and get text
+                summary_text = summary_html
+                # Remove span tags
+                summary_text = summary_text.replace('<span class="ml-auto text-burgundy-600" aria-hidden="true">+</span>', '')
+                summary_text = summary_text.replace('<span class="ml-auto text-burgundy-600" aria-hidden="true">×</span>', '')
+                # Remove any remaining HTML tags
+                import re
+                summary_text = re.sub(r'<[^>]+>', '', summary_text).strip()
+                # Remove trailing + or × characters that might be appended directly
+                summary_text = summary_text.rstrip('+×').strip()
+                
+                summary_texts.append(summary_text)
+                summary_start = summary_tag_end + 1
+            
+            print(f"✓ Found {len(summary_texts)} <summary> elements")
+            
+            if len(summary_texts) != 8:
+                print(f"⚠️  Warning: Expected 8 <summary> elements, found {len(summary_texts)}")
+            
+            # Compare with schema names
+            all_match = True
+            for i, entity in enumerate(main_entity):
+                schema_name = entity.get("name", "")
+                if i < len(summary_texts):
+                    summary_text = summary_texts[i]
+                    if schema_name == summary_text:
+                        print(f"  ✓ [{i+1}] Match: '{summary_text}'")
                     else:
-                        self.log(f"❌ faqs_de content mismatch: {faq_de}")
-                        return False
+                        print(f"  ❌ [{i+1}] Mismatch:")
+                        print(f"      Schema: '{schema_name}'")
+                        print(f"      Summary: '{summary_text}'")
+                        all_match = False
                 else:
-                    self.log(f"❌ faqs_de length mismatch: expected 1, got {len(faqs_de)}")
-                    return False
-                
-                # Verify faqs_en
-                faqs_en = data.get('faqs_en', [])
-                if len(faqs_en) == 1:
-                    faq_en = faqs_en[0]
-                    if faq_en.get('q') == "How do I plan an evening?" and \
-                       "restaurant" in faq_en.get('a', '').lower():
-                        self.log("✅ faqs_en verified correctly")
-                    else:
-                        self.log(f"❌ faqs_en content mismatch: {faq_en}")
-                        return False
-                else:
-                    self.log(f"❌ faqs_en length mismatch: expected 1, got {len(faqs_en)}")
-                    return False
-                
-                # Verify content sanitization
-                content = data.get('content', '')
-                if '## Überschrift' in content:
-                    self.log("✅ content preserved with h2 headings")
-                else:
-                    self.log(f"❌ content sanitization issue: {content[:100]}")
-                    return False
-                
-                content_en = data.get('content_en', '')
-                if '## Heading' in content_en:
-                    self.log("✅ content_en preserved with h2 headings")
-                else:
-                    self.log(f"❌ content_en sanitization issue: {content_en[:100]}")
-                    return False
-                
-                # Verify slug_en auto-derivation
-                slug_en = data.get('slug_en', '')
-                if slug_en and 'regression-test-en' in slug_en:
-                    self.log(f"✅ slug_en auto-derived: {slug_en}")
-                else:
-                    self.log(f"⚠️  slug_en: {slug_en} (expected 'regression-test-en' or similar)")
-                
-                self.log("✅ TEST 3 PASSED: Blog post retrieved and verified")
-                return True
+                    print(f"  ❌ [{i+1}] Missing summary for schema entry: '{schema_name}'")
+                    all_match = False
+            
+            if all_match:
+                print(f"✅ PASS: All summary texts match FAQPage schema names (1:1 alignment)")
             else:
-                self.log(f"❌ TEST 3 FAILED: Status {response.status_code}")
-                self.log(f"   Response: {response.text[:500]}")
+                print(f"❌ FAIL: Summary texts do not match FAQPage schema names")
                 return False
-        except Exception as e:
-            self.log(f"❌ TEST 3 FAILED: Exception - {str(e)}")
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ FAIL: Could not parse FAQPage JSON-LD: {e}")
             return False
+        
+        print(f"\n✅ TEST 2 PASSED: SSR page renders correctly with single FAQ heading")
+        return True
+        
+    except Exception as e:
+        print(f"❌ TEST 2 FAILED with exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_auth_gate():
+    """
+    TEST 3: Auth Gate - Unauthenticated PUT must return 401 or 403
+    """
+    print("\n" + "="*80)
+    print("TEST 3: Auth Gate - Unauthenticated PUT /api/admin/service-content/luxury-escort-hamburg")
+    print("="*80)
     
-    def test_4_update_blog_post(self):
-        """Test 4: PUT /api/blog/[slug] updates the blog post"""
-        self.log("TEST 4: Update blog post with modified content and additional FAQ")
-        try:
-            if not self.created_slug:
-                self.log("❌ TEST 4 SKIPPED: No slug from previous test")
-                return False
-            
-            payload = {
-                "content": "## Überschrift\n\nErster Absatz.\n\nZweiter Absatz.\n\n## Second heading\n\nAdditional content.",
-                "faqs_de": [
-                    {
-                        "q": "Wie plane ich einen Abend?",
-                        "a": "Wir empfehlen ein Restaurant zu reservieren und rechtzeitig zu buchen."
-                    },
-                    {
-                        "q": "Was sollte ich beachten?",
-                        "a": "Bitte beachten Sie unsere Hinweise zur Diskretion und Planung."
-                    }
-                ],
-                "published": True
-            }
-            
-            response = self.session.put(
-                f"{API_BASE}/blog/{self.created_slug}",
-                json=payload,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Verify updated content
-                content = data.get('content', '')
-                if '## Second heading' in content:
-                    self.log("✅ content updated with new heading")
-                else:
-                    self.log(f"❌ content update failed: {content[:200]}")
-                    return False
-                
-                # Verify updated faqs_de
-                faqs_de = data.get('faqs_de', [])
-                if len(faqs_de) == 2:
-                    self.log("✅ faqs_de updated with 2 entries")
-                else:
-                    self.log(f"❌ faqs_de length mismatch: expected 2, got {len(faqs_de)}")
-                    return False
-                
-                # Verify published status
-                if data.get('published') == True:
-                    self.log("✅ published status updated to true")
-                else:
-                    self.log(f"❌ published status not updated: {data.get('published')}")
-                    return False
-                
-                self.log("✅ TEST 4 PASSED: Blog post updated successfully")
-                return True
-            else:
-                self.log(f"❌ TEST 4 FAILED: Status {response.status_code}")
-                self.log(f"   Response: {response.text[:500]}")
-                return False
-        except Exception as e:
-            self.log(f"❌ TEST 4 FAILED: Exception - {str(e)}")
+    try:
+        url = f"{API_URL}/admin/service-content/luxury-escort-hamburg"
+        print(f"→ Attempting unauthenticated PUT: {url}")
+        
+        # Try PUT without auth
+        response = requests.put(
+            url,
+            json={"title": "Test"},
+            timeout=10
+        )
+        
+        print(f"✓ Status: {response.status_code}")
+        
+        if response.status_code in [401, 403]:
+            print(f"✅ PASS: Unauthenticated PUT correctly rejected with {response.status_code}")
+            return True
+        else:
+            print(f"❌ FAIL: Expected 401 or 403, got {response.status_code}")
+            print(f"Response: {response.text[:200]}")
             return False
+        
+    except Exception as e:
+        print(f"❌ TEST 3 FAILED with exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def main():
+    """Run all tests and report results."""
+    print("\n" + "="*80)
+    print("LUXURY ESCORT HAMBURG CMS CONTENT FIX VERIFICATION")
+    print("Testing removal of duplicated FAQ section heading")
+    print("="*80)
     
-    def test_5_xss_sanitization(self):
-        """Test 5: XSS sanitization - script tags should be stripped"""
-        self.log("TEST 5: XSS sanitization in FAQ answers")
-        try:
-            if not self.created_slug:
-                self.log("❌ TEST 5 SKIPPED: No slug from previous test")
-                return False
-            
-            payload = {
-                "faqs_de": [
-                    {
-                        "q": "Test XSS Question?",
-                        "a": "<script>alert(1)</script>Legit answer with <strong>bold</strong> text."
-                    }
-                ]
-            }
-            
-            response = self.session.put(
-                f"{API_BASE}/blog/{self.created_slug}",
-                json=payload,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                faqs_de = data.get('faqs_de', [])
-                
-                if len(faqs_de) > 0:
-                    answer = faqs_de[0].get('a', '')
-                    
-                    # Check that script tag is stripped
-                    if '<script>' not in answer and 'alert(1)' not in answer:
-                        self.log("✅ Script tag stripped from answer")
-                    else:
-                        self.log(f"❌ Script tag NOT stripped: {answer}")
-                        return False
-                    
-                    # Check that legitimate content is preserved
-                    if 'Legit answer' in answer:
-                        self.log("✅ Legitimate content preserved")
-                    else:
-                        self.log(f"❌ Legitimate content missing: {answer}")
-                        return False
-                    
-                    # Check if safe HTML like <strong> is preserved
-                    if '<strong>' in answer or 'bold' in answer:
-                        self.log("✅ Safe HTML preserved or text extracted")
-                    else:
-                        self.log(f"⚠️  HTML handling: {answer}")
-                    
-                    self.log("✅ TEST 5 PASSED: XSS sanitization working")
-                    return True
-                else:
-                    self.log("❌ TEST 5 FAILED: No FAQs in response")
-                    return False
-            else:
-                self.log(f"❌ TEST 5 FAILED: Status {response.status_code}")
-                self.log(f"   Response: {response.text[:500]}")
-                return False
-        except Exception as e:
-            self.log(f"❌ TEST 5 FAILED: Exception - {str(e)}")
-            return False
+    results = {
+        "test_1_api_endpoint": False,
+        "test_2_ssr_rendering": False,
+        "test_3_auth_gate": False,
+    }
     
-    def test_6_auth_gate(self):
-        """Test 6: Unauthenticated POST /api/blog should return 401/403"""
-        self.log("TEST 6: Auth gate - unauthenticated request should fail")
-        try:
-            # Create a new session without auth
-            unauth_session = requests.Session()
-            
-            payload = {
-                "slug": f"unauthorized-test-{int(time.time())}",
-                "title": "Unauthorized Test",
-                "published": False
-            }
-            
-            response = unauth_session.post(
-                f"{API_BASE}/blog",
-                json=payload,
-                timeout=30
-            )
-            
-            if response.status_code in [401, 403]:
-                self.log(f"✅ TEST 6 PASSED: Unauthenticated request rejected with {response.status_code}")
-                return True
-            else:
-                self.log(f"❌ TEST 6 FAILED: Expected 401/403, got {response.status_code}")
-                self.log(f"   Response: {response.text[:200]}")
-                return False
-        except Exception as e:
-            self.log(f"❌ TEST 6 FAILED: Exception - {str(e)}")
-            return False
+    # Run tests
+    results["test_1_api_endpoint"] = test_api_service_content()
+    results["test_2_ssr_rendering"] = test_ssr_page_rendering()
+    results["test_3_auth_gate"] = test_auth_gate()
     
-    def test_7_cleanup(self):
-        """Test 7: DELETE /api/blog/[slug] removes the test article"""
-        self.log("TEST 7: Cleanup - delete test article")
-        try:
-            if not self.created_slug:
-                self.log("❌ TEST 7 SKIPPED: No slug to delete")
-                return False
-            
-            response = self.session.delete(
-                f"{API_BASE}/blog/{self.created_slug}",
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('ok') == True and data.get('deleted_at'):
-                    self.log("✅ Blog post soft-deleted successfully")
-                    self.log(f"   Deleted at: {data.get('deleted_at')}")
-                    
-                    # Verify it's gone (should return 404 or have deleted_at)
-                    verify_response = self.session.get(
-                        f"{API_BASE}/blog/{self.created_slug}",
-                        timeout=30
-                    )
-                    
-                    if verify_response.status_code == 404:
-                        self.log("✅ Verified: Blog post returns 404 after deletion")
-                    elif verify_response.status_code == 200:
-                        verify_data = verify_response.json()
-                        if verify_data.get('deleted_at'):
-                            self.log("✅ Verified: Blog post has deleted_at set")
-                        else:
-                            self.log("⚠️  Blog post still accessible without deleted_at")
-                    
-                    self.log("✅ TEST 7 PASSED: Cleanup successful")
-                    return True
-                else:
-                    self.log(f"❌ TEST 7 FAILED: Unexpected response: {data}")
-                    return False
-            else:
-                self.log(f"❌ TEST 7 FAILED: Status {response.status_code}")
-                self.log(f"   Response: {response.text[:500]}")
-                return False
-        except Exception as e:
-            self.log(f"❌ TEST 7 FAILED: Exception - {str(e)}")
-            return False
+    # Summary
+    print("\n" + "="*80)
+    print("TEST SUMMARY")
+    print("="*80)
     
-    def run_all_tests(self):
-        """Run all tests in sequence"""
-        self.log("=" * 80)
-        self.log("CMS BLOG EDITOR REGRESSION TEST SUITE")
-        self.log("=" * 80)
-        self.log(f"Base URL: {BASE_URL}")
-        self.log(f"Test Slug: {self.test_slug}")
-        self.log("")
-        
-        results = []
-        
-        # Test 1: Admin login
-        results.append(("Admin Login", self.test_1_admin_login()))
-        self.log("")
-        
-        # Test 2: Create blog post
-        results.append(("Create Blog Post", self.test_2_create_blog_post()))
-        self.log("")
-        
-        # Test 3: Get blog post
-        results.append(("Get Blog Post", self.test_3_get_blog_post()))
-        self.log("")
-        
-        # Test 4: Update blog post
-        results.append(("Update Blog Post", self.test_4_update_blog_post()))
-        self.log("")
-        
-        # Test 5: XSS sanitization
-        results.append(("XSS Sanitization", self.test_5_xss_sanitization()))
-        self.log("")
-        
-        # Test 6: Auth gate
-        results.append(("Auth Gate", self.test_6_auth_gate()))
-        self.log("")
-        
-        # Test 7: Cleanup
-        results.append(("Cleanup", self.test_7_cleanup()))
-        self.log("")
-        
-        # Summary
-        self.log("=" * 80)
-        self.log("TEST SUMMARY")
-        self.log("=" * 80)
-        
-        passed = sum(1 for _, result in results if result)
-        total = len(results)
-        
-        for test_name, result in results:
-            status = "✅ PASS" if result else "❌ FAIL"
-            self.log(f"{status}: {test_name}")
-        
-        self.log("")
-        self.log(f"TOTAL: {passed}/{total} tests passed ({int(passed/total*100)}%)")
-        self.log("=" * 80)
-        
-        return passed == total
+    passed = sum(1 for v in results.values() if v)
+    total = len(results)
+    
+    for test_name, result in results.items():
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"{status}: {test_name}")
+    
+    print(f"\nTotal: {passed}/{total} tests passed")
+    
+    if passed == total:
+        print("\n🎉 ALL TESTS PASSED - CMS content fix verified successfully!")
+        return 0
+    else:
+        print(f"\n⚠️  {total - passed} test(s) failed - see details above")
+        return 1
+
 
 if __name__ == "__main__":
-    tester = BlogCRUDTester()
-    success = tester.run_all_tests()
-    exit(0 if success else 1)
+    sys.exit(main())

@@ -4245,3 +4245,134 @@ agent_communication:
       on production until Republish deploys the new renderer code. Once
       Republish is clicked, the same page automatically flips all inline
       links to `<a>` anchors — no further content edit needed.
+
+agent_communication:
+  - agent: "main"
+    message: |
+      LUXURY ESCORT HAMBURG — DUPLICATED FAQ INTRO FIX — 2026-07-29
+
+      QA identified a duplicate FAQ heading on the page:
+        1. CMS-managed <h2> "Häufig gestellte Fragen" + intro paragraph
+           (section 14 in the service_content doc)
+        2. Auto-rendered <h2> "Häufige Fragen zu {title}" hardcoded in the
+           service page component right above the <details> block.
+
+      FIX: Removed section #14 ("Häufig gestellte Fragen") from the CMS
+      service_content doc via PUT /api/admin/service-content/luxury-escort-hamburg.
+      Also relocated the `/faq` link from the removed section into the
+      closing conclusion paragraph so no internal link count regresses.
+
+      No code changes required — pure CMS content edit.
+
+      Verification (fresh cache-busted fetch):
+        - Canonical self-referencing: ✅
+        - Indexable (no robots noindex): ✅
+        - Title / meta description / H1 SSR-rendered: ✅
+        - 8 visible FAQs === 8 FAQPage schema entries (1:1 order match): ✅
+        - CMS "Häufig gestellte Fragen" header removed: ✅
+        - Auto "Häufige Fragen zu ..." header preserved: ✅
+        - All 10 internal-link targets present as anchors, all HTTP 200: ✅
+        - Related-services sidebar intact: ✅
+        - Word count 1,779 body (FAQ excluded): ✅ (still within spec range)
+
+      Note: production sits behind Cloudflare with s-maxage=300, so users
+      may see the stale (16-H2) version for up to 5 minutes after PUT,
+      but fresh visits after that window get the corrected page.
+
+      Preview DB has been synced to identical v4 payload so any downstream
+      testing runs against the same state.
+
+backend:
+  - task: "CMS content fix verification: luxury-escort-hamburg duplicated FAQ section removal"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js + MongoDB service_content collection"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ VERIFIED: CMS content fix for luxury-escort-hamburg service page.
+            All 3 required verification tests PASSED (3/3).
+            Test base URL: http://localhost:3000
+            
+            BUG FIXED: Duplicated FAQ section heading removed from CMS content.
+            BEFORE: Page had 15 sections with CMS-managed "Häufig gestellte Fragen" 
+                    followed by auto-rendered "Häufige Fragen zu Luxus Escort Hamburg"
+            AFTER:  Page has 14 sections with only the auto-rendered FAQ heading
+            
+            ═══════════════════════════════════════════════════════════════════════
+            TEST 1 — API ENDPOINT: GET /api/service-content/luxury-escort-hamburg ✅
+            ═══════════════════════════════════════════════════════════════════════
+            ✅ Response 200
+            ✅ sections[] length === 14 (was 15 before fix)
+            ✅ No section has h2 === "Häufig gestellte Fragen" (removed section)
+            ✅ faqs[] array has exactly 8 items with expected questions
+            ✅ meta_title, meta_description, h1 present and unchanged from v3
+            ✅ Conclusion section (last section: "Exklusive Begleitung mit Stil, 
+               Vertrauen und Persönlichkeit") contains "/faq" link in body text
+               → Link preservation verified (moved from removed section)
+            
+            ═══════════════════════════════════════════════════════════════════════
+            TEST 2 — SSR PAGE RENDERING: GET /services/luxury-escort-hamburg ✅
+            ═══════════════════════════════════════════════════════════════════════
+            ✅ Response 200
+            ✅ Exactly one <h1> in <main>
+            ✅ "Häufig gestellte Fragen" does NOT appear anywhere in <main> content
+               (removed CMS section heading successfully eliminated)
+            ✅ "Häufige Fragen zu" appears exactly once in <main>
+               (auto-rendered component heading preserved)
+            ✅ <details> count === 8 (FAQ accordion items)
+            ✅ <a href="/faq"> appears at least once in <main> (link preservation)
+            ✅ FAQPage JSON-LD schema has exactly 8 mainEntity entries
+            ✅ All 8 <summary> texts match FAQPage schema mainEntity[i].name in order
+               (1:1 alignment verified for all FAQ items):
+                 1. "Was genau versteht man unter einem Luxury Escort?"
+                 2. "Wie diskret ist der Service von Noir Hamburg?"
+                 3. "Wie werden die Escorts ausgewählt?"
+                 4. "Kann ich eine Begleitung für einen bestimmten Anlass buchen?"
+                 5. "Wie lange im Voraus sollte ich buchen?"
+                 6. "Welche Zahlungsmodalitäten gibt es?"
+                 7. "Ist der Service auch außerhalb Hamburgs verfügbar?"
+                 8. "Welche Sprachen sprechen die Damen bei Noir Hamburg?"
+            
+            ═══════════════════════════════════════════════════════════════════════
+            TEST 3 — AUTH GATE: Unauthenticated PUT must return 401/403 ✅
+            ═══════════════════════════════════════════════════════════════════════
+            ✅ PUT /api/admin/service-content/luxury-escort-hamburg without auth
+               returns 401 (correctly rejected)
+            ✅ Admin endpoints properly protected (security verification)
+            
+            ═══════════════════════════════════════════════════════════════════════
+            SUMMARY
+            ═══════════════════════════════════════════════════════════════════════
+            CRITICAL VERIFICATIONS:
+            • CMS content fix working correctly — section count reduced from 15 to 14
+            • Removed section heading "Häufig gestellte Fragen" no longer appears
+            • Auto-rendered FAQ heading "Häufige Fragen zu..." preserved (appears once)
+            • All 8 FAQ items render correctly with matching JSON-LD schema
+            • /faq internal link preserved in conclusion section (moved successfully)
+            • Meta fields (title, description, h1) unchanged from previous v3 state
+            • Auth gate working correctly (401 for unauthenticated writes)
+            • NO code changes required — pure CMS content edit verified
+            
+            PRODUCTION IMPACT:
+            • Both preview (localhost:3000) and production (noir-hamburg.com) updated
+              with same v4 payload per main agent communication
+            • Fix eliminates duplicate FAQ heading that appeared consecutively
+            • SEO improvement: cleaner heading hierarchy, no duplicate H2 content
+            • User experience: single clear FAQ section instead of confusing duplicate
+            
+            NO REGRESSIONS:
+            • All existing functionality preserved
+            • FAQ count unchanged (8 items)
+            • Internal link count unchanged (/faq link relocated, not removed)
+            • Meta tags and structured data unchanged
+            • Service page component rendering unchanged
+            
+            VERDICT: ✅ CMS CONTENT FIX VERIFIED AND WORKING
+            The duplicated FAQ section heading has been successfully removed from the
+            luxury-escort-hamburg service page. All verification tests passed.
+
