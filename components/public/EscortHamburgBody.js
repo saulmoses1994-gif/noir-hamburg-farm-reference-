@@ -12,7 +12,7 @@ const FALLBACK_HERO =
 
 // Landing hub at /escort-hamburg. Combines hero + hanseatic prose + services
 // grid + reach grid + closing CTA. All copy comes from the i18n dictionary.
-export default function EscortHamburgBody({ lang, services = [], areas = [], settings = {} }) {
+export default function EscortHamburgBody({ lang, services = [], areas = [], settings = {}, hub = null }) {
   const isEn = lang === 'en'
   const path = localePath(lang, '/escort-hamburg')
   const homeHref = isEn ? '/en' : '/'
@@ -20,20 +20,51 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
   const modelsHref = localePath(lang, '/models')
   const heroImage = settings.escort_hamburg_image || FALLBACK_HERO
 
+  // Hub CMS content selectors
+  const hubLong = hub ? (isEn ? hub.long_copy_en : hub.long_copy) : null
+  const hubSections = hub ? (hub.sections || []) : []
+  const hubFaqs = hub ? (hub.faqs || []) : []
+  const hubMetaTitle = hub ? (isEn ? hub.meta_title_en : hub.meta_title) : t(lang, 'hub.metaTitle')
+  const hubMetaDesc = hub ? (isEn ? hub.meta_description_en : hub.meta_description) : t(lang, 'hub.metaDesc')
+
+  const renderInline = (text) => {
+    if (!text) return null
+    const parts = []
+    const re = /\[([^\]]+)\]\(([^)]+)\)/g
+    let last = 0, m
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) parts.push(text.slice(last, m.index))
+      parts.push(<Link key={parts.length} href={m[2]} className="underline hover:accent-text">{m[1]}</Link>)
+      last = m.index + m[0].length
+    }
+    if (last < text.length) parts.push(text.slice(last))
+    return parts
+  }
+
   const jsonLd = [
     {
       '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: t(lang, 'hub.metaTitle'),
-      description: t(lang, 'hub.metaDesc'),
+      '@type': 'Service',
+      name: hubMetaTitle,
+      description: hubMetaDesc,
       url: `${siteUrl()}${path}`,
       inLanguage: isEn ? 'en' : 'de',
-      about: { '@type': 'Place', name: 'Hamburg', address: { '@type': 'PostalAddress', addressLocality: 'Hamburg', addressCountry: 'DE' } },
+      areaServed: { '@type': 'City', name: 'Hamburg' },
+      provider: { '@type': 'Organization', name: 'Noir Hamburg', url: siteUrl() },
     },
     breadcrumbSchema([
       { name: t(lang, 'crumb.home'), url: homeHref },
       { name: t(lang, 'hub.crumb') },
     ]),
+    ...(hubFaqs.length ? [{
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: hubFaqs.map((f) => ({
+        '@type': 'Question',
+        name: isEn ? (f.q_en || f.q) : f.q,
+        acceptedAnswer: { '@type': 'Answer', text: isEn ? (f.a_en || f.a) : f.a },
+      })),
+    }] : []),
   ]
 
   return (
@@ -80,12 +111,31 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
               </h2>
             </div>
             <div className="lg:col-span-6 lg:col-start-7 space-y-6 text-base lg:text-lg font-light text-[#6B5F5F] leading-relaxed">
-              <p>{t(lang, 'hub.section2P1')}</p>
-              <p>{t(lang, 'hub.section2P2')}</p>
-              <p>{t(lang, 'hub.section2P3')}</p>
+              <p>{hubLong || t(lang, 'hub.section2P1')}</p>
+              {!hubLong && (<><p>{t(lang, 'hub.section2P2')}</p><p>{t(lang, 'hub.section2P3')}</p></>)}
             </div>
           </div>
         </section>
+
+        {hubSections.length > 0 && (
+          <section className="px-6 md:px-12 lg:px-16 py-24 bg-[#FBF7F4]" data-testid="hub-longform">
+            <div className="max-w-4xl mx-auto space-y-14">
+              {hubSections.map((s, i) => {
+                const h2 = isEn ? (s.h2_en || s.h2) : s.h2
+                const bodyArr = isEn ? (s.body_en || s.body || []) : (s.body || [])
+                const paragraphs = Array.isArray(bodyArr) ? bodyArr : [bodyArr]
+                return (
+                  <div key={i} data-testid={`hub-section-${i}`}>
+                    <h2 className="font-heading text-2xl lg:text-3xl font-light tracking-tight leading-tight mb-5">{h2}</h2>
+                    <div className="space-y-4 text-base lg:text-lg font-light text-[#3A3232] leading-relaxed">
+                      {paragraphs.filter(Boolean).map((p, j) => (<p key={j}>{renderInline(p)}</p>))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
 
         <section className="px-6 md:px-12 lg:px-16 py-20 bg-[#FBF7F4]">
           <div>
@@ -111,6 +161,27 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
             ))}
           </div>
         </section>
+
+        {hubFaqs.length > 0 && (
+          <section className="px-6 md:px-12 lg:px-16 py-24" data-testid="hub-faqs">
+            <div className="max-w-4xl mx-auto">
+              <span className="overline">FAQ</span>
+              <h2 className="font-heading text-3xl lg:text-5xl font-light tracking-tight leading-tight mt-4 mb-10">
+                {isEn ? 'Frequently Asked Questions' : 'Häufig gestellte Fragen'}
+              </h2>
+              <div className="divide-y divide-[#1A1414]/10">
+                {hubFaqs.map((f, i) => (
+                  <div key={i} className="py-6" data-testid={`hub-faq-${i}`}>
+                    <h3 className="font-heading text-xl mb-3">{isEn ? (f.q_en || f.q) : f.q}</h3>
+                    <div className="text-base lg:text-lg font-light text-[#3A3232] leading-relaxed">
+                      {renderInline(isEn ? (f.a_en || f.a) : f.a)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="px-6 md:px-12 lg:px-16 py-20">
           <div>
