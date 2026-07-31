@@ -76,11 +76,11 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
         <section className="relative w-full aspect-[16/9] flex items-end" data-testid="escort-hamburg-page">
           <div className="absolute inset-0">
             <img
-              src={optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })}
-              srcSet={`${optimizeImageUrl(heroImage, { w: 640, ar: '16/9', crop: 'fill' })} 640w, ${optimizeImageUrl(heroImage, { w: 900, ar: '16/9', crop: 'fill' })} 900w, ${optimizeImageUrl(heroImage, { w: 1280, ar: '16/9', crop: 'fill' })} 1280w, ${optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })} 1600w, ${optimizeImageUrl(heroImage, { w: 2000, ar: '16/9', crop: 'fill' })} 2000w`}
+              src={optimizeImageUrl(heroImage, { w: 1920, ar: '16/9', crop: 'fill', quality: 'auto:best', sharpen: 80 })}
+              srcSet={`${optimizeImageUrl(heroImage, { w: 800, ar: '16/9', crop: 'fill', quality: 'auto:best', sharpen: 60 })} 800w, ${optimizeImageUrl(heroImage, { w: 1200, ar: '16/9', crop: 'fill', quality: 'auto:best', sharpen: 60 })} 1200w, ${optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill', quality: 'auto:best', sharpen: 80 })} 1600w, ${optimizeImageUrl(heroImage, { w: 1920, ar: '16/9', crop: 'fill', quality: 'auto:best', sharpen: 80 })} 1920w, ${optimizeImageUrl(heroImage, { w: 2400, ar: '16/9', crop: 'fill', quality: 'auto:best', sharpen: 100 })} 2400w`}
               sizes="100vw"
-              width={2000}
-              height={1125}
+              width={2400}
+              height={1350}
               alt={t(lang, 'hub.heroH1a') + ' ' + t(lang, 'hub.heroH1b')}
               loading="eager"
               fetchPriority="high"
