@@ -81,7 +81,7 @@ export default async function HomeEn() {
             </div>
             <Link href="/en/services" className="text-xs font-mono uppercase tracking-[0.2em] accent-text hover:opacity-70 whitespace-nowrap">View all →</Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#1A1414]/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-px bg-[#1A1414]/5">
             {services.map((s) => (
               <Link key={s.slug} href={`/en/services/${s.slug}`} className="bg-white hover:bg-[#FBF7F4] transition-colors p-6 md:p-8 block group">
                 <span className="overline">{s.short_label}</span>
