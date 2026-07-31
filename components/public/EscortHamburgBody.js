@@ -73,51 +73,32 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
       <main id="main">
         <JsonLd data={jsonLd} />
 
-        {/*
-          Split hero — dark text panel on the left, full-figure portrait
-          photo on the right. The right column is locked to the same 2:3
-          aspect as the source so the model is shown in full with no
-          cropping.  On mobile the image stacks on top (native 2:3) and
-          the text panel sits below.  Preserves LCP hint (eager +
-          fetchpriority=high) and JSON-LD structure of the previous
-          hero.
-        */}
-        <section className="bg-[#1A1414]" data-testid="escort-hamburg-page">
-          <div className="grid grid-cols-1 lg:grid-cols-2 lg:items-stretch">
-            {/* TEXT PANEL — dark background, breadcrumbs + overline + H1 */}
-            <div className="order-2 lg:order-1 flex flex-col justify-end px-6 md:px-12 lg:px-16 pt-14 pb-16 lg:pt-24 lg:pb-24 text-white lg:min-h-[80vh]">
-              <Breadcrumbs
-                dark
-                items={[{ label: t(lang, 'crumb.home'), href: homeHref }, { label: t(lang, 'hub.crumb') }]}
-              />
-              <span className="overline block mt-6 mb-4 text-[#E5A5B5]">{t(lang, 'hub.heroOverline')}</span>
-              <h1 className="font-heading text-5xl lg:text-7xl xl:text-8xl font-semibold tracking-tight leading-[1.05] text-white">
-                {t(lang, 'hub.heroH1a')} <em className="italic accent-text">{t(lang, 'hub.heroH1b')}</em>
-              </h1>
-            </div>
-
-            {/* IMAGE COLUMN — matches source 2:3 aspect so the whole model
-                stays visible.  On desktop the column is a min-h-[80vh]
-                container and the image fills it with object-contain +
-                dark bg, so if the uploaded photo happens to be a
-                different aspect it still shows in full (letterboxed
-                against the dark panel that visually continues from the
-                left column). */}
-            <div className="order-1 lg:order-2 relative bg-[#1A1414] aspect-[2/3] lg:aspect-auto lg:min-h-[80vh]">
-              <img
-                src={optimizeImageUrl(heroImage, { w: 1200 })}
-                srcSet={`${optimizeImageUrl(heroImage, { w: 480 })} 480w, ${optimizeImageUrl(heroImage, { w: 720 })} 720w, ${optimizeImageUrl(heroImage, { w: 960 })} 960w, ${optimizeImageUrl(heroImage, { w: 1200 })} 1200w, ${optimizeImageUrl(heroImage, { w: 1600 })} 1600w`}
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                width={1200}
-                height={1800}
-                alt={t(lang, 'hub.heroH1a') + ' ' + t(lang, 'hub.heroH1b')}
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-contain object-center"
-                data-testid="escort-hamburg-hero-image"
-              />
-            </div>
+        <section className="relative h-[70vh] flex items-end" data-testid="escort-hamburg-page">
+          <div className="absolute inset-0">
+            <img
+              src={optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })}
+              srcSet={`${optimizeImageUrl(heroImage, { w: 640, ar: '16/9', crop: 'fill' })} 640w, ${optimizeImageUrl(heroImage, { w: 900, ar: '16/9', crop: 'fill' })} 900w, ${optimizeImageUrl(heroImage, { w: 1280, ar: '16/9', crop: 'fill' })} 1280w, ${optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })} 1600w, ${optimizeImageUrl(heroImage, { w: 2000, ar: '16/9', crop: 'fill' })} 2000w`}
+              sizes="100vw"
+              width={2000}
+              height={1125}
+              alt={t(lang, 'hub.heroH1a') + ' ' + t(lang, 'hub.heroH1b')}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-cover"
+              data-testid="escort-hamburg-hero-image"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1A1414] via-[#1A1414]/50 to-[#1A1414]/25" />
+          </div>
+          <div className="relative z-10 px-6 md:px-12 lg:px-16 pb-16 max-w-5xl text-white">
+            <Breadcrumbs
+              dark
+              items={[{ label: t(lang, 'crumb.home'), href: homeHref }, { label: t(lang, 'hub.crumb') }]}
+            />
+            <span className="overline block mt-6 mb-4 text-[#E5A5B5]">{t(lang, 'hub.heroOverline')}</span>
+            <h1 className="font-heading text-5xl lg:text-8xl font-semibold tracking-tight leading-tight text-white">
+              {t(lang, 'hub.heroH1a')} <em className="italic accent-text">{t(lang, 'hub.heroH1b')}</em>
+            </h1>
           </div>
         </section>
 
