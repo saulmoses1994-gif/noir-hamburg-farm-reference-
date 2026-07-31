@@ -308,6 +308,43 @@ async function route(request, ctx, method) {
       return j(cleanDoc(result))
     }
 
+    // ---------- Admin: Hub content (flagship /escort-hamburg) ----------
+    // PUT /api/admin/hub-content/:key — upsert the hub_content doc for a given key
+    // (currently only `escort-hamburg`). Whitelisted fields, revalidates hub + sitemap.
+    if (parts[0] === 'admin' && parts[1] === 'hub-content' && parts.length === 3 && method === 'PUT') {
+      const guard = await requireAdmin(request, NextResponse)
+      if (!guard.ok) return cors(guard.response)
+      const key = parts[2]
+      if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(key)) {
+        return j({ detail: 'Invalid key' }, { status: 400 })
+      }
+      const body = await readJson(request)
+      const ALLOW = [
+        'meta_title', 'meta_title_en',
+        'meta_description', 'meta_description_en',
+        'long_copy', 'long_copy_en',
+        'sections', 'faqs',
+      ]
+      const update = { key }
+      for (const k of ALLOW) if (k in body) update[k] = body[k]
+      update.updated_at = new Date()
+      const db = await getDb()
+      const result = await db.collection('hub_content').findOneAndUpdate(
+        { key },
+        { $set: update, $setOnInsert: { created_at: new Date() } },
+        { upsert: true, returnDocument: 'after' }
+      )
+      // Determine the public paths to bust based on the key (currently only one).
+      const dePath = key === 'escort-hamburg' ? '/escort-hamburg' : `/${key}`
+      const enPath = key === 'escort-hamburg' ? '/en/escort-hamburg' : `/en/${key}`
+      try {
+        revalidatePath(dePath)
+        revalidatePath(enPath)
+        revalidatePath('/sitemap.xml')
+      } catch (e) { console.warn('[revalidate] failed', e?.message) }
+      return j(cleanDoc(result))
+    }
+
     // ---------- Settings (real collection is `site_settings`) ----------
     if (p === '/settings' && method === 'GET') {
       const db = await getDb()
