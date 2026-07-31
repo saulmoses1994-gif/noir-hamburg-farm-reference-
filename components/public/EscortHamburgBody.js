@@ -73,7 +73,7 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
       <main id="main">
         <JsonLd data={jsonLd} />
 
-        <section className="relative h-[70vh] flex items-end" data-testid="escort-hamburg-page">
+        <section className="relative w-full aspect-[16/9] flex items-end" data-testid="escort-hamburg-page">
           <div className="absolute inset-0">
             <img
               src={optimizeImageUrl(heroImage, { w: 1600, ar: '16/9', crop: 'fill' })}
