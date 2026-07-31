@@ -73,12 +73,16 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
       <main id="main">
         <JsonLd data={jsonLd} />
 
-        <section className="relative w-full aspect-[64/45] lg:aspect-[8/3] flex items-end" data-testid="escort-hamburg-page">
+        <section className="relative w-full aspect-[64/45] lg:aspect-[21/9] flex items-end" data-testid="escort-hamburg-page">
           <div className="absolute inset-0">
             {/*
               Responsive hero:
               - Mobile (default):  aspect 64:45 ≈ 1.42 (25 % taller than 16:9).
-              - Desktop (lg+):     aspect 8:3   ≈ 2.67 (33 % shorter than 16:9).
+              - Desktop (lg+):     aspect 21:9  ≈ 2.33 (24 % shorter than 16:9)
+                                   — a cinematic ultra-wide banner that leaves
+                                   enough vertical room to show face + corset
+                                   + hands, using `g_face` gravity so the
+                                   head is never cropped.
               Cloudinary applies q_auto:best + e_improve + e_sharpen per size
               to squeeze the most quality out of the current source without
               blowing up file weight.
@@ -86,7 +90,7 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
             <picture>
               <source
                 media="(min-width: 1024px)"
-                srcSet={`${optimizeImageUrl(heroImage, { w: 1280, ar: '8/3', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 1280w, ${optimizeImageUrl(heroImage, { w: 1600, ar: '8/3', crop: 'fill', quality: 'auto:best', sharpen: 80, improve: true })} 1600w, ${optimizeImageUrl(heroImage, { w: 1920, ar: '8/3', crop: 'fill', quality: 'auto:best', sharpen: 80, improve: true })} 1920w, ${optimizeImageUrl(heroImage, { w: 2400, ar: '8/3', crop: 'fill', quality: 'auto:best', sharpen: 100, improve: true })} 2400w`}
+                srcSet={`${optimizeImageUrl(heroImage, { w: 1280, ar: '21/9', crop: 'fill', gravity: 'face', quality: 'auto:best', sharpen: 60, improve: true })} 1280w, ${optimizeImageUrl(heroImage, { w: 1600, ar: '21/9', crop: 'fill', gravity: 'face', quality: 'auto:best', sharpen: 80, improve: true })} 1600w, ${optimizeImageUrl(heroImage, { w: 1920, ar: '21/9', crop: 'fill', gravity: 'face', quality: 'auto:best', sharpen: 80, improve: true })} 1920w, ${optimizeImageUrl(heroImage, { w: 2400, ar: '21/9', crop: 'fill', gravity: 'face', quality: 'auto:best', sharpen: 100, improve: true })} 2400w`}
                 sizes="100vw"
               />
               <img
@@ -94,7 +98,7 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
                 srcSet={`${optimizeImageUrl(heroImage, { w: 480, ar: '64/45', crop: 'fill', quality: 'auto:best', sharpen: 50, improve: true })} 480w, ${optimizeImageUrl(heroImage, { w: 720, ar: '64/45', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 720w, ${optimizeImageUrl(heroImage, { w: 960, ar: '64/45', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 960w, ${optimizeImageUrl(heroImage, { w: 1200, ar: '64/45', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 1200w`}
                 sizes="100vw"
                 width={2400}
-                height={900}
+                height={1029}
                 alt={t(lang, 'hub.heroH1a') + ' ' + t(lang, 'hub.heroH1b')}
                 loading="eager"
                 fetchPriority="high"
