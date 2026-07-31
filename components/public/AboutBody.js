@@ -107,21 +107,22 @@ export default function AboutBody({ lang, settings = {} }) {
               />
             </div>
             <aside className="hidden lg:block lg:col-span-4 lg:col-start-9">
-              <div className="editorial-image h-[60vh] bg-[#F2EAE4]">
-                {/* PERF: About-page editorial (desktop only — LCP on desktop).
-                    3:4 crop.  Mobile shows this image higher up in its own
-                    section between the H1 and the body copy. */}
+              {/* Desktop-only editorial image.  We deliberately DO NOT force
+                  a `3/4` (or any other) aspect via Cloudinary so the uploaded
+                  photo shows in full — no cropping.  The image renders at its
+                  natural aspect and simply fills the column width.  Mobile
+                  shows this image higher up (between H1 and body) in a
+                  cropped 3:4 tile from its own <section>. */}
+              <div className="editorial-image bg-[#F2EAE4]">
                 <img
-                  src={optimizeImageUrl(aboutImage, { w: 900, ar: '3/4', crop: 'fill' })}
-                  srcSet={`${optimizeImageUrl(aboutImage, { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(aboutImage, { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(aboutImage, { w: 900, ar: '3/4', crop: 'fill' })} 900w, ${optimizeImageUrl(aboutImage, { w: 1200, ar: '3/4', crop: 'fill' })} 1200w`}
+                  src={optimizeImageUrl(aboutImage, { w: 900, quality: 'auto:best', sharpen: 60, improve: true })}
+                  srcSet={`${optimizeImageUrl(aboutImage, { w: 600, quality: 'auto:best', sharpen: 60, improve: true })} 600w, ${optimizeImageUrl(aboutImage, { w: 900, quality: 'auto:best', sharpen: 60, improve: true })} 900w, ${optimizeImageUrl(aboutImage, { w: 1200, quality: 'auto:best', sharpen: 80, improve: true })} 1200w, ${optimizeImageUrl(aboutImage, { w: 1600, quality: 'auto:best', sharpen: 80, improve: true })} 1600w`}
                   sizes="33vw"
-                  width={1200}
-                  height={1600}
                   alt="Hamburg Editorial"
                   data-testid="about-editorial-image"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto object-contain"
                 />
               </div>
             </aside>
