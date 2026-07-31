@@ -70,6 +70,27 @@ export default function AboutBody({ lang, settings = {} }) {
           </div>
         </section>
 
+        {/* MOBILE-ONLY editorial image — sits between the H1 and the body
+            copy on mobile so the visual arrives before the reader scrolls
+            through the long text.  On desktop this is hidden (lg:hidden)
+            and the same image is rendered in the sidebar aside below. */}
+        <section className="px-6 md:px-12 pb-8 lg:hidden" data-testid="about-mobile-image">
+          <div className="editorial-image aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
+            <img
+              src={optimizeImageUrl(aboutImage, { w: 900, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })}
+              srcSet={`${optimizeImageUrl(aboutImage, { w: 480, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 50, improve: true })} 480w, ${optimizeImageUrl(aboutImage, { w: 720, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 720w, ${optimizeImageUrl(aboutImage, { w: 960, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 960w`}
+              sizes="(max-width: 767px) calc(100vw - 48px), calc(100vw - 96px)"
+              width={960}
+              height={1280}
+              alt="Hamburg Editorial"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </section>
+
         <section className="px-6 md:px-12 lg:px-16 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             <div className="lg:col-span-7">
@@ -85,19 +106,20 @@ export default function AboutBody({ lang, settings = {} }) {
                 dangerouslySetInnerHTML={{ __html: content }}
               />
             </div>
-            <aside className="lg:col-span-4 lg:col-start-9">
+            <aside className="hidden lg:block lg:col-span-4 lg:col-start-9">
               <div className="editorial-image h-[60vh] bg-[#F2EAE4]">
-                {/* PERF: About-page editorial (LCP on this page). 3:4 crop. */}
+                {/* PERF: About-page editorial (desktop only — LCP on desktop).
+                    3:4 crop.  Mobile shows this image higher up in its own
+                    section between the H1 and the body copy. */}
                 <img
                   src={optimizeImageUrl(aboutImage, { w: 900, ar: '3/4', crop: 'fill' })}
                   srcSet={`${optimizeImageUrl(aboutImage, { w: 400, ar: '3/4', crop: 'fill' })} 400w, ${optimizeImageUrl(aboutImage, { w: 600, ar: '3/4', crop: 'fill' })} 600w, ${optimizeImageUrl(aboutImage, { w: 900, ar: '3/4', crop: 'fill' })} 900w, ${optimizeImageUrl(aboutImage, { w: 1200, ar: '3/4', crop: 'fill' })} 1200w`}
-                  sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1023px) calc(100vw - 96px), 33vw"
+                  sizes="33vw"
                   width={1200}
                   height={1600}
                   alt="Hamburg Editorial"
                   data-testid="about-editorial-image"
-                  loading="eager"
-                  fetchPriority="high"
+                  loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover"
                 />
