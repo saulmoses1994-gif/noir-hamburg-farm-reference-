@@ -94,7 +94,7 @@ export default function EscortHamburgBody({ lang, services = [], areas = [], set
               {t(lang, 'hub.servicesTitle')}
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-[#1A1414]/5 mt-16" data-testid="hub-services-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-px bg-[#1A1414]/5 mt-16" data-testid="hub-services-grid">
             {services.map((s) => (
               <Link
                 key={s.slug}
