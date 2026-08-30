@@ -6,6 +6,8 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { Field, StringArrayEditor, SaveToolbar, cls } from '@/components/admin/FormFields'
 import CloudinaryImageField from '@/components/admin/CloudinaryImageField'
+import TagsInput from '@/components/admin/TagsInput'
+import { extractPasteAsMarkdown } from '@/lib/markdown-paste'
 
 function slugify(s) {
   return String(s || '').toLowerCase()
@@ -14,19 +16,84 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
-function MarkdownSplitPane({ label, value, onChange }) {
+// Detects any leading `# ...` line so we can warn about duplicate H1s
+// even when the pasted heading doesn't match the article title exactly.
+function bodyHasLeadingH1(text) {
+  if (!text) return false
+  const lines = String(text).split(/\r?\n/)
+  for (const l of lines) {
+    if (l.trim() === '') continue
+    return /^#\s+\S/.test(l)
+  }
+  return false
+}
+
+/**
+ * MarkdownSplitPane
+ *
+ * Two-column editor: raw Markdown on the left, live-rendered preview
+ * on the right.  New in 2026-08:
+ *   • Rich-paste handler — when the clipboard carries text/html
+ *     (Google Docs, Notion, browser selection) we convert it to
+ *     Markdown via `turndown` and strip a leading H1 that matches the
+ *     article title, so pasted articles keep their structure without
+ *     introducing a second <h1>.
+ *   • Duplicate-H1 hint — a subtle warning surfaces whenever the body
+ *     still starts with `# ...` so admins can decide whether to keep
+ *     or remove it (not a hard block, keeps drafts saveable).
+ */
+function MarkdownSplitPane({ label, value, onChange, articleTitle, testId }) {
+  const [notice, setNotice] = useState('')  // ephemeral post-paste hint
+  const showDupH1Warning = bodyHasLeadingH1(value)
+
+  function handlePaste(e) {
+    const cd = e.clipboardData || window.clipboardData
+    const result = extractPasteAsMarkdown(cd, { articleTitle })
+    if (!result) return  // let browser default happen (no clipboard data)
+    e.preventDefault()
+    // Insert at current selection.
+    const el = e.target
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? el.value.length
+    const next = el.value.slice(0, start) + result.text + el.value.slice(end)
+    onChange(next)
+    setNotice(
+      result.replacedH1
+        ? `Eingefügt (${result.source === 'html' ? 'HTML → Markdown' : 'Markdown'}) · Doppelter H1 automatisch entfernt`
+        : `Eingefügt (${result.source === 'html' ? 'HTML → Markdown' : 'Markdown'})`
+    )
+    // Restore cursor position roughly at end of inserted block.
+    requestAnimationFrame(() => {
+      try {
+        el.selectionStart = el.selectionEnd = start + result.text.length
+        el.focus()
+      } catch { /* noop */ }
+    })
+    setTimeout(() => setNotice(''), 4000)
+  }
+
   return (
     <div>
       <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-2">{label}</label>
-      <div className="grid grid-cols-2 gap-4 border border-[#1A1414]/15 rounded-md overflow-hidden bg-white">
+      {notice && (
+        <div className="text-[11px] font-mono text-[#2D7A4E] bg-[#DCEFE2] rounded px-2 py-1 mb-2" data-testid={`${testId}-paste-notice`}>{notice}</div>
+      )}
+      {showDupH1Warning && (
+        <div className="text-[11px] font-mono text-[#8A5A00] bg-[#FEF3E4] border border-[#EEC474] rounded px-2 py-1 mb-2" data-testid={`${testId}-h1-warning`}>
+          ⚠ Der Body beginnt mit einer H1 (<code># …</code>). Die Seite rendert bereits eine eigene &lt;h1&gt; aus dem Titel-Feld — bitte diese Zeile entfernen, sonst existieren <strong>zwei H1s</strong>.
+        </div>
+      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 border border-[#1A1414]/15 rounded-md overflow-hidden bg-white">
         <textarea
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
-          className="px-3 py-3 text-sm font-mono leading-relaxed focus:outline-none border-r border-[#1A1414]/10 min-h-[380px] resize-y"
+          onPaste={handlePaste}
+          className="px-3 py-3 text-sm font-mono leading-relaxed focus:outline-none lg:border-r border-[#1A1414]/10 min-h-[380px] resize-y"
           spellCheck={false}
-          placeholder="# Überschrift\n\nText mit **Markdown**."
+          placeholder="# Überschrift&#10;&#10;Text mit **Markdown**."
+          data-testid={testId}
         />
-        <div className="px-4 py-3 prose prose-sm max-w-none overflow-y-auto min-h-[380px] max-h-[600px] bg-[#FBF7F4]">
+        <div className="px-4 py-3 prose prose-sm max-w-none overflow-y-auto min-h-[380px] max-h-[600px] bg-[#FBF7F4]" data-testid={`${testId}-preview`}>
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{value || '*Vorschau erscheint hier — tippe links los.*'}</ReactMarkdown>
         </div>
       </div>
@@ -368,11 +435,19 @@ export default function BlogEditor({ mode, initial }) {
         h1: merged.h1 || '',                    // optional custom H1 override — DE
         h1_en: merged.h1_en || '',              // optional custom H1 override — EN
         category: merged.category || '',
+        category_en: merged.category_en || '',
+        tags: Array.isArray(merged.tags) ? merged.tags : [],
+        tags_en: Array.isArray(merged.tags_en) ? merged.tags_en : [],
+        author: merged.author || '',
         excerpt: merged.excerpt || '', excerpt_en: merged.excerpt_en || '',
         content: merged.content || '', content_en: merged.content_en || '',
         cover_image: merged.cover_image || '',
+        cover_image_alt: merged.cover_image_alt || '',
+        cover_image_alt_en: merged.cover_image_alt_en || '',
         meta_title: merged.meta_title || '', meta_title_en: merged.meta_title_en || '',
         meta_description: merged.meta_description || '', meta_description_en: merged.meta_description_en || '',
+        og_title: merged.og_title || '', og_title_en: merged.og_title_en || '',
+        og_description: merged.og_description || '', og_description_en: merged.og_description_en || '',
         related_services: merged.related_services || [],
         related_locations: merged.related_locations || [],
         faqs: merged.faqs || [],
@@ -510,14 +585,6 @@ export default function BlogEditor({ mode, initial }) {
                 {' · '}leerlassen für Auto-Generierung
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">Kategorie</label>
-              <select value={doc.category || ''} onChange={(e) => set('category', e.target.value)} className={cls('input')}>
-                <option value="">— wählen —</option>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                {doc.category && !CATEGORIES.includes(doc.category) && <option value={doc.category}>{doc.category}</option>}
-              </select>
-            </div>
             <div className="md:col-span-2">
               <CloudinaryImageField
                 label="Cover-Bild"
@@ -527,14 +594,114 @@ export default function BlogEditor({ mode, initial }) {
                 folder="noir-hamburg/blog"
               />
             </div>
+            {/* Per-language cover ALT — required for accessibility + SEO.
+                Missing values render a non-blocking warning; frontend falls
+                back to the article title if empty. */}
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                Cover Image ALT (DE) <span className="text-[#B8AFAF] normal-case tracking-normal">— fällt auf Titel zurück wenn leer</span>
+              </label>
+              <input
+                type="text"
+                value={doc.cover_image_alt || ''}
+                onChange={(e) => set('cover_image_alt', e.target.value)}
+                placeholder="Elegantes Paar bei einem exklusiven Date in Hamburg"
+                className={cls('input')}
+                data-testid="cover-alt-de"
+              />
+              {doc.cover_image && !doc.cover_image_alt && (
+                <div className="text-[11px] font-mono text-[#8A5A00] bg-[#FEF3E4] rounded px-2 py-1 mt-1">
+                  ⚠ DE: Cover image ALT text missing — please add before publishing.
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                Cover Image ALT (EN) <span className="text-[#B8AFAF] normal-case tracking-normal">— falls back to English title when empty</span>
+              </label>
+              <input
+                type="text"
+                value={doc.cover_image_alt_en || ''}
+                onChange={(e) => set('cover_image_alt_en', e.target.value)}
+                placeholder="Elegant couple enjoying an exclusive evening date in Hamburg"
+                className={cls('input')}
+                data-testid="cover-alt-en"
+              />
+              {doc.cover_image && !doc.cover_image_alt_en && doc.title_en && (
+                <div className="text-[11px] font-mono text-[#8A5A00] bg-[#FEF3E4] rounded px-2 py-1 mt-1">
+                  ⚠ EN: Cover image ALT text missing — please add before publishing.
+                </div>
+              )}
+            </div>
             <Field label="Excerpt (DE)" name="excerpt" type="textarea" value={doc.excerpt} onChange={set} />
             <Field label="Excerpt (EN)" name="excerpt_en" type="textarea" value={doc.excerpt_en} onChange={set} />
           </div>
         </section>
 
         <section className="bg-white p-8 rounded-lg">
+          <h2 className="font-heading text-xl mb-6">Klassifizierung</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">Kategorie (DE)</label>
+              <select value={doc.category || ''} onChange={(e) => set('category', e.target.value)} className={cls('input')} data-testid="category-de">
+                <option value="">— wählen —</option>
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {doc.category && !CATEGORIES.includes(doc.category) && <option value={doc.category}>{doc.category}</option>}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">Category (EN) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, fallback: DE</span></label>
+              <input
+                type="text"
+                value={doc.category_en || ''}
+                onChange={(e) => set('category_en', e.target.value)}
+                placeholder={doc.category || 'e.g. Fine Dining Hamburg'}
+                className={cls('input')}
+                data-testid="category-en"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <TagsInput
+                label="Tags (DE)"
+                value={doc.tags}
+                onChange={(v) => set('tags', v)}
+                placeholder="z.\u00a0B. Exclusive Date Hamburg — Enter oder Komma"
+                hint="Enter, Komma oder Tab zum Hinzufügen. Duplikate werden automatisch verhindert. Erscheinen als BlogPosting.keywords im Structured-Data."
+                dataTestid="tags-de"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <TagsInput
+                label="Tags (EN)"
+                value={doc.tags_en}
+                onChange={(v) => set('tags_en', v)}
+                placeholder="e.g. Exclusive Date Hamburg — press Enter or comma"
+                hint="Press Enter, comma, or Tab to add. Duplicates are prevented. Emitted as BlogPosting.keywords on the EN article."
+                dataTestid="tags-en"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                Author <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, default: Noir Hamburg (Organisation)</span>
+              </label>
+              <input
+                type="text"
+                value={doc.author || ''}
+                onChange={(e) => set('author', e.target.value)}
+                placeholder="Noir Hamburg"
+                className={cls('input')}
+                data-testid="author-field"
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">
+                Erscheint im BlogPosting-Schema. Leer lassen für Organisation „Noir Hamburg&quot;.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-3">Content (DE)</h2>
-          <p className="text-xs font-mono text-[#6B5F5F] mb-2">Markdown links — Live-Vorschau rechts.</p>
+          <p className="text-xs font-mono text-[#6B5F5F] mb-2">Markdown links — Live-Vorschau rechts. HTML aus Google&nbsp;Docs / Notion wird beim Einfügen automatisch in Markdown umgewandelt.</p>
           <div className="text-xs text-[#6B5F5F] bg-[#F8F4F0] border border-[#1A1414]/8 rounded p-3 mb-4 leading-relaxed">
             <strong className="text-[#1A1414]">Formatierungs-Hilfe:</strong>{' '}
             <code>## Überschrift</code> → H2 ·{' '}
@@ -543,14 +710,16 @@ export default function BlogEditor({ mode, initial }) {
             <code>1. Punkt</code> → Nummerierte Liste ·{' '}
             <code>**fett**</code> ·{' '}
             <code>*kursiv*</code> ·{' '}
-            <code>[Text](https://url)</code>
+            <code>[Text](https://url)</code> ·{' '}
+            <code>&gt; Zitat</code>
           </div>
-          <MarkdownSplitPane label="content" value={doc.content} onChange={(v) => set('content', v)} />
+          <MarkdownSplitPane label="content" value={doc.content} onChange={(v) => set('content', v)} articleTitle={doc.title} testId="content-de" />
         </section>
 
         <section className="bg-white p-8 rounded-lg">
           <h2 className="font-heading text-xl mb-3">Content (EN)</h2>
-          <MarkdownSplitPane label="content_en" value={doc.content_en} onChange={(v) => set('content_en', v)} />
+          <p className="text-xs font-mono text-[#6B5F5F] mb-2">Same paste flow: rich HTML from Google&nbsp;Docs / Notion is converted to Markdown automatically.</p>
+          <MarkdownSplitPane label="content_en" value={doc.content_en} onChange={(v) => set('content_en', v)} articleTitle={doc.title_en} testId="content-en" />
         </section>
 
         <FaqEditor
@@ -582,6 +751,67 @@ export default function BlogEditor({ mode, initial }) {
             <Field label="Meta Title (EN)" name="meta_title_en" type="input" value={doc.meta_title_en} onChange={set} showCounter />
             <Field label="Meta Description (DE)" name="meta_description" type="textarea" value={doc.meta_description} onChange={set} showCounter />
             <Field label="Meta Description (EN)" name="meta_description_en" type="textarea" value={doc.meta_description_en} onChange={set} showCounter />
+          </div>
+
+          <h3 className="font-heading text-lg mt-8 mb-2">Social / Open Graph</h3>
+          <p className="text-xs font-mono text-[#6B5F5F] mb-4">
+            Optional. Leer lassen → wir verwenden automatisch den passenden Meta&nbsp;Title bzw. die Meta&nbsp;Description als Fallback. Wirkt sich auf <code>og:title</code>, <code>og:description</code> und Twitter&nbsp;Card aus.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                OG Title (DE) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, Fallback: Meta Title (DE)</span>
+              </label>
+              <input
+                type="text"
+                value={doc.og_title || ''}
+                onChange={(e) => set('og_title', e.target.value)}
+                placeholder={doc.meta_title || doc.title || '(verwendet Meta Title (DE) wenn leer)'}
+                className={cls('input')}
+                data-testid="og-title-de"
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">{(doc.og_title || '').length} Zeichen</div>
+            </div>
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                OG Title (EN) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, fallback: Meta Title (EN)</span>
+              </label>
+              <input
+                type="text"
+                value={doc.og_title_en || ''}
+                onChange={(e) => set('og_title_en', e.target.value)}
+                placeholder={doc.meta_title_en || doc.title_en || '(falls back to Meta Title (EN) when empty)'}
+                className={cls('input')}
+                data-testid="og-title-en"
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">{(doc.og_title_en || '').length} Zeichen</div>
+            </div>
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                OG Description (DE) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, Fallback: Meta Description (DE)</span>
+              </label>
+              <textarea
+                value={doc.og_description || ''}
+                onChange={(e) => set('og_description', e.target.value)}
+                placeholder={doc.meta_description || '(verwendet Meta Description (DE) wenn leer)'}
+                className={cls('textarea')}
+                data-testid="og-desc-de"
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">{(doc.og_description || '').length} Zeichen</div>
+            </div>
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-[0.15em] text-[#6B5F5F] mb-1.5">
+                OG Description (EN) <span className="text-[#B8AFAF] normal-case tracking-normal">— optional, fallback: Meta Description (EN)</span>
+              </label>
+              <textarea
+                value={doc.og_description_en || ''}
+                onChange={(e) => set('og_description_en', e.target.value)}
+                placeholder={doc.meta_description_en || '(falls back to Meta Description (EN) when empty)'}
+                className={cls('textarea')}
+                data-testid="og-desc-en"
+              />
+              <div className="text-[11px] font-mono text-[#6B5F5F] mt-1">{(doc.og_description_en || '').length} Zeichen</div>
+            </div>
           </div>
         </section>
 

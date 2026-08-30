@@ -112,6 +112,23 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
   const datePublished = toIsoDate(post.created_at)
   const dateModified  = toIsoDate(post.updated_at || post.created_at)
   const articleSection = (isEn ? (post.category_en || post.category) : post.category) || undefined
+  // Per-language cover ALT. Explicit ALT overrides the article-title
+  // fallback so screen readers + Googlebot see meaningful text instead
+  // of the page's own <h1> repeated.
+  const coverAlt = ((isEn ? post.cover_image_alt_en : post.cover_image_alt) || title).trim()
+  // Author — single string override; empty string means fall back to
+  // the "Noir Hamburg" Organization (the historical default and how
+  // most published articles already read).  We deliberately keep the
+  // schema shape stable (`@type: Organization` when the fallback is
+  // used) so existing articles' structured data doesn't regress.
+  const authorName = (post.author || '').trim()
+  // Tags → BlogPosting.keywords. DE reads `tags`, EN falls back to
+  // `tags` when `tags_en` is empty (so the EN page still gets the SEO
+  // signal even before an editor has time to translate).
+  const articleTags = (() => {
+    const t = isEn ? (post.tags_en || post.tags) : post.tags
+    return Array.isArray(t) ? t.filter(Boolean) : []
+  })()
 
   // FAQPage schema must exactly match the visible FAQ text — strip any
   // HTML markup from admin-entered rich text and collapse whitespace.
@@ -137,11 +154,11 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
       image: imageAbs ? [imageAbs] : undefined,
       datePublished,
       dateModified,
-      author: {
-        '@type': 'Organization',
-        name: 'Noir Hamburg',
-        url: siteBase,
-      },
+      // Author — Person (with name only) if an editor set a real author
+      // string, otherwise the Organization fallback used historically.
+      author: authorName
+        ? { '@type': 'Person', name: authorName }
+        : { '@type': 'Organization', name: 'Noir Hamburg', url: siteBase },
       publisher: {
         '@type': 'Organization',
         name: 'Noir Hamburg',
@@ -149,6 +166,10 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
       },
       inLanguage: isEn ? 'en' : 'de',
       articleSection,
+      // Emit `keywords` only when tags exist — Schema.org allows either
+      // an array of strings or a comma-separated string; we prefer the
+      // array form (what Google's rich-results tester recommends).
+      keywords: articleTags.length ? articleTags : undefined,
       mainEntityOfPage: { '@type': 'WebPage', '@id': articleUrlAbs },
     },
     // 2) BreadcrumbList — three items, localised, final item includes both
@@ -272,7 +293,7 @@ export default function BlogDetailBody({ lang, post, relatedPosts = [], relatedS
                   sizes={img.sizes}
                   width={img.width}
                   height={img.height}
-                  alt={title}
+                  alt={coverAlt}
                   loading="eager"
                   fetchPriority="high"
                   decoding="async"

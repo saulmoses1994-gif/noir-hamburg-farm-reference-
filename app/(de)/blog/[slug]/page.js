@@ -25,6 +25,13 @@ export async function generateMetadata({ params }) {
   // DE page renders DE fields directly — no `pick(lang)` fallback here.
   const title = resolveArticleTitle(p.title, p.meta_title)
   const description = p.meta_description || p.excerpt || ''
+  // OG fallback: dedicated OG fields override the general meta_* fields
+  // when set, so social platforms can show a different title/description
+  // than search engines when it makes sense. Empty → meta_* fallback.
+  const ogTitle = (p.og_title || '').trim() || title
+  const ogDescription = (p.og_description || '').trim() || description
+  const coverAlt = (p.cover_image_alt || '').trim() || p.title
+  const authorName = (p.author || '').trim() || 'Noir Hamburg'
   // MULTILINGUAL SEO: emit hreflang=EN alternate only when a real EN
   // counterpart exists (title_en + content_en + slug_en). Otherwise this
   // page is the sole indexable version.
@@ -34,8 +41,10 @@ export async function generateMetadata({ params }) {
   return buildMetadata({
     title,
     description,
+    ogTitle,
+    ogDescription,
     image: p.cover_image,
-    imageAlt: p.title,
+    imageAlt: coverAlt,
     path: `/blog/${slug}`,
     lang,
     hasEnAlternate,
@@ -45,7 +54,7 @@ export async function generateMetadata({ params }) {
     ogType: 'article',
     publishedTime: toIso(p.created_at),
     modifiedTime: toIso(p.updated_at || p.created_at),
-    authors: ['Noir Hamburg'],
+    authors: [authorName],
     section: p.category || undefined,
     tags: Array.isArray(p.tags) ? p.tags.filter(Boolean) : undefined,
   })

@@ -26,7 +26,11 @@ function extractHeadings(md) {
 // HTML-bearing CMS fields per resource type — passed to sanitizeFields()
 // on every write path. Sanitization happens SERVER-SIDE before persistence
 // so the database itself is the trust boundary (SEC-001, 2026-07-25 audit).
-const HTML_FIELDS_BLOG     = ['content', 'content_en', 'excerpt', 'excerpt_en']
+// content/content_en are stored as raw MARKDOWN, not HTML — sanitising
+// them here escapes special Markdown characters like `>` (blockquote)
+// and breaks rendering. Sanitisation runs at render-time instead, after
+// marked.parse() produces HTML (see `ensureFormattedHtml`).
+const HTML_FIELDS_BLOG     = ['excerpt', 'excerpt_en']
 const HTML_FIELDS_PAGE     = ['content', 'content_en', 'intro', 'intro_en']
 const HTML_FIELDS_MODEL    = ['bio', 'bio_en']
 const HTML_FIELDS_SERVICE  = ['description', 'description_en']
@@ -83,8 +87,12 @@ const BLOG_FIELDS = [
   'excerpt', 'excerpt_en',
   'content', 'content_en',
   'cover_image',
+  'cover_image_alt', 'cover_image_alt_en',  // 2026-08: per-language cover image ALT text (SEO)
   'meta_title', 'meta_title_en',
   'meta_description', 'meta_description_en',
+  'og_title', 'og_title_en',                // 2026-08: optional OG title override (falls back to meta_title)
+  'og_description', 'og_description_en',    // 2026-08: optional OG description override (falls back to meta_description)
+  'author',                                 // 2026-08: single author string; empty → "Noir Hamburg" fallback in JSON-LD
   'related_services', 'related_locations',
   'faqs',                    // legacy bilingual-row format (kept for compat)
   'faqs_de', 'faqs_en',      // 2026-07 new: independent language arrays
@@ -113,6 +121,24 @@ function sanitizeFaqArray(arr) {
     })
     // Drop malformed entries — both fields must be non-empty.
     .filter((f) => f.q && f.a)
+}
+
+// Normalise a Tags/keywords array: trim each entry, drop empties, dedupe
+// case-insensitively while preserving the first-seen casing. Non-string
+// entries are coerced. Returns [] for non-array input.
+function normalizeTagArray(arr) {
+  if (!Array.isArray(arr)) return []
+  const seen = new Set()
+  const out = []
+  for (const t of arr) {
+    const trimmed = String(t == null ? '' : t).trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(trimmed)
+  }
+  return out
 }
 
 async function readJson(request) {
@@ -565,6 +591,9 @@ async function route(request, ctx, method) {
       const doc = { slug, id: crypto.randomUUID(), created_at: new Date(), updated_at: new Date() }
       for (const k of ALLOW) if (k in body) doc[k] = body[k]
       sanitizeFields(doc, HTML_FIELDS_BLOG)
+      // Normalise Tags on write (trim, dedupe, drop empties).
+      if ('tags' in doc) doc.tags = normalizeTagArray(doc.tags)
+      if ('tags_en' in doc) doc.tags_en = normalizeTagArray(doc.tags_en)
       doc.published = doc.published ?? false
       // MULTILINGUAL BLOG: resolve slug_en (auto-derive from title_en when
       // absent, sanitise+ensure uniqueness when provided). See helper below
@@ -588,6 +617,9 @@ async function route(request, ctx, method) {
       const update = {}
       for (const k of BLOG_FIELDS) if (k in body) update[k] = body[k]
       sanitizeFields(update, HTML_FIELDS_BLOG)
+      // Normalise Tags on write (trim, dedupe, drop empties).
+      if ('tags' in update) update.tags = normalizeTagArray(update.tags)
+      if ('tags_en' in update) update.tags_en = normalizeTagArray(update.tags_en)
       // FAQ arrays (both legacy `faqs` and new language-split fields).
       if ('faqs_de' in update) update.faqs_de = sanitizeFaqArray(update.faqs_de)
       if ('faqs_en' in update) update.faqs_en = sanitizeFaqArray(update.faqs_en)

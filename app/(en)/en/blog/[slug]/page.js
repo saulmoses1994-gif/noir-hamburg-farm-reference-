@@ -41,6 +41,11 @@ export async function generateMetadata({ params }) {
   const canonicalSlug = post.slug_en || slug
   const title = resolveArticleTitle(post.title_en, post.meta_title_en)
   const description = post.meta_description_en || post.excerpt_en || ''
+  // OG fallback: prefer EN OG fields → EN meta_* → same for description.
+  const ogTitle = (post.og_title_en || '').trim() || title
+  const ogDescription = (post.og_description_en || '').trim() || description
+  const coverAlt = (post.cover_image_alt_en || '').trim() || post.title_en
+  const authorName = (post.author || '').trim() || 'Noir Hamburg'
   const toIso = (v) => { try { return v ? new Date(v).toISOString() : undefined } catch { return undefined } }
   // EN category / tags fall back to the DE values when a language-specific
   // translation was not authored — better than emitting nothing.
@@ -52,8 +57,10 @@ export async function generateMetadata({ params }) {
   return buildMetadata({
     title,
     description,
+    ogTitle,
+    ogDescription,
     image: post.cover_image,
-    imageAlt: post.title_en,
+    imageAlt: coverAlt,
     path: `/blog/${canonicalSlug}`,       // buildMetadata will apply /en prefix
     lang: 'en',
     hasEnAlternate: true,
@@ -64,7 +71,7 @@ export async function generateMetadata({ params }) {
     ogType: 'article',
     publishedTime: toIso(post.created_at),
     modifiedTime: toIso(post.updated_at || post.created_at),
-    authors: ['Noir Hamburg'],
+    authors: [authorName],
     section,
     tags: tags.length ? tags : undefined,
   })
