@@ -7,6 +7,15 @@ import ContactForm from '@/components/public/ContactForm'
 import { t, localePath, pick } from '@/lib/i18n'
 import { siteUrl, breadcrumbSchema } from '@/lib/seo'
 import { resolveContentPagePath } from '@/lib/pages'
+import { optimizeImageUrl } from '@/lib/cloudinary-url'
+
+// 2026-09: Editorial photo introduced on the Contact page.  Master lives
+// on the Noir Hamburg Cloudinary account so the same Cloudinary
+// optimisation pipeline (auto-format WebP/AVIF, retina srcSet,
+// e_improve + e_sharpen tuning) that we use across the site applies
+// here too.  The source is a 1500×2000 px master (3:4 portrait), so
+// no upscaling is required at any breakpoint we ship.
+const CONTACT_HERO_IMAGE = 'https://res.cloudinary.com/yjccbi9f/image/upload/v1788377714/noir-hamburg/contact/kontakt-hero-2026-09.jpg'
 
 // Server component that hosts the (client) ContactForm and the sidebar of
 // direct-contact channels. Renders SSR-first so the hero + JSON-LD are
@@ -71,10 +80,52 @@ export default async function ContactBody({ lang, services = [], settings = {} }
           </div>
         </section>
 
+        {/* MOBILE-ONLY editorial image — sits between the H1 intro and the
+            contact form so the visual anchors the page before the reader
+            scrolls to the form.  Same photo is rendered in the desktop
+            sidebar aside further below (lg:hidden vs. hidden lg:block).
+            3:4 portrait crop with g_auto keeps the model composition
+            centred at any breakpoint. */}
+        <section className="px-6 md:px-12 pb-8 lg:hidden" data-testid="contact-mobile-image">
+          <div className="editorial-image aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
+            <img
+              src={optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 900, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })}
+              srcSet={`${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 480, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 50, improve: true })} 480w, ${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 720, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 720w, ${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 960, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 960w, ${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 1200, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 80, improve: true })} 1200w`}
+              sizes="(max-width: 767px) calc(100vw - 48px), calc(100vw - 96px)"
+              width={960}
+              height={1280}
+              alt={lang === 'en' ? 'Noir Hamburg — contact and booking' : 'Noir Hamburg — Kontakt und Buchung'}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-cover"
+              data-testid="contact-image-mobile"
+            />
+          </div>
+        </section>
+
         <section className="px-6 md:px-12 lg:px-16 py-8 md:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-12">
             <ContactForm lang={lang} services={serviceOptions} privacyHref={privacyHref} />
             <aside className="lg:col-span-4 lg:col-start-9 space-y-8">
+              {/* DESKTOP-ONLY editorial image — sits at the top of the
+                  right sidebar so it visually balances the ContactForm
+                  in the left column.  Hidden on mobile (mobile shows
+                  the same photo higher up, between H1 and form). */}
+              <div className="hidden lg:block editorial-image aspect-[3/4] bg-[#F2EAE4] overflow-hidden">
+                <img
+                  src={optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 900, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 80, improve: true })}
+                  srcSet={`${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 600, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 60, improve: true })} 600w, ${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 900, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 80, improve: true })} 900w, ${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 1200, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 80, improve: true })} 1200w, ${optimizeImageUrl(CONTACT_HERO_IMAGE, { w: 1500, ar: '3/4', crop: 'fill', quality: 'auto:best', sharpen: 100, improve: true })} 1500w`}
+                  sizes="33vw"
+                  width={1200}
+                  height={1600}
+                  alt={lang === 'en' ? 'Noir Hamburg — contact and booking' : 'Noir Hamburg — Kontakt und Buchung'}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  data-testid="contact-image-desktop"
+                />
+              </div>
               <div>
                 <span className="overline mb-4 block">{t(lang, 'contact.direct.title')}</span>
                 <div className="space-y-5 mt-4">
